@@ -1,0 +1,468 @@
+#!/usr/bin/env python
+
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of version 2.1 of the GNU Lesser General Public
+# License as published by the Free Software Foundation.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Copyright (c) 2005, 2007 XenSource Ltd.
+
+
+import errno
+import getopt
+import getpass
+import httplib
+import re
+import os
+import os.path
+import string
+import StringIO
+import sys
+import tarfile
+import tempfile
+import time
+import urllib
+import commands
+import signal
+from xml.dom.minidom import parse, getDOMImplementation
+
+sys.path.append('/usr/lib/python')
+sys.path.append('/usr/lib64/python')
+
+import xen.lowlevel.xc
+
+
+PII_NO            = 'no'
+PII_YES           = 'yes'
+PII_MAYBE         = 'maybe'
+PII_IF_CUSTOMIZED = 'if_customized'
+
+KEY      = 0
+PII      = 1
+MIN_SIZE = 2
+MAX_SIZE = 3
+MIN_TIME = 4
+MAX_TIME = 5
+MIME     = 6
+CHECKED  = 7
+
+MIME_DATA = 'application/data'
+MIME_TEXT = 'text/plain'
+
+INVENTORY_XML_ROOT = "system-status-inventory"
+INVENTORY_XML_ELEMENT = 'inventory-entry'
+CAP_XML_ROOT = "system-status-capabilities"
+CAP_XML_ELEMENT = 'capability'
+
+
+CAP_HDPARM_T            = 'HDPARM_T'
+CAP_NETWORK_CONFIG      = 'NETWORK_CONFIG'
+CAP_NETWORK_STATUS      = 'NETWORK_STATUS'
+CAP_SYSTEM_INFO         = 'SYSTEM_INFO'
+CAP_SYSTEM_LOGS         = 'SYSTEM_LOGS'
+CAP_TAPDISK_LOGS        = 'TAPDISK_LOGS'
+CAP_XENSOURCE_CONFIG    = 'XENSOURCE_CONFIG'
+CAP_XENSOURCE_DATABASES = 'XENSOURCE_DATABASES'
+CAP_XENSOURCE_INSTALL   = 'XENSOURCE_INSTALL'
+CAP_XENSOURCE_LOGS      = 'XENSOURCE_LOGS'
+CAP_XEN_INFO            = 'XEN_INFO'
+CAP_YUM                 = 'YUM'
+
+KB = 1024
+MB = 1024 * 1024
+
+caps = {}
+
+
+def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
+        max_time=-1, mime=MIME_TEXT, checked=True):
+    caps[key] = (key, pii, min_size, max_size, min_time, max_time, mime,
+                 checked)
+
+
+cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=KB,
+    min_time=120, max_time=600, checked=False)
+cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
+                                        min_size=0,     max_size=10*KB)
+cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=2*KB)
+cap(CAP_SYSTEM_INFO,         PII_MAYBE,                 max_size=KB)
+cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB)
+cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=KB)
+cap(CAP_XENSOURCE_CONFIG,    PII_MAYBE,                 max_size=1*KB)
+cap(CAP_XENSOURCE_DATABASES, PII_YES,   min_size=10*MB, max_size=50*MB,
+    mime=MIME_DATA)
+cap(CAP_XENSOURCE_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=50*KB)
+cap(CAP_XENSOURCE_LOGS,      PII_MAYBE, min_size=0,     max_size=50*MB)
+cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=5*KB)
+cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=5*KB)
+
+
+def read_kvpairs(filename):
+   """Read in a file of key-value pairs in the format used by the inventory file"""
+   f = open(filename)
+   all = {}
+   try:
+        for line in f.readlines():
+            equals = line.index("=")    
+            key = line[0:equals]
+            value = line[equals+1:].strip().strip("'")
+            all[key] = value
+   finally:
+        f.close()
+        return all
+# read the /etc/xensource-inventory file if it exists
+def read_inventory():
+    try:
+        return read_kvpairs("/etc/xensource-inventory")  
+    except:
+        return {}
+
+
+SYSTEM_INFO_SCRIPT = '/usr/sbin/system-info.sh'
+SYSTEM_INFO_SCRIPT_OUTPUT = '/tmp/system-info.out'
+
+IPTABLES_CONFIG = '/etc/sysconfig/iptables-config'
+
+NETWORK_SCRIPTS_DIR = '/etc/sysconfig/network-scripts'
+
+YUM_REPOS_DIR = '/etc/yum.repos.d'
+
+DHCP_LEASE_DIR = '/var/lib/dhclient'
+
+XAPI_STATE_DB = '/var/xapi/state.db'
+XAPI_LOCAL_DB = '/var/xapi/local.db'
+
+POOL_CONF = '/etc/xensource/pool.conf'
+
+HDPARM = '/sbin/hdparm'
+
+
+# Key in the inventory file which maps to a space-separated list of 
+# physical devices
+DEFAULT_SR_PHYSDEVS = 'DEFAULT_SR_PHYSDEVS'
+
+
+FILES_TO_SEND = []
+COMMANDS_TO_RUN = []
+ANSWER_YES_TO_ALL = False
+SILENT_MODE = False
+
+
+def output(x):
+    global SILENT_MODE
+    if not(SILENT_MODE):
+        print x
+
+def main(argv = None):
+    global ANSWER_YES_TO_ALL, SILENT_MODE, FILES_TO_SEND, COMMANDS_TO_RUN
+    if argv is None:
+        argv = sys.argv
+
+    try:
+        (options, params) = getopt.gnu_getopt(
+            argv, 'sy', ['capabilities', 'silent', 'yestoall', 'entries='])
+    except getopt.GetoptError, opterr:
+        print >>sys.stderr, opterr
+        return 127
+
+    entries = caps.keys()
+
+    for (k, v) in options:
+        if k == '--capabilities':
+            print_capabilities()
+            return 0
+
+        # "-s" or "--silent" means suppress output (except for the final
+        # output filename at the end)
+        if k in ['-s', '--silent']:
+            SILENT_MODE = True
+
+        if k == '--entries':
+            entries = v.split(',')
+
+        # If the user runs the script with "-y" or "--yestoall" we don't ask
+        # all the really annoying questions.
+        if k in ['-y', '--yestoall']:
+            ANSWER_YES_TO_ALL = True  
+            output("Warning: '--yestoall' argument provided, will not prompt for individual files.")
+
+
+    if len(params) != 1:
+        print >>sys.stderr, "Invalid additional arguments", str(params)
+        return 128
+
+
+    output('''
+This application will collate the Xen dmesg output, details of the
+hardware configuration of your machine, information about the build of
+Xen that you are using, plus, if you allow it, various logs.
+
+The collated information will be saved as a .tar.bz2 for archiving or
+sending to a Technical Support Representative.
+
+The logs may contain private information, and if you are at all
+worried about that, you should exit now, or you should explicitly
+exclude those logs from the archive.
+
+''')
+
+
+    bugball = []
+    bugball_inventory = {}
+    xc = xen.lowlevel.xc.xc()
+
+    def send(e, files):
+        if e in entries:
+            FILES_TO_SEND.extend(files)
+            bugball_inventory.update(dict([(f, e) for f in files
+                                           if os.path.exists(f)]))
+
+    def cmd(e, commands):
+        if e in entries:
+            COMMANDS_TO_RUN.extend(commands)
+            bugball_inventory.update(dict([(c[2], e) for c in commands]))
+            
+    def do(n, e, f):
+        if e in entries:
+            try:
+                s = f()
+            except Exception, exn:
+                s = str(exn)
+            bugball.append(string_iterator(n, s))
+            bugball_inventory[n] = e
+
+
+    if CAP_HDPARM_T in entries:
+        try:
+            inventory = read_inventory()
+            if DEFAULT_SR_PHYSDEVS in inventory.keys():
+                for device in inventory[DEFAULT_SR_PHYSDEVS].split():
+                    f = "/tmp/hdparm-tT-" + string.join(device.split("/"), "-")
+                    cmd(CAP_HDPARM_T, [HDPARM, "-tT " + device, f])
+        except:
+            pass
+
+    # Add the network config scripts to FILES_TO_SEND
+    if (CAP_NETWORK_CONFIG in entries and
+        os.path.isdir(NETWORK_SCRIPTS_DIR)):
+       for f in os.listdir(NETWORK_SCRIPTS_DIR):
+	   if f.startswith("ifcfg-"):
+	       send(CAP_NETWORK_CONFIG,
+                    [os.path.join(NETWORK_SCRIPTS_DIR, f)])
+       send(CAP_NETWORK_CONFIG, [IPTABLES_CONFIG])
+
+    send(CAP_NETWORK_STATUS,
+         [os.path.join(DHCP_LEASE_DIR, x)
+          for x in os.listdir(DHCP_LEASE_DIR)] +
+         ['/etc/resolv.conf', '/etc/ntp.conf'])
+    cmd(CAP_NETWORK_STATUS,
+        [[ '/sbin/iptables', '-L', '/tmp/iptables-L.out' ],
+         [ '/usr/sbin/brctl', 'show', '/tmp/brctl-show.out' ],
+         [ '/sbin/ifconfig', '-a', '/tmp/ifconfig-a.out' ]])
+
+    if CAP_SYSTEM_INFO in entries:
+        run_system_info_script()
+    cmd(CAP_SYSTEM_INFO,
+        [[ '/sbin/lspci', '-n', '/tmp/lspci-n.out' ]])
+
+    send(CAP_SYSTEM_LOGS,
+         [ '/var/log/' + x for x in
+           [ 'syslog', 'messages', 'debug' ] +
+           [ 'messages.%d' % y for y in range(1,20)]])
+
+    if CAP_TAPDISK_LOGS in entries:
+        generate_tapdisk_logs()
+
+    send(CAP_XENSOURCE_CONFIG,
+         [POOL_CONF])
+
+    send(CAP_XENSOURCE_DATABASES,
+         [XAPI_STATE_DB, XAPI_LOCAL_DB])
+
+    send(CAP_XENSOURCE_INSTALL,
+         [ '/var/log/' + x for x in 
+           [ 'firstboot-SR-commands-log',
+             'upgrade-commands-log', 'generate-iscsi-iqn-log']] +
+         [ '/root/' + x for x in 
+           [ 'blockdevs-log', 'cmdline-log', 'devcontents-log',
+             'dmesg-log', 'install-log', 'lspci-log', 'modules-log',
+             'pci-log', 'processes-log', 'tty-log', 'uname-log',
+             'vgscan-log']])
+
+    send(CAP_XENSOURCE_LOGS,
+         [ '/var/log/' + x for x in
+           ['xensource.log', 'SMlog'] +
+           ['xensource.log.%d' % y for y in range(1,21)] +
+           ['SMlog.%d' % y for y in range(1,20)] +
+           ['xen/xenstored-trace.log',
+            'xen/xen-hotplug.log',
+            'xen/domain-builder-ng.log'] +
+           [ 'xen/xenstored-access.log.%d' % y for y in range(1,20)]])
+
+    do('xen-dmesg', CAP_XEN_INFO, lambda: xc.readconsolering())
+    do('physinfo',  CAP_XEN_INFO, lambda: prettyDict(xc.physinfo()))
+    do('xeninfo',   CAP_XEN_INFO, lambda: prettyDict(xc.xeninfo()))
+    cmd(CAP_XEN_INFO,
+        [[ '/bin/cat', '/proc/xen/balloon', '/tmp/proc-xen-balloon.out' ]])
+
+    send(CAP_YUM,
+         ['/var/log/yum.log'] +
+         [os.path.join(YUM_REPOS_DIR, x) for x in os.listdir(YUM_REPOS_DIR)])
+    cmd(CAP_YUM,
+        [['/bin/rpm', '-qa', '/tmp/rpm-qa.out']])
+
+
+    for c in COMMANDS_TO_RUN:
+	if os.path.isfile(c[0]):
+	   command = "%s %s > %s" % (c[0], c[1], c[2])
+	   output("Running " + command)
+	   commands.getstatusoutput(command)
+           FILES_TO_SEND.append(c[2])
+
+    for filename in FILES_TO_SEND:
+        if not os.path.exists(filename):
+            continue
+
+        if ANSWER_YES_TO_ALL or yes('Include %s? [Y/n] ' % filename):
+            bugball.append(file(filename))
+
+    tar(bugball, bugball_inventory)
+
+    return 0
+
+def run_system_info_script():
+    if os.path.isfile(SYSTEM_INFO_SCRIPT):
+        output('Gathering system information...\n')
+        (status, _) = commands.getstatusoutput("%s > %s" % (SYSTEM_INFO_SCRIPT, SYSTEM_INFO_SCRIPT_OUTPUT))
+        if status == 0:
+            FILES_TO_SEND.append(SYSTEM_INFO_SCRIPT_OUTPUT)
+
+def generate_tapdisk_logs():
+    pids = commands.getoutput("/bin/ps -C tapdisk -o pid=")
+    for pid in pids.split():
+	try:
+	    os.kill(int(pid), signal.SIGUSR1)
+	    FILES_TO_SEND.append("/tmp/tapdisk.log." + pid)
+	    FILES_TO_SEND.append("/tmp/vhd.log." + pid)
+	    FILES_TO_SEND.append("/tmp/io-optimize.log." + pid)
+	except:
+	    pass
+    # give processes a second to write their logs
+    time.sleep(1)
+
+def tar(bugball, bugball_inventory):
+    global SILENT_MODE
+
+    bug_dir = "/var/opt/xen/bug-report"
+    if not os.path.exists(bug_dir):
+        os.makedirs(bug_dir)
+
+    date_string = time.strftime("%Y%m%d%H%M%S")
+
+    filename = "%s/bug-report-%s.tar.bz2" % (bug_dir, date_string)
+    subdir = "bug-report-%s" %  date_string
+
+    bugball.append(string_iterator('inventory.xml',
+                                   make_inventory(bugball_inventory, subdir)))
+
+    now = time.time()
+
+    tf = tarfile.open(filename, 'w:bz2')
+
+    try:
+        for f in bugball:
+            tar_filename = os.path.join(subdir, os.path.basename(f.name))
+            ti = tarfile.TarInfo(tar_filename)
+
+            if hasattr(f, 'size'):
+                ti.size = f.size()
+            else:
+                ti.size = os.stat(f.name).st_size
+
+            ti.mtime = now
+            ti.type = tarfile.REGTYPE
+            ti.uid = 0
+            ti.gid = 0
+            ti.uname = 'root'
+            ti.gname = 'root'
+
+            f.seek(0) # If we've added this file to a bug, it will have been
+                      # read once already, so reset it.
+            tf.addfile(ti, f)
+    finally:
+        tf.close()
+
+    output ('Writing tarball %s successful.' % filename)
+    if SILENT_MODE:
+       print filename
+
+
+def make_inventory(inventory, subdir):
+    document = getDOMImplementation().createDocument(
+        None, INVENTORY_XML_ROOT, None)
+    map(lambda (f, e): inventory_entry(document, subdir, f, e),
+        inventory.iteritems())
+    return document.toprettyxml()
+
+def inventory_entry(document, subdir, filename, capability):
+    el = document.createElement(INVENTORY_XML_ELEMENT)
+    el.setAttribute('filename',
+                    os.path.join(subdir, os.path.basename(filename)))
+    el.setAttribute('capability', capability)
+    document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(el)
+
+
+def print_capabilities():
+    document = getDOMImplementation().createDocument(
+        "ns", CAP_XML_ROOT, None)
+    map(lambda key: capability(document, key), caps.keys())
+    print document.toprettyxml()
+
+def capability(document, key):
+    c = caps[key]
+    el = document.createElement(CAP_XML_ELEMENT)
+    el.setAttribute('key', c[KEY])
+    el.setAttribute('pii', c[PII])
+    el.setAttribute('min-size', str(c[MIN_SIZE]))
+    el.setAttribute('max-size', str(c[MAX_SIZE]))
+    el.setAttribute('min-time', str(c[MIN_TIME]))
+    el.setAttribute('max-time', str(c[MAX_TIME]))
+    el.setAttribute('content-type', c[MIME])
+    el.setAttribute('default-checked', c[CHECKED] and 'yes' or 'no')
+    document.getElementsByTagName(CAP_XML_ROOT)[0].appendChild(el)
+
+
+def prettyDict(d):
+    format = '%%-%ds: %%s' % max(map(len, [k for k, _ in d.items()]))
+    return '\n'.join([format % i for i in d.items()]) + '\n'
+
+
+class string_iterator(StringIO.StringIO):
+    def __init__(self, name, val):
+        StringIO.StringIO.__init__(self, val)
+        self.name = name
+
+    def size(self):
+        return len(self.getvalue())
+
+
+def yes(prompt):
+    yn = raw_input(prompt)
+
+    return len(yn) == 0 or yn.lower()[0] == 'y'
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print "\nInterrupted."
+        sys.exit(1)
