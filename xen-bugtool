@@ -37,6 +37,7 @@ from xml.dom.minidom import parse, getDOMImplementation
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
 
+import sexp
 import xen.lowlevel.xc
 
 
@@ -63,18 +64,20 @@ CAP_XML_ROOT = "system-status-capabilities"
 CAP_XML_ELEMENT = 'capability'
 
 
-CAP_HDPARM_T            = 'HDPARM_T'
-CAP_NETWORK_CONFIG      = 'NETWORK_CONFIG'
-CAP_NETWORK_STATUS      = 'NETWORK_STATUS'
-CAP_SYSTEM_INFO         = 'SYSTEM_INFO'
-CAP_SYSTEM_LOGS         = 'SYSTEM_LOGS'
-CAP_TAPDISK_LOGS        = 'TAPDISK_LOGS'
-CAP_XENSOURCE_CONFIG    = 'XENSOURCE_CONFIG'
-CAP_XENSOURCE_DATABASES = 'XENSOURCE_DATABASES'
-CAP_XENSOURCE_INSTALL   = 'XENSOURCE_INSTALL'
-CAP_XENSOURCE_LOGS      = 'XENSOURCE_LOGS'
-CAP_XEN_INFO            = 'XEN_INFO'
-CAP_YUM                 = 'YUM'
+CAP_HDPARM_T             = 'HDPARM_T'
+CAP_HOST_CRASHDUMP_DUMPS = 'HOST_CRASHDUMP_DUMPS'
+CAP_HOST_CRASHDUMP_LOGS  = 'HOST_CRASHDUMP_LOGS'
+CAP_NETWORK_CONFIG       = 'NETWORK_CONFIG'
+CAP_NETWORK_STATUS       = 'NETWORK_STATUS'
+CAP_SYSTEM_INFO          = 'SYSTEM_INFO'
+CAP_SYSTEM_LOGS          = 'SYSTEM_LOGS'
+CAP_TAPDISK_LOGS         = 'TAPDISK_LOGS'
+CAP_XENSERVER_CONFIG     = 'XENSERVER_CONFIG'
+CAP_XENSERVER_DATABASES  = 'XENSERVER_DATABASES'
+CAP_XENSERVER_INSTALL    = 'XENSERVER_INSTALL'
+CAP_XENSERVER_LOGS       = 'XENSERVER_LOGS'
+CAP_XEN_INFO             = 'XEN_INFO'
+CAP_YUM                  = 'YUM'
 
 KB = 1024
 MB = 1024 * 1024
@@ -90,17 +93,19 @@ def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
 
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=KB,
     min_time=120, max_time=600, checked=False)
+cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
+cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=10*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=2*KB)
 cap(CAP_SYSTEM_INFO,         PII_MAYBE,                 max_size=KB)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=KB)
-cap(CAP_XENSOURCE_CONFIG,    PII_MAYBE,                 max_size=1*KB)
-cap(CAP_XENSOURCE_DATABASES, PII_YES,   min_size=10*MB, max_size=50*MB,
+cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=1*KB)
+cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
     mime=MIME_DATA)
-cap(CAP_XENSOURCE_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=50*KB)
-cap(CAP_XENSOURCE_LOGS,      PII_MAYBE, min_size=0,     max_size=50*MB)
+cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=50*KB)
+cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=50*MB)
 cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=5*KB)
 cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=5*KB)
 
@@ -126,6 +131,8 @@ def read_inventory():
         return {}
 
 
+SQLITE = '/usr/bin/sqlite3'
+
 SYSTEM_INFO_SCRIPT = '/usr/sbin/system-info.sh'
 SYSTEM_INFO_SCRIPT_OUTPUT = '/tmp/system-info.out'
 
@@ -137,13 +144,27 @@ YUM_REPOS_DIR = '/etc/yum.repos.d'
 
 DHCP_LEASE_DIR = '/var/lib/dhclient'
 
-XAPI_STATE_DB = '/var/xapi/state.db'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
+XAPI_STATE_DB = '/tmp/state.db'
+XAPI_STATE_DB_GENERATION = '/tmp/state.db.generation'
+XAPI_DB_PROCESS = '/opt/xensource/bin/xapi-db-process'
 
 POOL_CONF = '/etc/xensource/pool.conf'
 
 HDPARM = '/sbin/hdparm'
 
+HOST_CRASHDUMPS_DIR = '/var/crash'
+HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
+
+XENSERVER_LOGS = \
+    [ '/var/log/' + x for x in
+      ['xensource.log', 'SMlog'] +
+      ['xensource.log.%d' % y for y in range(1,21)] +
+      ['SMlog.%d' % y for y in range(1,20)] +
+      ['xen/xenstored-trace.log',
+       'xen/xen-hotplug.log',
+       'xen/domain-builder-ng.log'] +
+      [ 'xen/xenstored-access.log.%d' % y for y in range(1,20)]]
 
 # Key in the inventory file which maps to a space-separated list of 
 # physical devices
@@ -154,6 +175,9 @@ FILES_TO_SEND = []
 COMMANDS_TO_RUN = []
 ANSWER_YES_TO_ALL = False
 SILENT_MODE = False
+entries = None
+bugball = []
+bugball_inventory = {}
 
 
 def output(x):
@@ -161,8 +185,41 @@ def output(x):
     if not(SILENT_MODE):
         print x
 
+def send(e, files):
+    if e in entries:
+        FILES_TO_SEND.extend(files)
+        bugball_inventory.update(dict([(f, e) for f in files
+                                       if os.path.exists(f)]))
+
+def send_all(e, dir, pattern, negate):
+    if os.path.exists(dir):
+        for f in os.listdir(dir):
+            fn = os.path.join(dir, f)
+            if os.path.isfile(fn) and matches(fn, pattern, negate):
+                send(e, [fn])
+            elif os.path.isdir(fn):
+                send_all(e, fn, pattern, negate)
+
+def cmd(e, commands):
+    if e in entries:
+        COMMANDS_TO_RUN.extend(commands)
+        FILES_TO_SEND.append(c[2])
+        bugball_inventory.update(dict([(c[2], e) for c in commands]))
+
+def do(n, e, f):
+    if e in entries:
+        try:
+            s = f()
+        except Exception, exn:
+            s = str(exn)
+        bugball.append(string_iterator(n, s))
+        bugball_inventory[n] = e
+
+
 def main(argv = None):
     global ANSWER_YES_TO_ALL, SILENT_MODE, FILES_TO_SEND, COMMANDS_TO_RUN
+    global entries, bugball, bugball_inventory
+    
     if argv is None:
         argv = sys.argv
 
@@ -177,6 +234,7 @@ def main(argv = None):
 
     for (k, v) in options:
         if k == '--capabilities':
+            update_capabilities()
             print_capabilities()
             return 0
 
@@ -215,30 +273,7 @@ exclude those logs from the archive.
 ''')
 
 
-    bugball = []
-    bugball_inventory = {}
     xc = xen.lowlevel.xc.xc()
-
-    def send(e, files):
-        if e in entries:
-            FILES_TO_SEND.extend(files)
-            bugball_inventory.update(dict([(f, e) for f in files
-                                           if os.path.exists(f)]))
-
-    def cmd(e, commands):
-        if e in entries:
-            COMMANDS_TO_RUN.extend(commands)
-            bugball_inventory.update(dict([(c[2], e) for c in commands]))
-            
-    def do(n, e, f):
-        if e in entries:
-            try:
-                s = f()
-            except Exception, exn:
-                s = str(exn)
-            bugball.append(string_iterator(n, s))
-            bugball_inventory[n] = e
-
 
     if CAP_HDPARM_T in entries:
         try:
@@ -249,6 +284,11 @@ exclude those logs from the archive.
                     cmd(CAP_HDPARM_T, [HDPARM, "-tT " + device, f])
         except:
             pass
+
+    send_all(CAP_HOST_CRASHDUMP_DUMPS, HOST_CRASHDUMPS_DIR,
+             HOST_CRASHDUMP_LOGS_RE, True)
+    send_all(CAP_HOST_CRASHDUMP_LOGS,  HOST_CRASHDUMPS_DIR,
+             HOST_CRASHDUMP_LOGS_RE, False)
 
     # Add the network config scripts to FILES_TO_SEND
     if (CAP_NETWORK_CONFIG in entries and
@@ -281,13 +321,14 @@ exclude those logs from the archive.
     if CAP_TAPDISK_LOGS in entries:
         generate_tapdisk_logs()
 
-    send(CAP_XENSOURCE_CONFIG,
-         [POOL_CONF])
+    send(CAP_XENSERVER_CONFIG, [POOL_CONF])
 
-    send(CAP_XENSOURCE_DATABASES,
-         [XAPI_STATE_DB, XAPI_LOCAL_DB])
+    if CAP_XENSERVER_DATABASES in entries:
+        get_and_sanitize_databases()
+    send(CAP_XENSERVER_DATABASES,
+         [XAPI_STATE_DB, XAPI_STATE_DB_GENERATION, XAPI_LOCAL_DB])
 
-    send(CAP_XENSOURCE_INSTALL,
+    send(CAP_XENSERVER_INSTALL,
          [ '/var/log/' + x for x in 
            [ 'firstboot-SR-commands-log',
              'upgrade-commands-log', 'generate-iscsi-iqn-log']] +
@@ -297,15 +338,7 @@ exclude those logs from the archive.
              'pci-log', 'processes-log', 'tty-log', 'uname-log',
              'vgscan-log']])
 
-    send(CAP_XENSOURCE_LOGS,
-         [ '/var/log/' + x for x in
-           ['xensource.log', 'SMlog'] +
-           ['xensource.log.%d' % y for y in range(1,21)] +
-           ['SMlog.%d' % y for y in range(1,20)] +
-           ['xen/xenstored-trace.log',
-            'xen/xen-hotplug.log',
-            'xen/domain-builder-ng.log'] +
-           [ 'xen/xenstored-access.log.%d' % y for y in range(1,20)]])
+    send(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
 
     do('xen-dmesg', CAP_XEN_INFO, lambda: xc.readconsolering())
     do('physinfo',  CAP_XEN_INFO, lambda: prettyDict(xc.physinfo()))
@@ -325,7 +358,6 @@ exclude those logs from the archive.
 	   command = "%s %s > %s" % (c[0], c[1], c[2])
 	   output("Running " + command)
 	   commands.getstatusoutput(command)
-           FILES_TO_SEND.append(c[2])
 
     for filename in FILES_TO_SEND:
         if not os.path.exists(filename):
@@ -334,7 +366,7 @@ exclude those logs from the archive.
         if ANSWER_YES_TO_ALL or yes('Include %s? [Y/n] ' % filename):
             bugball.append(file(filename))
 
-    tar(bugball, bugball_inventory)
+    tar()
 
     return 0
 
@@ -353,13 +385,55 @@ def generate_tapdisk_logs():
 	    FILES_TO_SEND.append("/tmp/tapdisk.log." + pid)
 	    FILES_TO_SEND.append("/tmp/vhd.log." + pid)
 	    FILES_TO_SEND.append("/tmp/io-optimize.log." + pid)
-	except:
-	    pass
+        except Exception, exn:
+            print >>sys.stderr, exn
     # give processes a second to write their logs
     time.sleep(1)
 
-def tar(bugball, bugball_inventory):
-    global SILENT_MODE
+
+def get_and_sanitize_databases():
+    status, _ = commands.getstatusoutput(
+        XAPI_DB_PROCESS + " -filename '" + XAPI_STATE_DB + "' -format sqlite")
+    if status:
+        try:
+            os.remove(XAPI_STATE_DB)
+        except Exception, exn:
+            print >>sys.stderr, exn
+    else:
+        sanitize_database(XAPI_STATE_DB)
+
+
+def sanitize_database(db):
+    try:
+        uuids = sql(db, 'select uuid from pbd')
+        for uuid in uuids:
+            uuid = uuid.strip()
+            dconfs = sql(db, "select device_config from pbd where uuid='%s'" % uuid)
+            d = dconfs[0].strip()
+            dconf = sexp.parse(d)
+            dconf.set_assoc('cifspassword', 'REMOVED')
+            new_d = dconf.toString()
+            if new_d != d:
+                sql(db, "update pbd set device_config='%s' where uuid='%s'" % (new_d.replace("'", "''"), uuid))
+    except Exception, exn:
+        print >>sys.stderr, exn
+        os.remove(db)
+
+
+def sql(db, sql):
+    result = []
+    inp, out = os.popen2([SQLITE, db, sql])
+    try:
+        for line in out:
+            result.append(line)
+        return result
+    finally:
+        inp.close()
+        out.close()
+
+
+def tar():
+    global SILENT_MODE, bugball, bugball_inventory
 
     bug_dir = "/var/opt/xen/bug-report"
     if not os.path.exists(bug_dir):
@@ -379,7 +453,7 @@ def tar(bugball, bugball_inventory):
 
     try:
         for f in bugball:
-            tar_filename = os.path.join(subdir, os.path.basename(f.name))
+            tar_filename = os.path.join(subdir, truncated_name(f.name))
             ti = tarfile.TarInfo(tar_filename)
 
             if hasattr(f, 'size'):
@@ -414,10 +488,72 @@ def make_inventory(inventory, subdir):
 
 def inventory_entry(document, subdir, filename, capability):
     el = document.createElement(INVENTORY_XML_ELEMENT)
+    try:
+        el.setAttribute('md5sum', md5sum(filename))
+    except:
+        pass
     el.setAttribute('filename',
-                    os.path.join(subdir, os.path.basename(filename)))
+                    os.path.join(subdir, truncated_name(filename)))
     el.setAttribute('capability', capability)
     document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(el)
+
+def md5sum(f):
+    return commands.getoutput("md5sum '" + f + "' | cut -d ' ' -f 1")
+
+
+def truncated_name(f):
+    if f.startswith(HOST_CRASHDUMPS_DIR):
+        return f.replace(HOST_CRASHDUMPS_DIR + os.path.sep, '')
+    else:
+        return os.path.basename(f)
+
+
+def update_capabilities():
+    update_cap_size(CAP_HOST_CRASHDUMP_LOGS,
+                    size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_RE))
+    update_cap_size(CAP_HOST_CRASHDUMP_DUMPS,
+                    size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_RE,
+                                True))
+    update_cap_size(CAP_XENSERVER_LOGS,  size_of_all(XENSERVER_LOGS))
+
+
+def update_cap_size(cap, size):
+    update_cap(cap, MIN_SIZE, size)
+    update_cap(cap, MAX_SIZE, size)
+    update_cap(cap, CHECKED, size > 0)
+
+
+def update_cap(cap, k, v):
+    global caps
+    l = list(caps[cap])
+    l[k] = v
+    caps[cap] = tuple(l)
+
+
+def size_of_dir(d, pattern = None, negate = False):
+    if os.path.isdir(d):
+        return size_of_all([os.path.join(d, fn) for fn in os.listdir(d)],
+                           pattern, negate)
+    else:
+        return 0
+
+
+def size_of_all(files, pattern = None, negate = False):
+    return sum([size_of(f, pattern, negate) for f in files])
+
+
+def matches(f, pattern, negate):
+    if negate:
+        return not matches(f, pattern, False)
+    else:
+        return pattern is None or pattern.match(f)
+
+
+def size_of(f, pattern, negate):
+    if os.path.isfile(f) and matches(f, pattern, negate):
+        return os.stat(f)[6]
+    else:
+        return size_of_dir(f, pattern, negate)
 
 
 def print_capabilities():
