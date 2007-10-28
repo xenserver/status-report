@@ -16,6 +16,22 @@
 # Copyright (c) 2005, 2007 XenSource Ltd.
 
 
+#
+# To add new entries to the bugtool, you need to:
+#
+# Create a new capability.  These declare the new entry to the GUI, including
+# the expected size, time to collect, privacy implications, and whether the
+# capability should be selected by default.  One capability may refer to
+# multiple files, assuming that they can be reasonably grouped together, and
+# have the same privacy implications.  You need:
+#
+#   A new CAP_ constant.
+#   A cap() invocation to declare the capability.
+#
+# You then need to add calls to main() to collect the files.  These will
+# typically be calls to the helpers send(), send_all(), cmd(), or do().
+#
+
 import errno
 import getopt
 import getpass
@@ -40,6 +56,20 @@ sys.path.append('/usr/lib64/python')
 import sexp
 import xen.lowlevel.xc
 
+#
+# PII -- Personally identifiable information.  Of particular concern are
+# things that would identify customers, or their network topology.
+# Passwords are never to be included in any bug report, regardless of any PII
+# declaration.
+#
+# NO            -- No PII will be in these entries.
+# YES           -- PII will likely or certainly be in these entries.
+# MAYBE         -- The user may wish to audit these entries for PII.
+# IF_CUSTOMIZED -- If the files are unmodified, then they will contain no PII,
+# but since we encourage customers to edit these files, PII may have been
+# introduced by the customer.  This is used in particular for the networking
+# scripts in dom0.
+#
 
 PII_NO            = 'no'
 PII_YES           = 'yes'
