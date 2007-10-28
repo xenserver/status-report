@@ -203,7 +203,7 @@ def send_all(e, dir, pattern, negate):
 def cmd(e, commands):
     if e in entries:
         COMMANDS_TO_RUN.extend(commands)
-        FILES_TO_SEND.append(c[2])
+        FILES_TO_SEND.extend([c[2] for c in commands])
         bugball_inventory.update(dict([(c[2], e) for c in commands]))
 
 def do(n, e, f):
@@ -281,7 +281,7 @@ exclude those logs from the archive.
             if DEFAULT_SR_PHYSDEVS in inventory.keys():
                 for device in inventory[DEFAULT_SR_PHYSDEVS].split():
                     f = "/tmp/hdparm-tT-" + string.join(device.split("/"), "-")
-                    cmd(CAP_HDPARM_T, [HDPARM, "-tT " + device, f])
+                    cmd(CAP_HDPARM_T, [[HDPARM, "-tT " + device, f]])
         except:
             pass
 
@@ -488,10 +488,11 @@ def make_inventory(inventory, subdir):
 
 def inventory_entry(document, subdir, filename, capability):
     el = document.createElement(INVENTORY_XML_ELEMENT)
-    try:
-        el.setAttribute('md5sum', md5sum(filename))
-    except:
-        pass
+    if os.path.exists(filename):
+        try:
+            el.setAttribute('md5sum', md5sum(filename))
+        except:
+            pass
     el.setAttribute('filename',
                     os.path.join(subdir, truncated_name(filename)))
     el.setAttribute('capability', capability)
