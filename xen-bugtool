@@ -48,6 +48,7 @@ import time
 import urllib
 import commands
 import signal
+import shutil
 from xml.dom.minidom import parse, getDOMImplementation
 
 sys.path.append('/usr/lib/python')
@@ -161,6 +162,8 @@ def read_inventory():
         return {}
 
 
+BUG_DIR = "/var/opt/xen/bug-report"
+
 SQLITE = '/usr/bin/sqlite3'
 
 SYSTEM_INFO_SCRIPT = '/usr/sbin/system-info.sh'
@@ -208,6 +211,7 @@ SILENT_MODE = False
 entries = None
 bugball = []
 bugball_inventory = {}
+output_type = 'tar.bz2'
 
 
 def output(x):
@@ -248,14 +252,15 @@ def do(n, e, f):
 
 def main(argv = None):
     global ANSWER_YES_TO_ALL, SILENT_MODE, FILES_TO_SEND, COMMANDS_TO_RUN
-    global entries, bugball, bugball_inventory
+    global entries, bugball, bugball_inventory, output_type
     
     if argv is None:
         argv = sys.argv
 
     try:
         (options, params) = getopt.gnu_getopt(
-            argv, 'sy', ['capabilities', 'silent', 'yestoall', 'entries='])
+            argv, 'sy', ['capabilities', 'silent', 'yestoall', 'entries=',
+                         'output='])
     except getopt.GetoptError, opterr:
         print >>sys.stderr, opterr
         return 127
@@ -267,6 +272,10 @@ def main(argv = None):
             update_capabilities()
             print_capabilities()
             return 0
+
+        if k == '--output':
+            if v == 'zip':
+                output_type = 'zip'
 
         # "-s" or "--silent" means suppress output (except for the final
         # output filename at the end)
@@ -293,14 +302,14 @@ This application will collate the Xen dmesg output, details of the
 hardware configuration of your machine, information about the build of
 Xen that you are using, plus, if you allow it, various logs.
 
-The collated information will be saved as a .tar.bz2 for archiving or
+The collated information will be saved as a .%s for archiving or
 sending to a Technical Support Representative.
 
 The logs may contain private information, and if you are at all
 worried about that, you should exit now, or you should explicitly
 exclude those logs from the archive.
 
-''')
+''' % output_type)
 
 
     xc = xen.lowlevel.xc.xc()
@@ -396,7 +405,13 @@ exclude those logs from the archive.
         if ANSWER_YES_TO_ALL or yes('Include %s? [Y/n] ' % filename):
             bugball.append(file(filename))
 
-    tar()
+    if not os.path.exists(BUG_DIR):
+        os.makedirs(BUG_DIR)
+
+    if output_type == 'tar.bz2':
+        tar()
+    else:
+        make_zip()
 
     return 0
 
@@ -465,13 +480,9 @@ def sql(db, sql):
 def tar():
     global SILENT_MODE, bugball, bugball_inventory
 
-    bug_dir = "/var/opt/xen/bug-report"
-    if not os.path.exists(bug_dir):
-        os.makedirs(bug_dir)
-
     date_string = time.strftime("%Y%m%d%H%M%S")
 
-    filename = "%s/bug-report-%s.tar.bz2" % (bug_dir, date_string)
+    filename = "%s/bug-report-%s.tar.bz2" % (BUG_DIR, date_string)
     subdir = "bug-report-%s" %  date_string
 
     bugball.append(string_iterator('inventory.xml',
@@ -505,6 +516,46 @@ def tar():
         tf.close()
 
     output ('Writing tarball %s successful.' % filename)
+    if SILENT_MODE:
+       print filename
+
+
+def make_zip():
+    global SILENT_MODE, bugball, bugball_inventory
+
+    tempdir = tempfile.mkdtemp()
+    try:
+        date_string = time.strftime("%Y%m%d%H%M%S")
+
+        filename = "%s/bug-report-%s.zip" % (BUG_DIR, date_string)
+        subdir = "bug-report-%s" %  date_string
+
+        bugball.append(string_iterator('inventory.xml',
+                                       make_inventory(bugball_inventory, subdir)))
+
+        for f in bugball:
+            dest = os.path.join(os.path.join(tempdir, subdir),
+                                truncated_name(f.name))
+
+            d = os.path.dirname(dest)
+            if not os.path.exists(d):
+                os.makedirs(d)
+
+            if os.path.exists(f.name):
+                shutil.copy2(f.name, dest)
+            elif hasattr(f, 'getvalue'):
+                fd = open(dest, 'w+')
+                try:
+                    fd.write(f.getvalue())
+                finally:
+                    fd.close()
+
+        commands.getstatusoutput('cd %s && zip -r %s %s' %
+                                 (tempdir, filename, subdir))
+    finally:
+        shutil.rmtree(tempdir, True)
+    
+    output ('Writing archive %s successful.' % filename)
     if SILENT_MODE:
        print filename
 
