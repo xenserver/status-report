@@ -129,7 +129,8 @@ cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=10*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=2*KB)
-cap(CAP_SYSTEM_INFO,         PII_MAYBE,                 max_size=KB)
+cap(CAP_SYSTEM_INFO,         PII_YES,                   max_size=KB,
+    checked = False)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=KB)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=1*KB)
@@ -456,7 +457,8 @@ def sanitize_database(db):
             dconfs = sql(db, "select device_config from pbd where uuid='%s'" % uuid)
             d = dconfs[0].strip()
             dconf = sexp.parse(d)
-            dconf.set_assoc('cifspassword', 'REMOVED')
+            for pw in ['cifspassword', 'chappassword', 'password']:
+                dconf.set_assoc(pw, 'REMOVED')
             new_d = dconf.toString()
             if new_d != d:
                 sql(db, "update pbd set device_config='%s' where uuid='%s'" % (new_d.replace("'", "''"), uuid))
