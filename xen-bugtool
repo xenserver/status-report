@@ -95,6 +95,7 @@ CAP_XML_ROOT = "system-status-capabilities"
 CAP_XML_ELEMENT = 'capability'
 
 
+CAP_FIRSTBOOT            = 'FIRSTBOOT'
 CAP_HDPARM_T             = 'HDPARM_T'
 CAP_HOST_CRASHDUMP_DUMPS = 'HOST_CRASHDUMP_DUMPS'
 CAP_HOST_CRASHDUMP_LOGS  = 'HOST_CRASHDUMP_LOGS'
@@ -122,6 +123,7 @@ def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
                  checked)
 
 
+cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=KB,
     min_time=120, max_time=600, checked=False)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
@@ -190,6 +192,8 @@ HDPARM = '/sbin/hdparm'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
 
+FIRSTBOOT_DIR = '/etc/firstboot.d'
+
 XENSERVER_LOGS = \
     [ '/var/log/' + x for x in
       ['xensource.log', 'SMlog'] +
@@ -226,7 +230,7 @@ def send(e, files):
         bugball_inventory.update(dict([(f, e) for f in files
                                        if os.path.exists(f)]))
 
-def send_all(e, dir, pattern, negate):
+def send_all(e, dir, pattern = None, negate = False):
     if os.path.exists(dir):
         for f in os.listdir(dir):
             fn = os.path.join(dir, f)
@@ -274,16 +278,15 @@ def main(argv = None):
             print_capabilities()
             return 0
 
-        if k == '--output':
-            if v == 'zip':
-                output_type = 'zip'
+        if k == '--output' and v == 'zip':
+            output_type = 'zip'
 
         # "-s" or "--silent" means suppress output (except for the final
         # output filename at the end)
         if k in ['-s', '--silent']:
             SILENT_MODE = True
 
-        if k == '--entries':
+        if k == '--entries' and v != '':
             entries = v.split(',')
 
         # If the user runs the script with "-y" or "--yestoall" we don't ask
@@ -314,6 +317,8 @@ exclude those logs from the archive.
 
 
     xc = xen.lowlevel.xc.xc()
+
+    send_all(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
     if CAP_HDPARM_T in entries:
         try:
@@ -586,6 +591,8 @@ def md5sum(f):
 
 
 def truncated_name(f):
+    if f.startswith(FIRSTBOOT_DIR):
+        return f.replace(os.path.dirname(FIRSTBOOT_DIR) + os.path.sep, '')
     if f.startswith(HOST_CRASHDUMPS_DIR):
         return f.replace(HOST_CRASHDUMPS_DIR + os.path.sep, '')
     else:
