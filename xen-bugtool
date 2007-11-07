@@ -49,6 +49,7 @@ import urllib
 import commands
 import signal
 import shutil
+import pprint
 from xml.dom.minidom import parse, getDOMImplementation
 
 sys.path.append('/usr/lib/python')
@@ -104,6 +105,7 @@ CAP_NETWORK_STATUS       = 'network-status'
 CAP_SYSTEM_INFO          = 'system-info'
 CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
+CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
 CAP_XENSERVER_CONFIG     = 'xenserver-config'
 CAP_XENSERVER_DATABASES  = 'xenserver-databases'
 CAP_XENSERVER_INSTALL    = 'xenserver-install'
@@ -135,6 +137,7 @@ cap(CAP_SYSTEM_INFO,         PII_YES,                   max_size=KB,
     checked = False)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=KB)
+cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=KB)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=1*KB)
 cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
     mime=MIME_DATA)
@@ -388,6 +391,7 @@ exclude those logs from the archive.
     do('xen-dmesg', CAP_XEN_INFO, lambda: xc.readconsolering())
     do('physinfo',  CAP_XEN_INFO, lambda: prettyDict(xc.physinfo()))
     do('xeninfo',   CAP_XEN_INFO, lambda: prettyDict(xc.xeninfo()))
+    do('xapi-subprocesses', CAP_XAPI_SUBPROCESS, lambda: dump_xapi_subprocess_info())
     cmd(CAP_XEN_INFO,
         [[ '/bin/cat', '/proc/xen/balloon', '/tmp/proc-xen-balloon.out' ]])
 
@@ -441,6 +445,46 @@ def generate_tapdisk_logs():
     # give processes a second to write their logs
     time.sleep(1)
 
+def dump_xapi_subprocess_info():
+    """Check which fds are open by xapi and its subprocesses to diagnose faults like CA-10543.
+       Returns a string containing a pretty-printed pstree-like structure. """
+    pids = filter(lambda x: os.path.exists("/proc/" + x + "/cmdline"), os.listdir("/proc"))
+    def readlines(filename):
+    	f = open(filename, "r")
+	try:
+		return f.readlines()
+	finally:
+		f.close()
+    def cmdline(pid):
+    	all = readlines("/proc/" + pid + "/cmdline")
+	if all == []:
+	   return ""
+	else:
+	   return all[0]
+    def parent(pid):
+    	for i in readlines("/proc/" + pid + "/status"):
+	    if i.startswith("PPid:"):
+	       return i.split()[-1]
+	return None
+    def pstree(pid):
+    	result = { "cmdline": cmdline(pid) }
+	child_pids = filter(lambda x:parent(x) == pid, pids)
+	children = { }
+	for child in child_pids:
+	    children[child] = pstree(child)
+	result['children'] = children
+	fds = { }
+	for fd in os.listdir("/proc/" + pid + "/fd"):
+	    fds[fd] = os.readlink("/proc/" + pid + "/fd/" + fd)
+	result['fds'] = fds
+	return result	
+    xapis = filter(lambda x: cmdline(x).startswith("/opt/xensource/bin/xapi"), pids)
+    xapis = filter(lambda x: parent(x) == "1", xapis)
+    result = {}
+    for xapi in xapis:
+    	result[xapi] = pstree(xapi)
+    pp = pprint.PrettyPrinter(indent=4)
+    return pp.pformat(result)
 
 def get_and_sanitize_databases():
     status, _ = commands.getstatusoutput(
