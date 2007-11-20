@@ -169,12 +169,13 @@ def read_inventory():
         return {}
 
 
+TMP_DIR = '/tmp/bugtool.%s' % os.getpid()
 BUG_DIR = "/var/opt/xen/bug-report"
 
 SQLITE = '/usr/bin/sqlite3'
 
 SYSTEM_INFO_SCRIPT = '/usr/sbin/system-info.sh'
-SYSTEM_INFO_SCRIPT_OUTPUT = '/tmp/system-info.out'
+SYSTEM_INFO_SCRIPT_OUTPUT = '%s/system-info.out' % TMP_DIR
 
 IPTABLES_CONFIG = '/etc/sysconfig/iptables-config'
 
@@ -185,8 +186,8 @@ YUM_REPOS_DIR = '/etc/yum.repos.d'
 DHCP_LEASE_DIR = '/var/lib/dhclient'
 
 XAPI_LOCAL_DB = '/var/xapi/local.db'
-XAPI_STATE_DB = '/tmp/state.db'
-XAPI_STATE_DB_GENERATION = '/tmp/state.db.generation'
+XAPI_STATE_DB = '%s/state.db' % TMP_DIR
+XAPI_STATE_DB_GENERATION = '%s/state.db.generation' % TMP_DIR
 XAPI_DB_PROCESS = '/opt/xensource/bin/xapi-db-process'
 
 POOL_CONF = '/etc/xensource/pool.conf'
@@ -261,6 +262,7 @@ def do(n, e, f):
 
 
 def main(argv = None):
+    global TMP_DIR
     global ANSWER_YES_TO_ALL, SILENT_MODE, FILES_TO_SEND, COMMANDS_TO_RUN
     global entries, bugball, bugball_inventory, output_type, output_fd
     
@@ -328,6 +330,8 @@ exclude those logs from the archive.
 
 ''' % output_type)
 
+    if not os.path.exists(TMP_DIR):
+        os.makedirs(TMP_DIR)
 
     xc = xen.lowlevel.xc.xc()
 
@@ -338,7 +342,7 @@ exclude those logs from the archive.
             inventory = read_inventory()
             if DEFAULT_SR_PHYSDEVS in inventory.keys():
                 for device in inventory[DEFAULT_SR_PHYSDEVS].split():
-                    f = "/tmp/hdparm-tT-" + string.join(device.split("/"), "-")
+                    f = TMP_DIR + "/hdparm-tT-" + string.join(device.split("/"), "-")
                     cmd(CAP_HDPARM_T, [[HDPARM, "-tT " + device, f]])
         except:
             pass
@@ -362,14 +366,14 @@ exclude those logs from the archive.
           for x in os.listdir(DHCP_LEASE_DIR)] +
          ['/etc/resolv.conf', '/etc/ntp.conf'])
     cmd(CAP_NETWORK_STATUS,
-        [[ '/sbin/iptables', '-L', '/tmp/iptables-L.out' ],
-         [ '/usr/sbin/brctl', 'show', '/tmp/brctl-show.out' ],
-         [ '/sbin/ifconfig', '-a', '/tmp/ifconfig-a.out' ]])
+        [[ '/sbin/iptables', '-L', '%s/iptables-L.out' % TMP_DIR ],
+         [ '/usr/sbin/brctl', 'show', '%s/brctl-show.out' % TMP_DIR ],
+         [ '/sbin/ifconfig', '-a', '%s/ifconfig-a.out' % TMP_DIR ]])
 
     if CAP_SYSTEM_INFO in entries:
         run_system_info_script()
     cmd(CAP_SYSTEM_INFO,
-        [[ '/sbin/lspci', '-n', '/tmp/lspci-n.out' ]])
+        [[ '/sbin/lspci', '-n', '%s/lspci-n.out' % TMP_DIR ]])
 
     send(CAP_SYSTEM_LOGS,
          [ '/var/log/' + x for x in
@@ -403,13 +407,13 @@ exclude those logs from the archive.
     do('xeninfo',   CAP_XEN_INFO, lambda: prettyDict(xc.xeninfo()))
     do('xapi-subprocesses', CAP_XAPI_SUBPROCESS, lambda: dump_xapi_subprocess_info())
     cmd(CAP_XEN_INFO,
-        [[ '/bin/cat', '/proc/xen/balloon', '/tmp/proc-xen-balloon.out' ]])
+        [[ '/bin/cat', '/proc/xen/balloon', '%s/proc-xen-balloon.out' % TMP_DIR ]])
 
     send(CAP_YUM,
          ['/var/log/yum.log'] +
          [os.path.join(YUM_REPOS_DIR, x) for x in os.listdir(YUM_REPOS_DIR)])
     cmd(CAP_YUM,
-        [['/bin/rpm', '-qa', '/tmp/rpm-qa.out']])
+        [['/bin/rpm', '-qa', '%s/rpm-qa.out' % TMP_DIR]])
 
 
     for c in COMMANDS_TO_RUN:
@@ -433,6 +437,7 @@ exclude those logs from the archive.
     else:
         make_zip()
 
+    os.system('/bin/rm -rf %s' % TMP_DIR)
     return 0
 
 def run_system_info_script():
@@ -447,9 +452,9 @@ def generate_tapdisk_logs():
     for pid in pids.split():
 	try:
 	    os.kill(int(pid), signal.SIGUSR1)
-	    FILES_TO_SEND.append("/tmp/tapdisk.log." + pid)
-	    FILES_TO_SEND.append("/tmp/vhd.log." + pid)
-	    FILES_TO_SEND.append("/tmp/io-optimize.log." + pid)
+	    FILES_TO_SEND.append(TMP_DIR + "/tapdisk.log." + pid)
+	    FILES_TO_SEND.append(TMP_DIR + "/vhd.log." + pid)
+	    FILES_TO_SEND.append(TMP_DIR + "/io-optimize.log." + pid)
         except Exception, exn:
             print >>sys.stderr, exn
     # give processes a second to write their logs
@@ -648,6 +653,8 @@ def truncated_name(f):
         return f.replace(os.path.dirname(FIRSTBOOT_DIR) + os.path.sep, '')
     if f.startswith(HOST_CRASHDUMPS_DIR):
         return f.replace(HOST_CRASHDUMPS_DIR + os.path.sep, '')
+    if f.startswith(TMP_DIR):
+        return f.replace(TMP_DIR + os.path.sep, '')
     else:
         return os.path.basename(f)
 
@@ -745,4 +752,5 @@ if __name__ == "__main__":
         sys.exit(main())
     except KeyboardInterrupt:
         print "\nInterrupted."
+        os.system('/bin/rm -rf %s' % TMP_DIR)
         sys.exit(1)
