@@ -51,6 +51,7 @@ import signal
 import shutil
 import pprint
 from xml.dom.minidom import parse, getDOMImplementation
+import zipfile
 
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
@@ -574,37 +575,29 @@ def tar():
 def make_zip():
     global SILENT_MODE, bugball, bugball_inventory
 
-    tempdir = tempfile.mkdtemp()
+    date_string = time.strftime("%Y%m%d%H%M%S")
+
+    filename = "%s/bug-report-%s.zip" % (BUG_DIR, date_string)
+    subdir = "bug-report-%s" %  date_string
+
+    bugball.append(string_iterator('inventory.xml',
+                                   make_inventory(bugball_inventory, subdir)))
+
+    zf = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+
     try:
-        date_string = time.strftime("%Y%m%d%H%M%S")
-
-        filename = "%s/bug-report-%s.zip" % (BUG_DIR, date_string)
-        subdir = "bug-report-%s" %  date_string
-
-        bugball.append(string_iterator('inventory.xml',
-                                       make_inventory(bugball_inventory, subdir)))
-
         for f in bugball:
-            dest = os.path.join(os.path.join(tempdir, subdir),
-                                truncated_name(f.name))
-
-            d = os.path.dirname(dest)
-            if not os.path.exists(d):
-                os.makedirs(d)
+            dest = os.path.join(subdir, truncated_name(f.name))
 
             if os.path.exists(f.name):
-                shutil.copy2(f.name, dest)
+                compress_type = zipfile.ZIP_DEFLATED
+                if os.stat(f.name).st_size < 50:
+                    compress_type = zipfile.ZIP_STORED
+                zf.write(f.name, dest, compress_type)
             elif hasattr(f, 'getvalue'):
-                fd = open(dest, 'w+')
-                try:
-                    fd.write(f.getvalue())
-                finally:
-                    fd.close()
-
-        commands.getstatusoutput('cd %s && zip -r %s %s' %
-                                 (tempdir, filename, subdir))
+                zf.writestr(dest, f.getvalue())
     finally:
-        shutil.rmtree(tempdir, True)
+        zf.close()
     
     output ('Writing archive %s successful.' % filename)
     if SILENT_MODE:
