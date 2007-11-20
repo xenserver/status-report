@@ -221,6 +221,7 @@ entries = None
 bugball = []
 bugball_inventory = {}
 output_type = 'tar.bz2'
+output_fd = -1
 
 
 def output(x):
@@ -261,7 +262,7 @@ def do(n, e, f):
 
 def main(argv = None):
     global ANSWER_YES_TO_ALL, SILENT_MODE, FILES_TO_SEND, COMMANDS_TO_RUN
-    global entries, bugball, bugball_inventory, output_type
+    global entries, bugball, bugball_inventory, output_type, output_fd
     
     if argv is None:
         argv = sys.argv
@@ -269,7 +270,7 @@ def main(argv = None):
     try:
         (options, params) = getopt.gnu_getopt(
             argv, 'sy', ['capabilities', 'silent', 'yestoall', 'entries=',
-                         'output='])
+                         'output=', 'outfd='])
     except getopt.GetoptError, opterr:
         print >>sys.stderr, opterr
         return 127
@@ -282,8 +283,11 @@ def main(argv = None):
             print_capabilities()
             return 0
 
-        if k == '--output' and v == 'zip':
-            output_type = 'zip'
+        if k == '--output':
+            for vv in ['tar', 'tar.bz2', 'zip']:
+                if v == vv:
+                    output_type = v
+                    break
 
         # "-s" or "--silent" means suppress output (except for the final
         # output filename at the end)
@@ -299,11 +303,16 @@ def main(argv = None):
             ANSWER_YES_TO_ALL = True  
             output("Warning: '--yestoall' argument provided, will not prompt for individual files.")
 
+        if k == '--outfd':
+            output_fd = int(v)
 
     if len(params) != 1:
         print >>sys.stderr, "Invalid additional arguments", str(params)
         return 128
 
+    if output_fd != -1 and output_type != 'tar':
+        print >>sys.stderr, "Option '--outfd' only valid with '--output=tar'"
+        return 128
 
     output('''
 This application will collate the Xen dmesg output, details of the
@@ -419,8 +428,8 @@ exclude those logs from the archive.
     if not os.path.exists(BUG_DIR):
         os.makedirs(BUG_DIR)
 
-    if output_type == 'tar.bz2':
-        tar()
+    if output_type == 'tar.bz2' or output_type == 'tar':
+        make_tar(output_type)
     else:
         make_zip()
 
@@ -529,12 +538,15 @@ def sql(db, sql):
         out.close()
 
 
-def tar():
+def make_tar(suffix):
     global SILENT_MODE, bugball, bugball_inventory
 
+    mode = 'w'
+    if suffix == 'tar.bz2':
+        mode = 'w:bz2'
     date_string = time.strftime("%Y%m%d%H%M%S")
 
-    filename = "%s/bug-report-%s.tar.bz2" % (BUG_DIR, date_string)
+    filename = "%s/bug-report-%s.%s" % (BUG_DIR, date_string, suffix)
     subdir = "bug-report-%s" %  date_string
 
     bugball.append(string_iterator('inventory.xml',
@@ -542,7 +554,10 @@ def tar():
 
     now = time.time()
 
-    tf = tarfile.open(filename, 'w:bz2')
+    if output_fd == -1:
+        tf = tarfile.open(filename, mode)
+    else:
+        tf = tarfile.open(None, 'w', os.fdopen(output_fd, 'a'))
 
     try:
         for f in bugball:
@@ -567,9 +582,10 @@ def tar():
     finally:
         tf.close()
 
-    output ('Writing tarball %s successful.' % filename)
-    if SILENT_MODE:
-       print filename
+    if output_fd == -1:
+        output ('Writing tarball %s successful.' % filename)
+        if SILENT_MODE:
+            print filename
 
 
 def make_zip():
