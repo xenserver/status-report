@@ -622,7 +622,7 @@ def make_zip():
     
     output ('Writing archive %s successful.' % filename)
     if SILENT_MODE:
-       print filename
+        print filename
 
 
 def make_inventory(inventory, subdir):
