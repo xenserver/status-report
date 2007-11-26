@@ -369,11 +369,18 @@ exclude those logs from the archive.
         [[ '/sbin/iptables', '-L', '%s/iptables-L.out' % TMP_DIR ],
          [ '/usr/sbin/brctl', 'show', '%s/brctl-show.out' % TMP_DIR ],
          [ '/sbin/ifconfig', '-a', '%s/ifconfig-a.out' % TMP_DIR ]])
+    for p in os.listdir('/sys/class/net/'):
+        if os.path.isdir('/sys/class/net/%s/bridge' % p):
+            cmd(CAP_NETWORK_STATUS,
+                [[ '/usr/sbin/brctl', 'showmacs %s' % p,
+                   '%s/brctl-showmacs-%s.out' % (TMP_DIR, p) ]])
 
     if CAP_SYSTEM_INFO in entries:
         run_system_info_script()
     cmd(CAP_SYSTEM_INFO,
         [[ '/sbin/lspci', '-n', '%s/lspci-n.out' % TMP_DIR ]])
+    cmd(CAP_SYSTEM_INFO,
+        [[ '/sbin/sysctl', '-A', '%s/sysctl-A.out' % TMP_DIR ]])
 
     send(CAP_SYSTEM_LOGS,
          [ '/var/log/' + x for x in
