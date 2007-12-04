@@ -235,6 +235,9 @@ def output(x):
     if not(SILENT_MODE):
         print x
 
+def output_ts(x):
+    output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
+
 def send(e, files):
     if e in entries:
         FILES_TO_SEND.extend(files)
@@ -433,7 +436,7 @@ exclude those logs from the archive.
     for c in COMMANDS_TO_RUN:
 	if os.path.isfile(c[0]):
 	   command = "%s %s > %s" % (c[0], c[1], c[2])
-	   output("Running " + command)
+	   output_ts("Running " + command)
 	   commands.getstatusoutput(command)
 
     for filename in FILES_TO_SEND:
@@ -456,7 +459,7 @@ exclude those logs from the archive.
 
 def run_system_info_script():
     if os.path.isfile(SYSTEM_INFO_SCRIPT):
-        output('Gathering system information...\n')
+        output_ts('Gathering system information...\n')
         (status, _) = commands.getstatusoutput("%s > %s" % (SYSTEM_INFO_SCRIPT, SYSTEM_INFO_SCRIPT_OUTPUT))
         if status == 0:
             FILES_TO_SEND.append(SYSTEM_INFO_SCRIPT_OUTPUT)
@@ -464,6 +467,7 @@ def run_system_info_script():
 def generate_tapdisk_logs():
     pids = commands.getoutput("/bin/ps -C tapdisk -o pid=")
     for pid in pids.split():
+        output_ts("Including logs for tapdisk process %s" % pid)
 	try:
 	    os.kill(int(pid), signal.SIGUSR1)
 	    FILES_TO_SEND.append(TMP_DIR + "/tapdisk.log." + pid)
@@ -516,6 +520,7 @@ def dump_xapi_subprocess_info():
     return pp.pformat(result)
 
 def get_and_sanitize_databases():
+    output_ts("Dumping XAPI database")
     status, _ = commands.getstatusoutput(
         XAPI_DB_PROCESS + " -filename '" + XAPI_STATE_DB + "' -format sqlite")
     if status:
