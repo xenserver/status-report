@@ -106,6 +106,8 @@ XENSOURCE_INVENTORY = '/etc/xensource-inventory'
 VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
 POOL_CONF = '/etc/xensource/pool.conf'
+XAPI_CONF = '/etc/xensource/xapi.conf'
+XAPI_SSL_CONF = '/etc/xensource/xapi-ssl.conf'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
 X11_LOGS_DIR = VAR_LOG_DIR
@@ -513,7 +515,7 @@ exclude those logs from the archive.
 
     do('xapi-subprocesses', CAP_XAPI_SUBPROCESS, lambda: dump_xapi_subprocess_info())
 
-    send(CAP_XENSERVER_CONFIG, [POOL_CONF, XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
+    send(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
     cmd(CAP_XENSERVER_CONFIG, [[LS, '-lR', OPT_XENSOURCE_LISTING]])
 
     if CAP_XENSERVER_DATABASES in entries:
