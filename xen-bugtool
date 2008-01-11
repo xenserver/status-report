@@ -143,7 +143,8 @@ IOPORTS_OUT = TMP_DIR + '/proc/ioports.out'
 INTERRUPTS_OUT = TMP_DIR + '/proc/interrupts.out'
 HDPARM_I_OUT = TMP_DIR + '/hdparm-I-%s.out'
 HDPARM_TT_OUT = TMP_DIR + '/hdparm-tT-%s.out'
-LSPCI_OUT = TMP_DIR + '/lspci.out'
+LSPCI_N_OUT = TMP_DIR + '/lspci-n.out'
+LSPCI_VV_OUT = TMP_DIR + '/lspci-vv.out'
 LSUSB_OUT = TMP_DIR + '/lsusb.out'
 SCSI_OUT = TMP_DIR + '/proc/scsi.out'
 VERSION_OUT = TMP_DIR + '/proc/version.out'
@@ -470,8 +471,9 @@ exclude those logs from the archive.
                             [CAT, PROC_MEMINFO, MEMINFO_OUT], 
                             [CAT, PROC_IOPORTS, IOPORTS_OUT], 
                             [CAT, PROC_INTERRUPTS, INTERRUPTS_OUT]])
-    cmd(CAP_HARDWARE_INFO, [[DMIDECODE, '', DMI_OUT], [LSPCI, '', LSPCI_OUT], 
-                            [LSUSB, '', LSUSB_OUT],[CAT, PROC_SCSI, SCSI_OUT]])
+    cmd(CAP_HARDWARE_INFO, [[DMIDECODE, '', DMI_OUT], [LSPCI, '-n', LSPCI_N_OUT], 
+                            [LSPCI, '-vv', LSPCI_VV_OUT], [LSUSB, '', LSUSB_OUT],
+                            [CAT, PROC_SCSI, SCSI_OUT]])
     # FIXME IDE?
 
     for d in disk_list():
