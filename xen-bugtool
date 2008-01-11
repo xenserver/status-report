@@ -279,7 +279,7 @@ def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
 cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=5)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=15*KB,
-    max_time=10)
+    max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=18*KB,
     max_time=5)
@@ -458,10 +458,12 @@ exclude those logs from the archive.
         cmd(CAP_DISK_INFO, [[HDPARM, '-I /dev/%s' % d, HDPARM_I_OUT % d]])
     cmd(CAP_DISK_INFO, [[ISCSIADM, '-m node', ISCSI_NODE_OUT]])
     if CAP_DISK_INFO in entries:
-        os.system(VGSCAN + '>/dev/null 2>&1')
-    cmd(CAP_DISK_INFO, [[PVS, '', PVS_OUT], [VGS, '', VGS_OUT], [LVS, '', LVS_OUT]])
-    send(CAP_DISK_INFO, [LVM_CACHE])
-
+        output_ts("Scanning volume groups")
+        vgp = ProcOutput(VGSCAN, '/dev/null', caps[CAP_DISK_INFO][MAX_TIME])
+        run_procs([vgp])
+        if not (vgp.timed_out or vgp.failed):
+            cmd(CAP_DISK_INFO, [[PVS, '', PVS_OUT], [VGS, '', VGS_OUT], [LVS, '', LVS_OUT]])
+            send(CAP_DISK_INFO, [LVM_CACHE])
     send_all(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
     cmd(CAP_HARDWARE_INFO, [[CAT, PROC_CPUINFO, CPUINFO_OUT], 
@@ -564,7 +566,7 @@ exclude those logs from the archive.
     else:
         make_zip()
 
-    os.system('/bin/rm -rf %s' % TMP_DIR)
+    shutil.rmtree(TMP_DIR, ignore_errors = True)
     return 0
 
 def generate_tapdisk_logs():
@@ -624,7 +626,7 @@ def dump_xapi_subprocess_info():
 
 def get_and_sanitize_databases():
     output_ts("Dumping XAPI database")
-    dbp = ProcOutput("%s -filename %s -format sqlite" % (XAPI_DB_PROCESS, XAPI_STATE_DB), '/dev/null', 30)
+    dbp = ProcOutput("%s -filename %s -format sqlite" % (XAPI_DB_PROCESS, XAPI_STATE_DB), '/dev/null', caps[CAP_XENSERVER_DATABASES][MAX_TIME])
     run_procs([dbp])
     if dbp.timed_out or dbp.failed:
         os.remove(XAPI_STATE_DB)
@@ -985,5 +987,5 @@ if __name__ == "__main__":
         sys.exit(main())
     except KeyboardInterrupt:
         print "\nInterrupted."
-        os.system('/bin/rm -rf %s' % TMP_DIR)
+        shutil.rmtree(TMP_DIR, ignore_errors = True)
         sys.exit(3)
