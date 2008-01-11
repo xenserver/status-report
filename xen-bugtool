@@ -633,19 +633,6 @@ def get_and_sanitize_databases():
     else:
         sanitize_database(XAPI_STATE_DB)
 
-def get_and_sanitize_databases_old():
-    output_ts("Dumping XAPI database")
-    status, _ = commands.getstatusoutput(
-        XAPI_DB_PROCESS + " -filename '" + XAPI_STATE_DB + "' -format sqlite")
-    if status:
-        try:
-            os.remove(XAPI_STATE_DB)
-        except Exception, exn:
-            print >>sys.stderr, exn
-    else:
-        sanitize_database(XAPI_STATE_DB)
-
-
 def sanitize_database(db):
     try:
         uuids = sql(db, 'select uuid from pbd')
