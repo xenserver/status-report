@@ -510,9 +510,11 @@ exclude those logs from the archive.
 
     send(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
-           [ 'syslog', 'messages', 'debug', 'dmesg', 'boot.msg' ] +
+           [ 'syslog', 'messages', 'secure', 'debug', 'dmesg', 'boot.msg' ] +
            [ 'messages.%d' % y for y in range(1,20)] +
-           [ 'messages.%d.gz' % y for y in range(1,20)]])
+           [ 'messages.%d.gz' % y for y in range(1,20)] +
+           [ 'secure.%d' % y for y in range(1,20)] +
+           [ 'secure.%d.gz' % y for y in range(1,20)]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd(CAP_SYSTEM_LOGS, [[DMESG, '', DMESG_OUT]])
 
