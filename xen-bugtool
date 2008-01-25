@@ -173,6 +173,9 @@ XENSTORE_LS_OUT = TMP_DIR + '/xenstore-ls.out'
 XEN_BALLOON_OUT = TMP_DIR + '/proc/xen-balloon.out'
 RPM_QA_OUT = TMP_DIR + '/rpm-qa.out'
 LIST_DOMAINS_OUT = TMP_DIR + '/list-domains.out'
+ETHTOOL_S_OUT = TMP_DIR + '/ethtool-S-%s.out'
+ETHTOOL_K_OUT = TMP_DIR + '/ethtool-k-%s.out'
+ETHTOOL_I_OUT = TMP_DIR + '/ethtool-i-%s.out'
 
 #
 # External programs
@@ -184,6 +187,7 @@ CAT = '/bin/cat'
 DF = '/bin/df'
 DMESG = '/bin/dmesg'
 DMIDECODE = '/usr/sbin/dmidecode'
+ETHTOOL = '/sbin/ethtool'
 FDISK = '/sbin/fdisk'
 HDPARM = '/sbin/hdparm'
 IFCONFIG = '/sbin/ifconfig'
@@ -510,6 +514,18 @@ exclude those logs from the archive.
         if os.path.isdir('/sys/class/net/%s/bridge' % p):
             cmd(CAP_NETWORK_STATUS,
                 [[BRCTL, 'showmacs %s' % p, BRCTL_SHOWMACS_OUT % p]])
+        else:
+            try:
+                f = open('/sys/class/net/%s/type' % p, 'r')
+                t = f.readline()
+                f.close()
+                if int(t) == 1:
+                    # ARPHRD_ETHER
+                    cmd(CAP_NETWORK_STATUS, [[ETHTOOL, '-S', ETHTOOL_S_OUT % p],
+                                             [ETHTOOL, '-k', ETHTOOL_K_OUT % p],
+                                             [ETHTOOL, '-i', ETHTOOL_I_OUT % p]])
+            except:
+                pass
 
     cmd(CAP_PROCESS_LIST, [[PS, 'wwwaxf -eo pid,tty,stat,time,nice,psr,pcpu,pmem,wchan:25,args', PS_OUT]])
 
