@@ -172,6 +172,7 @@ XAPI_STATE_DB_GENERATION = TMP_DIR + '/state.db.generation'
 XENSTORE_LS_OUT = TMP_DIR + '/xenstore-ls.out'
 XEN_BALLOON_OUT = TMP_DIR + '/proc/xen-balloon.out'
 RPM_QA_OUT = TMP_DIR + '/rpm-qa.out'
+LIST_DOMAINS_OUT = TMP_DIR + '/list-domains.out'
 
 #
 # External programs
@@ -188,6 +189,7 @@ HDPARM = '/sbin/hdparm'
 IFCONFIG = '/sbin/ifconfig'
 IPTABLES = '/sbin/iptables'
 ISCSIADM = '/sbin/iscsiadm'
+LIST_DOMAINS = '/opt/xensource/bin/list_domains'
 LS = '/bin/ls'
 LSPCI = '/sbin/lspci'
 LSUSB = '/usr/sbin/lsusb -v 2>/dev/null || '+CAT+' /proc/bus/usb/devices'
@@ -262,6 +264,7 @@ CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_X11_LOGS             = 'X11'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
 CAP_XENSERVER_CONFIG     = 'xenserver-config'
+CAP_XENSERVER_DOMAINS    = 'xenserver-domains'
 CAP_XENSERVER_DATABASES  = 'xenserver-databases'
 CAP_XENSERVER_INSTALL    = 'xenserver-install'
 CAP_XENSERVER_LOGS       = 'xenserver-logs'
@@ -305,6 +308,8 @@ cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=KB,
     max_time=10)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=1*KB,
+    max_time=5)
+cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=5)
 cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
     max_time=20, mime=MIME_DATA)
@@ -450,7 +455,7 @@ exclude those logs from the archive.
     xc = xen.lowlevel.xc.xc()
 
     send(CAP_BOOT_LOADER, [GRUB_CONFIG])
-    cmd(CAP_BOOT_LOADER, [[LS, '-lR', BOOT_LISTING],
+    cmd(CAP_BOOT_LOADER, [[LS, '-lR /boot', BOOT_LISTING],
                           [MD5SUM, '%s %s' % (BOOT_KERNEL, BOOT_INITRD), BOOT_MD5SUMS]])
 
     cmd(CAP_DISK_INFO, [[FDISK, '-l', FDISK_OUT]])
@@ -526,7 +531,9 @@ exclude those logs from the archive.
     do('xapi-subprocesses', CAP_XAPI_SUBPROCESS, lambda: dump_xapi_subprocess_info())
 
     send(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
-    cmd(CAP_XENSERVER_CONFIG, [[LS, '-lR', OPT_XENSOURCE_LISTING]])
+    cmd(CAP_XENSERVER_CONFIG, [[LS, '-lR /opt/xensource', OPT_XENSOURCE_LISTING]])
+
+    cmd(CAP_XENSERVER_DOMAINS, [[LIST_DOMAINS, '', LIST_DOMAINS_OUT]])
 
     if CAP_XENSERVER_DATABASES in entries:
         get_and_sanitize_databases()
