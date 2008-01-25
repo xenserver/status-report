@@ -521,9 +521,9 @@ exclude those logs from the archive.
                 f.close()
                 if int(t) == 1:
                     # ARPHRD_ETHER
-                    cmd(CAP_NETWORK_STATUS, [[ETHTOOL, '-S', ETHTOOL_S_OUT % p],
-                                             [ETHTOOL, '-k', ETHTOOL_K_OUT % p],
-                                             [ETHTOOL, '-i', ETHTOOL_I_OUT % p]])
+                    cmd(CAP_NETWORK_STATUS, [[ETHTOOL, '-S %s' % p, ETHTOOL_S_OUT % p],
+                                             [ETHTOOL, '-k %s' % p, ETHTOOL_K_OUT % p],
+                                             [ETHTOOL, '-i %s' % p, ETHTOOL_I_OUT % p]])
             except:
                 pass
 
