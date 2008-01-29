@@ -55,6 +55,7 @@ from select import select
 from signal import SIGTERM, SIGUSR1
 import md5
 import platform
+import fcntl
 
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
@@ -128,7 +129,7 @@ YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 
 
-BOOT_MD5SUMS = TMP_DIR + '/boot.ms5sum'
+BOOT_MD5SUMS = TMP_DIR + '/boot.md5sum'
 BOOT_LISTING = TMP_DIR + '/boot.list'
 PARTITIONS_OUT = TMP_DIR + '/proc/partitions.out'
 MOUNTS_OUT = TMP_DIR + '/proc/mounts.out'
@@ -332,6 +333,7 @@ SILENT_MODE = False
 entries = None
 bugball = []
 bugball_inventory = {}
+dev_null = open('/dev/null', 'r+')
 
 def output(x):
     global SILENT_MODE
@@ -933,6 +935,7 @@ def disk_list():
         (major, minor, blocks, name) = line.split()
         if int(major) < 254 and not partition_re.match(name):
             disks.append(name)
+    f.close()
     return disks
 
 
@@ -950,7 +953,11 @@ class ProcOutput:
 
     def run(self):
         self.outfile = open(self.output, 'w')
-        self.proc = Popen(self.command + ' 2>/dev/null', 1, stdout=PIPE, shell=True)
+        old = fcntl.fcntl(self.outfile.fileno(), fcntl.F_GETFD)
+        fcntl.fcntl(self.outfile.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
+        self.proc = Popen(self.command, 1, stdin=dev_null, stdout=PIPE, stderr=dev_null, shell=True)
+        old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
+        fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
         self.timeout = int(time.time()) + self.max_time
         self.running = True
         self.timed_out = False
