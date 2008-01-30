@@ -29,25 +29,18 @@
 #   A cap() invocation to declare the capability.
 #
 # You then need to add calls to main() to collect the files.  These will
-# typically be calls to the helpers send(), send_all(), cmd(), or do().
+# typically be calls to the helpers file_output(), tree_output(), cmd_output(),
+# or func_output().
 #
 
-import errno
 import getopt
-import getpass
-import httplib
 import re
 import os
-import os.path
-import string
 import StringIO
 import sys
 import tarfile
 import time
-import urllib
 import commands
-import shutil
-import pprint
 from xml.dom.minidom import parse, getDOMImplementation
 import zipfile
 from subprocess import Popen, PIPE
@@ -60,7 +53,6 @@ import fcntl
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
 
-import sexp
 import xen.lowlevel.xc
 
 OS_RELEASE = platform.release()
@@ -69,7 +61,6 @@ OS_RELEASE = platform.release()
 # Files & directories
 #
 
-TMP_DIR = '/tmp/bugtool.%d' % os.getpid()
 BUG_DIR = "/var/opt/xen/bug-report"
 GRUB_CONFIG = '/boot/grub/menu.lst'
 BOOT_KERNEL = '/boot/vmlinuz-' + OS_RELEASE
@@ -92,6 +83,8 @@ PROC_DEVICES = '/proc/devices'
 PROC_FILESYSTEMS = '/proc/filesystems'
 PROC_CMDLINE = '/proc/cmdline'
 PROC_CONFIG = '/proc/config.gz'
+PROC_USB_DEV = '/proc/bus/usb/devices'
+PROC_XEN_BALLOON = '/proc/xen/balloon'
 SYSCONFIG_NETWORK = '/etc/sysconfig/network'
 SYSCONFIG_NETWORK_SCRIPTS = '/etc/sysconfig/network-scripts'
 IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
@@ -113,6 +106,10 @@ HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
 X11_LOGS_DIR = VAR_LOG_DIR
 X11_LOGS_RE = re.compile(r'.*/Xorg\..*$')
+XAPI_LOCAL_DB = '/var/xapi/local.db'
+XAPI_STATE_DB = '/var/xapi/state.db'
+XAPI_STATE_DB_GENERATION = '/var/xapi/state.db.generation'
+
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
       ['xensource.log', 'SMlog'] +
@@ -128,55 +125,6 @@ XENSERVER_LOGS = \
 YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 
-
-BOOT_MD5SUMS = TMP_DIR + '/boot.md5sum'
-BOOT_LISTING = TMP_DIR + '/boot.list'
-PARTITIONS_OUT = TMP_DIR + '/proc/partitions.out'
-MOUNTS_OUT = TMP_DIR + '/proc/mounts.out'
-FDISK_OUT = TMP_DIR + '/fdisk-l.out'
-DF_OUT = TMP_DIR + '/df-alT.out'
-DFI_OUT = TMP_DIR + '/df-alTi.out'
-ISCSI_NODE_OUT = TMP_DIR + '/iscsiadm-m-node.out'
-PVS_OUT = TMP_DIR + '/pvs.out'
-VGS_OUT = TMP_DIR + '/vgs.out'
-LVS_OUT = TMP_DIR + '/lvs.out'
-DMI_OUT = TMP_DIR + '/dmidecode.out'
-CPUINFO_OUT = TMP_DIR + '/proc/cpuinfo.out'
-MEMINFO_OUT = TMP_DIR + '/proc/meminfo.out'
-IOPORTS_OUT = TMP_DIR + '/proc/ioports.out'
-INTERRUPTS_OUT = TMP_DIR + '/proc/interrupts.out'
-HDPARM_I_OUT = TMP_DIR + '/hdparm-I-%s.out'
-HDPARM_TT_OUT = TMP_DIR + '/hdparm-tT-%s.out'
-LSPCI_N_OUT = TMP_DIR + '/lspci-n.out'
-LSPCI_VV_OUT = TMP_DIR + '/lspci-vv.out'
-LSUSB_OUT = TMP_DIR + '/lsusb.out'
-SCSI_OUT = TMP_DIR + '/proc/scsi.out'
-VERSION_OUT = TMP_DIR + '/proc/version.out'
-MODULES_OUT = TMP_DIR + '/proc/modules.out'
-DEVICES_OUT = TMP_DIR + '/proc/devices.out'
-FILESYSTEMS_OUT = TMP_DIR + '/proc/filesystems.out'
-CMDLINE_OUT = TMP_DIR + '/proc/cmdline.out'
-CONFIG_OUT = TMP_DIR + '/proc/config.out'
-SYSCTL_OUT = TMP_DIR + '/sysctl-A.out'
-IFCONFIG_OUT = TMP_DIR + '/ifconfig-a.out'
-ROUTE_OUT = TMP_DIR + '/route-n.out'
-ARP_OUT = TMP_DIR + '/arp-n.out'
-NETSTAT_OUT = TMP_DIR + '/netstat-an.out'
-IPTABLES_OUT = TMP_DIR + '/iptables-nL.out'
-BRCTL_SHOW_OUT =  TMP_DIR + '/brctl-show.out'
-BRCTL_SHOWMACS_OUT = TMP_DIR + '/brctl-showmacs-%s.out'
-PS_OUT = TMP_DIR + '/ps-wwwaxf.out'
-DMESG_OUT = TMP_DIR + '/dmesg.out'
-OPT_XENSOURCE_LISTING = TMP_DIR + '/opt-xensource.list'
-XAPI_STATE_DB = TMP_DIR + '/state.db'
-XAPI_STATE_DB_GENERATION = TMP_DIR + '/state.db.generation'
-XENSTORE_LS_OUT = TMP_DIR + '/xenstore-ls.out'
-XEN_BALLOON_OUT = TMP_DIR + '/proc/xen-balloon.out'
-RPM_QA_OUT = TMP_DIR + '/rpm-qa.out'
-LIST_DOMAINS_OUT = TMP_DIR + '/list-domains.out'
-ETHTOOL_S_OUT = TMP_DIR + '/ethtool-S-%s.out'
-ETHTOOL_K_OUT = TMP_DIR + '/ethtool-k-%s.out'
-ETHTOOL_I_OUT = TMP_DIR + '/ethtool-i-%s.out'
 
 #
 # External programs
@@ -197,7 +145,6 @@ ISCSIADM = '/sbin/iscsiadm'
 LIST_DOMAINS = '/opt/xensource/bin/list_domains'
 LS = '/bin/ls'
 LSPCI = '/sbin/lspci'
-LSUSB = '/usr/sbin/lsusb -v 2>/dev/null || '+CAT+' /proc/bus/usb/devices'
 LVS = '/usr/sbin/lvs'
 MD5SUM = '/usr/bin/md5sum'
 NETSTAT = '/bin/netstat'
@@ -325,59 +272,98 @@ cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=5*KB,
 cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=5*KB,
     max_time=30)
 
-
-FILES_TO_SEND = []
-COMMANDS_TO_RUN = []
 ANSWER_YES_TO_ALL = False
 SILENT_MODE = False
 entries = None
-bugball = []
-bugball_inventory = {}
+data = {}
 dev_null = open('/dev/null', 'r+')
 
 def output(x):
     global SILENT_MODE
-    if not(SILENT_MODE):
+    if not SILENT_MODE:
         print x
 
 def output_ts(x):
     output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
 
-def send(e, files):
-    if e in entries:
-        FILES_TO_SEND.extend(files)
-        bugball_inventory.update(dict([(f, e) for f in files
-                                       if os.path.exists(f)]))
+def cmd_output(cap, args, label = None):
+    if cap in entries:
+        a = [aa for aa in args]
+        a[0] = os.path.basename(a[0])
+        if not label:
+            label = ' '.join(a)
+        data[label] = {'cap': cap, 'cmd_args': args}
 
-def send_all(e, dir, pattern = None, negate = False):
-    if os.path.exists(dir):
-        for f in os.listdir(dir):
-            fn = os.path.join(dir, f)
-            if os.path.isfile(fn) and matches(fn, pattern, negate):
-                send(e, [fn])
-            elif os.path.isdir(fn):
-                send_all(e, fn, pattern, negate)
+def file_output(cap, path_list):
+    if cap in entries:
+        for p in path_list:
+            if os.path.exists(p):
+                data[p] = {'cap': cap, 'filename': p}
 
-def cmd(e, commands):
-    if e in entries:
-        COMMANDS_TO_RUN.extend([ProcOutput("%s %s" % (c[0], c[1]), c[2], caps[e][MAX_TIME]) for c in commands])
-        FILES_TO_SEND.extend([c[2] for c in commands])
-        bugball_inventory.update(dict([(c[2], e) for c in commands]))
+def tree_output(cap, path, pattern = None, negate = False):
+    if cap in entries:
+        if os.path.exists(path):
+            for f in os.listdir(path):
+                fn = os.path.join(path, f)
+                if os.path.isfile(fn) and matches(fn, pattern, negate):
+                    file_output(cap, [fn])
+                elif os.path.isdir(fn):
+                    tree_output(cap, fn, pattern, negate)
 
-def do(n, e, f):
-    if e in entries:
-        try:
-            s = f()
-        except Exception, exn:
-            s = str(exn)
-        bugball.append(string_iterator(n, s))
-        bugball_inventory[n] = e
+def func_output(cap, label, func):
+    if cap in entries:
+        t = str(func).split()
+        data[label] = {'cap': cap, 'func': func}
+
+def collect_data():
+    process_list = []
+
+    for v in data.values():
+        if v.has_key('cmd_args'):
+            v['output'] = StringIO.StringIO()
+            process_list.append(ProcOutput(v['cmd_args'], caps[v['cap']][MAX_TIME], v['output']))
+        elif v.has_key('filename') and v['filename'].startswith('/proc/'):
+            # proc files must be read into memory
+            try:
+                f = open(v['filename'], 'r')
+                v['output'] = StringIO.StringIO(f.read())
+                f.close()
+            except:
+                pass
+        elif v.has_key('func'):
+            try:
+                s = v['func']()
+            except Exception, e:
+                s = str(e)
+            v['output'] = StringIO.StringIO(s)
+
+    run_procs(process_list)
+
+    # filter passwords out of XAPI database
+    if data.has_key('xapi-db.xml') and data['xapi-db.xml'].has_key('output'):
+        ih = data['xapi-db.xml']['output']
+        ih.seek(0)
+        oh = StringIO.StringIO()
+        remain = ''
+        rec = ih.read(2048)
+        while True:
+            p = rec.find('>')
+            if p != -1:
+                remain = rec[p+1:]
+                oh.write(re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', rec[:p+1]))
+            else:
+                remain = rec
+            new_data = ih.read(2048)
+            if new_data == '':
+                break
+            rec = remain + new_data
+        oh.write(remain)
+        data['xapi-db.xml']['output'] = oh
 
 
 def main(argv = None):
-    global TMP_DIR
-    global ANSWER_YES_TO_ALL, SILENT_MODE, FILES_TO_SEND, COMMANDS_TO_RUN
-    global entries, bugball, bugball_inventory
+    global ANSWER_YES_TO_ALL, SILENT_MODE
+    global entries, data
 
     # we need access to privileged files, exit if we are not running as root
     if os.getuid() != 0:
@@ -407,10 +393,11 @@ def main(argv = None):
             return 0
 
         if k == '--output':
-            for vv in ['tar', 'tar.bz2', 'zip']:
-                if v == vv:
-                    output_type = v
-                    break
+            if  v in ['tar', 'tar.bz2', 'zip']:
+                output_type = v
+            else:
+                print >>sys.stderr, "Invalid output format '%s'" % v
+                return 2
 
         # "-s" or "--silent" means suppress output (except for the final
         # output filename at the end)
@@ -423,10 +410,15 @@ def main(argv = None):
         # If the user runs the script with "-y" or "--yestoall" we don't ask
         # all the really annoying questions.
         if k in ['-y', '--yestoall']:
-            ANSWER_YES_TO_ALL = True  
+            ANSWER_YES_TO_ALL = True
 
         if k == '--outfd':
             output_fd = int(v)
+            try:
+                os.fstat(output_fd)
+            except:
+                print >>sys.stderr, "Invalid output file descriptor", output_fd
+                return 2
 
     if len(params) != 1:
         print >>sys.stderr, "Invalid additional arguments", str(params)
@@ -453,69 +445,61 @@ exclude those logs from the archive.
 
 ''' % output_type)
 
-    if not os.path.exists(TMP_DIR):
-        os.makedirs(TMP_DIR)
-    if not os.path.exists(TMP_DIR + '/proc'):
-        os.makedirs(TMP_DIR + '/proc')
+    # assemble potential data
+    file_output(CAP_BOOT_LOADER, [GRUB_CONFIG])
+    cmd_output(CAP_BOOT_LOADER, [LS, '-lR', '/boot'])
+    cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD])
 
-    xc = xen.lowlevel.xc.xc()
-
-    send(CAP_BOOT_LOADER, [GRUB_CONFIG])
-    cmd(CAP_BOOT_LOADER, [[LS, '-lR /boot', BOOT_LISTING],
-                          [MD5SUM, '%s %s' % (BOOT_KERNEL, BOOT_INITRD), BOOT_MD5SUMS]])
-
-    cmd(CAP_DISK_INFO, [[FDISK, '-l', FDISK_OUT]])
-    cmd(CAP_DISK_INFO, [[CAT, PROC_PARTITIONS, PARTITIONS_OUT],
-                        [CAT, PROC_MOUNTS, MOUNTS_OUT]])
-    send(CAP_DISK_INFO, [FSTAB, ISCSI_CONF, ISCSI_INITIATOR])
-    cmd(CAP_DISK_INFO, [[DF, '-alT', DF_OUT], [DF, '-alTi', DFI_OUT]])
+    cmd_output(CAP_DISK_INFO, [FDISK, '-l'])
+    file_output(CAP_DISK_INFO, [PROC_PARTITIONS, PROC_MOUNTS])
+    file_output(CAP_DISK_INFO, [FSTAB, ISCSI_CONF, ISCSI_INITIATOR])
+    cmd_output(CAP_DISK_INFO, [DF, '-alT'])
+    cmd_output(CAP_DISK_INFO, [DF, '-alTi'])
     for d in disk_list():
-        cmd(CAP_DISK_INFO, [[HDPARM, '-I /dev/%s' % d, HDPARM_I_OUT % d]])
-    cmd(CAP_DISK_INFO, [[ISCSIADM, '-m node', ISCSI_NODE_OUT]])
-    if CAP_DISK_INFO in entries:
-        output_ts("Scanning volume groups")
-        vgp = ProcOutput(VGSCAN, '/dev/null', caps[CAP_DISK_INFO][MAX_TIME])
-        run_procs([vgp])
-        if not (vgp.timed_out or vgp.failed):
-            cmd(CAP_DISK_INFO, [[PVS, '', PVS_OUT], [VGS, '', VGS_OUT], [LVS, '', LVS_OUT]])
-            send(CAP_DISK_INFO, [LVM_CACHE])
-    send_all(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
+        cmd_output(CAP_DISK_INFO, [HDPARM, '-I', '/dev/%s' % d])
+    cmd_output(CAP_DISK_INFO, [ISCSIADM, '-m', 'node'])
+    cmd_output(CAP_DISK_INFO, [VGSCAN])
+    cmd_output(CAP_DISK_INFO, [PVS])
+    cmd_output(CAP_DISK_INFO, [VGS])
+    cmd_output(CAP_DISK_INFO, [LVS])
+    file_output(CAP_DISK_INFO, [LVM_CACHE])
 
-    cmd(CAP_HARDWARE_INFO, [[CAT, PROC_CPUINFO, CPUINFO_OUT], 
-                            [CAT, PROC_MEMINFO, MEMINFO_OUT], 
-                            [CAT, PROC_IOPORTS, IOPORTS_OUT], 
-                            [CAT, PROC_INTERRUPTS, INTERRUPTS_OUT]])
-    cmd(CAP_HARDWARE_INFO, [[DMIDECODE, '', DMI_OUT], [LSPCI, '-n', LSPCI_N_OUT], 
-                            [LSPCI, '-vv', LSPCI_VV_OUT], [LSUSB, '', LSUSB_OUT],
-                            [CAT, PROC_SCSI, SCSI_OUT]])
+    tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
+
+    file_output(CAP_HARDWARE_INFO, [PROC_CPUINFO, PROC_MEMINFO, PROC_IOPORTS, PROC_INTERRUPTS])
+    cmd_output(CAP_HARDWARE_INFO, [DMIDECODE])
+    cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-n'])
+    cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-vv'])
+    file_output(CAP_HARDWARE_INFO, [PROC_USB_DEV, PROC_SCSI])
     # FIXME IDE?
 
     for d in disk_list():
-        cmd(CAP_HDPARM_T, [[HDPARM, '-tT /dev/%s' % d, HDPARM_TT_OUT % d]])
+        cmd_output(CAP_HDPARM_T, [HDPARM, '-tT', '/dev/%s' % d])
 
-    send_all(CAP_HOST_CRASHDUMP_DUMPS, HOST_CRASHDUMPS_DIR,
-             HOST_CRASHDUMP_LOGS_RE, True)
-    send_all(CAP_HOST_CRASHDUMP_LOGS,  HOST_CRASHDUMPS_DIR,
-             HOST_CRASHDUMP_LOGS_RE, False)
+    tree_output(CAP_HOST_CRASHDUMP_DUMPS, HOST_CRASHDUMPS_DIR,
+                HOST_CRASHDUMP_LOGS_RE, True)
+    tree_output(CAP_HOST_CRASHDUMP_LOGS, HOST_CRASHDUMPS_DIR,
+                HOST_CRASHDUMP_LOGS_RE, False)
 
-    cmd(CAP_KERNEL_INFO, [[CAT, PROC_VERSION, VERSION_OUT], [CAT, PROC_MODULES, MODULES_OUT], 
-                          [CAT, PROC_DEVICES, DEVICES_OUT], [CAT, PROC_FILESYSTEMS, FILESYSTEMS_OUT]])
-    cmd(CAP_KERNEL_INFO, [[CAT, PROC_CMDLINE, CMDLINE_OUT], [ZCAT, PROC_CONFIG, CONFIG_OUT],
-                          [SYSCTL, '-A', SYSCTL_OUT]])
+    file_output(CAP_KERNEL_INFO, [PROC_VERSION, PROC_MODULES, PROC_DEVICES, 
+                                  PROC_FILESYSTEMS, PROC_CMDLINE])
+    cmd_output(CAP_KERNEL_INFO, [ZCAT, PROC_CONFIG], label='config')
+    cmd_output(CAP_KERNEL_INFO, [SYSCTL, '-A'])
 
-    # Add the network config scripts to FILES_TO_SEND
-    send_all(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
-    send(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF])
-    send(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
+    tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
+    file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF])
+    file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
 
-    cmd(CAP_NETWORK_STATUS,[[IFCONFIG, '-a', IFCONFIG_OUT], [ROUTE, '-n', ROUTE_OUT],
-                            [ARP, '-n', ARP_OUT], [NETSTAT, '-an', NETSTAT_OUT]])
-    send_all(CAP_NETWORK_STATUS, DHCP_LEASE_DIR)
-    cmd(CAP_NETWORK_STATUS,[[IPTABLES, '-nL', IPTABLES_OUT], [BRCTL, 'show', BRCTL_SHOW_OUT]])
+    cmd_output(CAP_NETWORK_STATUS, [IFCONFIG, '-a'])
+    cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
+    cmd_output(CAP_NETWORK_STATUS, [ARP, '-n'])
+    cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-an'])
+    tree_output(CAP_NETWORK_STATUS, DHCP_LEASE_DIR)
+    cmd_output(CAP_NETWORK_STATUS, [IPTABLES, '-nL'])
+    cmd_output(CAP_NETWORK_STATUS, [BRCTL, 'show'])
     for p in os.listdir('/sys/class/net/'):
         if os.path.isdir('/sys/class/net/%s/bridge' % p):
-            cmd(CAP_NETWORK_STATUS,
-                [[BRCTL, 'showmacs %s' % p, BRCTL_SHOWMACS_OUT % p]])
+            cmd_output(CAP_NETWORK_STATUS, [BRCTL, 'showmacs', p])
         else:
             try:
                 f = open('/sys/class/net/%s/type' % p, 'r')
@@ -523,15 +507,15 @@ exclude those logs from the archive.
                 f.close()
                 if int(t) == 1:
                     # ARPHRD_ETHER
-                    cmd(CAP_NETWORK_STATUS, [[ETHTOOL, '-S %s' % p, ETHTOOL_S_OUT % p],
-                                             [ETHTOOL, '-k %s' % p, ETHTOOL_K_OUT % p],
-                                             [ETHTOOL, '-i %s' % p, ETHTOOL_I_OUT % p]])
+                    cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-S', p])
+                    cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-k', p])
+                    cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-i', p])
             except:
                 pass
 
-    cmd(CAP_PROCESS_LIST, [[PS, 'wwwaxf -eo pid,tty,stat,time,nice,psr,pcpu,pmem,wchan:25,args', PS_OUT]])
+    cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,wchan:25,args'], label='process-tree')
 
-    send(CAP_SYSTEM_LOGS,
+    file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
            [ 'syslog', 'messages', 'secure', 'debug', 'dmesg', 'boot.msg' ] +
            [ 'messages.%d' % y for y in range(1,20)] +
@@ -539,89 +523,87 @@ exclude those logs from the archive.
            [ 'secure.%d' % y for y in range(1,20)] +
            [ 'secure.%d.gz' % y for y in range(1,20)]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
-        cmd(CAP_SYSTEM_LOGS, [[DMESG, '', DMESG_OUT]])
+        cmd_output(CAP_SYSTEM_LOGS, [DMESG])
 
     if CAP_TAPDISK_LOGS in entries:
         generate_tapdisk_logs()
 
-    send_all(CAP_X11_LOGS, X11_LOGS_DIR, X11_LOGS_RE)
+    tree_output(CAP_X11_LOGS, X11_LOGS_DIR, X11_LOGS_RE)
 
-    do('xapi-subprocesses', CAP_XAPI_SUBPROCESS, lambda: dump_xapi_subprocess_info())
+    func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
 
-    send(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
-    cmd(CAP_XENSERVER_CONFIG, [[LS, '-lR /opt/xensource', OPT_XENSOURCE_LISTING]])
+    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
+    cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
 
-    cmd(CAP_XENSERVER_DOMAINS, [[LIST_DOMAINS, '', LIST_DOMAINS_OUT]])
+    cmd_output(CAP_XENSERVER_DATABASES, [XAPI_DB_PROCESS, '-xmltostdout'], label='xapi-db.xml')
+    cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
 
-    if CAP_XENSERVER_DATABASES in entries:
-        get_and_sanitize_databases()
-    send(CAP_XENSERVER_DATABASES,
-         [XAPI_STATE_DB, XAPI_STATE_DB_GENERATION, XAPI_LOCAL_DB])
-    cmd(CAP_XENSERVER_DATABASES, [[XENSTORE_LS, '', XENSTORE_LS_OUT]])
+    cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
 
-    send(CAP_XENSERVER_INSTALL,
-         [ VAR_LOG_DIR + x for x in 
-           [ 'firstboot-SR-commands-log',
-             'upgrade-commands-log', 'generate-iscsi-iqn-log']] +
-         [ '/root/' + x for x in 
-           [ 'blockdevs-log', 'cmdline-log', 'devcontents-log',
-             'dmesg-log', 'install-log', 'lspci-log', 'modules-log',
-             'pci-log', 'processes-log', 'tty-log', 'uname-log',
-             'vgscan-log']])
+    file_output(CAP_XENSERVER_INSTALL,
+                [ VAR_LOG_DIR + x for x in 
+                  [ 'firstboot-SR-commands-log',
+                    'upgrade-commands-log', 'generate-iscsi-iqn-log']] +
+                [ '/root/' + x for x in 
+                  [ 'blockdevs-log', 'cmdline-log', 'devcontents-log',
+                    'dmesg-log', 'install-log', 'lspci-log', 'modules-log',
+                    'pci-log', 'processes-log', 'tty-log', 'uname-log',
+                    'vgscan-log']])
 
-    send(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
+    file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
 
-    do('xen-dmesg', CAP_XEN_INFO, lambda: xc.readconsolering())
-    do('physinfo',  CAP_XEN_INFO, lambda: prettyDict(xc.physinfo()))
-    do('xeninfo',   CAP_XEN_INFO, lambda: prettyDict(xc.xeninfo()))
-    cmd(CAP_XEN_INFO,
-        [[CAT, '/proc/xen/balloon', XEN_BALLOON_OUT]])
+    try:
+        xc = xen.lowlevel.xc.xc()
 
-    send(CAP_YUM, [YUM_LOG])
-    send_all(CAP_YUM, YUM_REPOS_DIR)
-    cmd(CAP_YUM, [[RPM, '-qa', RPM_QA_OUT]])
+        func_output(CAP_XEN_INFO, 'xen-dmesg', xc.readconsolering)
+        func_output(CAP_XEN_INFO, 'physinfo', lambda: prettyDict(xc.physinfo()))
+        func_output(CAP_XEN_INFO, 'xeninfo', lambda: prettyDict(xc.xeninfo()))
+    except:
+        pass
+    file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
+
+    file_output(CAP_YUM, [YUM_LOG])
+    tree_output(CAP_YUM, YUM_REPOS_DIR)
+    cmd_output(CAP_YUM, [RPM, '-qa'])
     
+    # permit the user to filter out data
+    for k in sorted(data.keys()):
+        if not ANSWER_YES_TO_ALL and not yes("Include '%s'? [Y/n]: " % k):
+            del data[k]
+
+    # collect selected data now
     output_ts('Running commands to collect data')
-    run_procs(COMMANDS_TO_RUN)
+    collect_data()
 
-    for filename in FILES_TO_SEND:
-        if not os.path.exists(filename):
-            continue
-
-        if ANSWER_YES_TO_ALL or yes('Include %s? [Y/n] ' % filename):
-            bugball.append(file(filename))
-
+    # create archive
     if not os.path.exists(BUG_DIR):
         os.makedirs(BUG_DIR)
 
-    if output_type == 'tar.bz2' or output_type == 'tar':
+    if output_type.startswith('tar'):
         make_tar(output_type, output_fd)
     else:
         make_zip()
 
-    shutil.rmtree(TMP_DIR, ignore_errors = True)
     clean_tapdisk_logs()
     return 0
-
+    
 def generate_tapdisk_logs():
-    pids = commands.getoutput("/bin/ps -C tapdisk -o pid=")
-    for pid in pids.split():
-        output_ts("Including logs for tapdisk process %s" % pid)
+    for pid in pidof('tapdisk'):
 	try:
-	    os.kill(int(pid), SIGUSR1)
-	    FILES_TO_SEND.append("/tmp/tapdisk.log." + pid)
-        except Exception, exn:
-            print >>sys.stderr, exn
+	    os.kill(pid, SIGUSR1)
+            output_ts("Including logs for tapdisk process %d" % pid)
+        except :
+            pass
     # give processes a second to write their logs
     time.sleep(1)
+    file_output(CAP_TAPDISK_LOGS, ['/tmp/tapdisk.log.%d' % pid for pid in pidof('tapdisk')])
 
 def clean_tapdisk_logs():
-    for filename in FILES_TO_SEND:
-        if filename.startswith("/tmp/tapdisk.log"):
-            try:
-                os.remove(filename)
-            except Exception, exn:
-                print >>sys.stderr, exn
+    for filename in [f for f in os.listdir('/tmp') if f.startswith('tapdisk.log.')]:
+        try:
+            os.remove(os.path.join('tmp', filename))
+        except :
+            pass
 
 def dump_xapi_subprocess_info():
     """Check which fds are open by xapi and its subprocesses to diagnose faults like CA-10543.
@@ -664,47 +646,9 @@ def dump_xapi_subprocess_info():
     pp = pprint.PrettyPrinter(indent=4)
     return pp.pformat(result)
 
-def get_and_sanitize_databases():
-    output_ts("Dumping XAPI database")
-    dbp = ProcOutput("%s -filename %s -format sqlite" % (XAPI_DB_PROCESS, XAPI_STATE_DB), '/dev/null', caps[CAP_XENSERVER_DATABASES][MAX_TIME])
-    run_procs([dbp])
-    if dbp.timed_out or dbp.failed:
-        os.remove(XAPI_STATE_DB)
-    else:
-        sanitize_database(XAPI_STATE_DB)
-
-def sanitize_database(db):
-    try:
-        uuids = sql(db, 'select uuid from pbd')
-        for uuid in uuids:
-            uuid = uuid.strip()
-            dconfs = sql(db, "select device_config from pbd where uuid='%s'" % uuid)
-            d = dconfs[0].strip()
-            dconf = sexp.parse(d)
-            for pw in ['cifspassword', 'chappassword', 'password']:
-                dconf.set_assoc(pw, 'REMOVED')
-            new_d = dconf.toString()
-            if new_d != d:
-                sql(db, "update pbd set device_config='%s' where uuid='%s'" % (new_d.replace("'", "''"), uuid))
-    except Exception, exn:
-        print >>sys.stderr, exn
-        os.remove(db)
-
-
-def sql(db, sql):
-    result = []
-    inp, out = os.popen2([SQLITE, db, sql])
-    try:
-        for line in out:
-            result.append(line)
-        return result
-    finally:
-        inp.close()
-        out.close()
-
 
 def make_tar(suffix, output_fd):
-    global SILENT_MODE, bugball, bugball_inventory
+    global SILENT_MODE, data
 
     mode = 'w'
     if suffix == 'tar.bz2':
@@ -712,12 +656,12 @@ def make_tar(suffix, output_fd):
     date_string = time.strftime("%Y%m%d%H%M%S")
 
     filename = "%s/bug-report-%s.%s" % (BUG_DIR, date_string, suffix)
-    subdir = "bug-report-%s" %  date_string
-
-    bugball.append(string_iterator('inventory.xml',
-                                   make_inventory(bugball_inventory, subdir)))
+    subdir = "bug-report-%s" % date_string
 
     now = time.time()
+
+    # include inventory
+    data['inventory.xml'] = {'cap': None, 'output': StringIO.StringIO(make_inventory(data, subdir))}
 
     if output_fd == -1:
         tf = tarfile.open(filename, mode)
@@ -725,25 +669,21 @@ def make_tar(suffix, output_fd):
         tf = tarfile.open(None, 'w', os.fdopen(output_fd, 'a'))
 
     try:
-        for f in bugball:
-            tar_filename = os.path.join(subdir, truncated_name(f.name))
+        for (k, v) in data.items():
+            tar_filename = os.path.join(subdir, construct_filename(k, v))
             ti = tarfile.TarInfo(tar_filename)
 
-            if hasattr(f, 'size'):
-                ti.size = f.size()
-            else:
-                ti.size = os.stat(f.name).st_size
-
             ti.mtime = now
-            ti.type = tarfile.REGTYPE
-            ti.uid = 0
-            ti.gid = 0
             ti.uname = 'root'
             ti.gname = 'root'
 
-            f.seek(0) # If we've added this file to a bug, it will have been
-                      # read once already, so reset it.
-            tf.addfile(ti, f)
+            if v.has_key('output'):
+                ti.size = len(v['output'].getvalue())
+                v['output'].seek(0)
+                tf.addfile(ti, v['output'])
+            elif v.has_key('filename'):
+                ti.size = os.stat(v['filename']).st_size
+                tf.addfile(ti, file(v['filename']))
     finally:
         tf.close()
 
@@ -754,29 +694,30 @@ def make_tar(suffix, output_fd):
 
 
 def make_zip():
-    global SILENT_MODE, bugball, bugball_inventory
+    global SILENT_MODE, data
 
     date_string = time.strftime("%Y%m%d%H%M%S")
 
     filename = "%s/bug-report-%s.zip" % (BUG_DIR, date_string)
-    subdir = "bug-report-%s" %  date_string
+    subdir = "bug-report-%s" % date_string
 
-    bugball.append(string_iterator('inventory.xml',
-                                   make_inventory(bugball_inventory, subdir)))
+    # include inventory
+    data['inventory.xml'] = {'cap': None, 'output': StringIO.StringIO(make_inventory(data, subdir))}
 
     zf = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
 
     try:
-        for f in bugball:
-            dest = os.path.join(subdir, truncated_name(f.name))
+        for (k, v) in data.items():
+            dest = os.path.join(subdir, construct_filename(k, v))
 
-            if os.path.exists(f.name):
-                compress_type = zipfile.ZIP_DEFLATED
-                if os.stat(f.name).st_size < 50:
+            if v.has_key('output'):
+                zf.writestr(dest, v['output'].getvalue())
+            else:
+                if os.stat(v['filename']).st_size < 50:
                     compress_type = zipfile.ZIP_STORED
-                zf.write(f.name, dest, compress_type)
-            elif hasattr(f, 'getvalue'):
-                zf.writestr(dest, f.getvalue())
+                else:
+                    compress_type = zipfile.ZIP_DEFLATED
+                zf.write(v['filename'], dest, compress_type)
     finally:
         zf.close()
     
@@ -792,7 +733,7 @@ def make_inventory(inventory, subdir):
     # create summary entry
     s = document.createElement(INVENTORY_XML_SUMMARY)
     user = os.getenv('SUDO_USER', os.getenv('USER'))
-    if user != None:
+    if user:
         s.setAttribute('user', user)
     s.setAttribute('date', time.strftime('%c'))
     s.setAttribute('hostname', platform.node())
@@ -800,40 +741,45 @@ def make_inventory(inventory, subdir):
     s.setAttribute('uptime', commands.getoutput(UPTIME))
     document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(s)
 
-    map(lambda (f, e): inventory_entry(document, subdir, f, e),
-        inventory.iteritems())
+    map(lambda (k, v): inventory_entry(document, subdir, k, v),
+        inventory.items())
     return document.toprettyxml()
 
-def inventory_entry(document, subdir, filename, capability):
+def inventory_entry(document, subdir, k, v):
     el = document.createElement(INVENTORY_XML_ELEMENT)
-    if os.path.exists(filename):
-        try:
-            el.setAttribute('md5sum', md5sum(filename))
-        except:
-            pass
-    el.setAttribute('filename',
-                    os.path.join(subdir, truncated_name(filename)))
-    el.setAttribute('capability', capability)
+    el.setAttribute('capability', v['cap'])
+    el.setAttribute('filename', os.path.join(subdir, construct_filename(k, v)))
+    el.setAttribute('md5sum', md5sum(v))
     document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(el)
 
 
-def md5sum(fn):
+def md5sum(d):
     m = md5.new()
-    f = open(fn)
-    data = f.read(1024)
-    while len(data) > 0:
-        m.update(data)
+    if d.has_key('filename'):
+        f = open(d['filename'])
         data = f.read(1024)
-    f.close()
+        while len(data) > 0:
+            m.update(data)
+            data = f.read(1024)
+        f.close()
+    elif d.has_key('output'):
+        m.update(d['output'].getvalue())
     return m.hexdigest()
 
 
-def truncated_name(f):
-    if f.startswith(TMP_DIR):
-        return f.replace(TMP_DIR + os.path.sep, '')
-    elif f.startswith(os.path.sep):
-        return f[1:]
-    return f
+def construct_filename(k, v):
+    if v.has_key('filename'):
+        if v['filename'][0] == '/':
+            return v['filename'][1:]
+        else:
+            return v['filename']
+    s = k.replace(' ', '-')
+    s = s.replace('--', '-')
+    s = s.replace('/', '%')
+    if s.find('.') == -1:
+        s += '.out'
+
+    return s
 
 
 def update_capabilities():
@@ -842,7 +788,7 @@ def update_capabilities():
     update_cap_size(CAP_HOST_CRASHDUMP_DUMPS,
                     size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_RE,
                                 True))
-    update_cap_size(CAP_XENSERVER_LOGS,  size_of_all(XENSERVER_LOGS))
+    update_cap_size(CAP_XENSERVER_LOGS, size_of_all(XENSERVER_LOGS))
 
 
 def update_cap_size(cap, size):
@@ -909,15 +855,6 @@ def prettyDict(d):
     return '\n'.join([format % i for i in d.items()]) + '\n'
 
 
-class string_iterator(StringIO.StringIO):
-    def __init__(self, name, val):
-        StringIO.StringIO.__init__(self, val)
-        self.name = name
-
-    def size(self):
-        return len(self.getvalue())
-
-
 def yes(prompt):
     yn = raw_input(prompt)
 
@@ -928,22 +865,25 @@ partition_re = re.compile(r'.*[0-9]+$')
 
 def disk_list():
     disks = []
-    f = open('/proc/partitions')
-    f.readline()
-    f.readline()
-    for line in f.readlines():
-        (major, minor, blocks, name) = line.split()
-        if int(major) < 254 and not partition_re.match(name):
-            disks.append(name)
-    f.close()
+    try:
+        f = open('/proc/partitions')
+        f.readline()
+        f.readline()
+        for line in f.readlines():
+            (major, minor, blocks, name) = line.split()
+            if int(major) < 254 and not partition_re.match(name):
+                disks.append(name)
+        f.close()
+    except:
+        pass
     return disks
 
 
 class ProcOutput:
-    def __init__(self, command, output, max_time):
+    def __init__(self, command, max_time, inst=None):
         self.command = command
-        self.output = output
         self.max_time = max_time
+        self.inst = inst
         self.running = False
         self.timed_out = False
         self.failed = False
@@ -952,16 +892,18 @@ class ProcOutput:
         self.terminate()
 
     def run(self):
-        self.outfile = open(self.output, 'w')
-        old = fcntl.fcntl(self.outfile.fileno(), fcntl.F_GETFD)
-        fcntl.fcntl(self.outfile.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
-        self.proc = Popen(self.command, 1, stdin=dev_null, stdout=PIPE, stderr=dev_null, shell=True)
-        old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
-        fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
-        self.timeout = int(time.time()) + self.max_time
-        self.running = True
         self.timed_out = False
-        self.failed = False
+        try:
+            self.proc = Popen(self.command, bufsize=1, stdin=dev_null, stdout=PIPE, stderr=dev_null)
+            old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
+            fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
+            self.timeout = int(time.time()) + self.max_time
+            self.running = True
+            self.failed = False
+        except:
+            output_ts("'%s' failed" % ' '.join(self.command))
+            self.running = False
+            self.failed = True
 
     def terminate(self):
         if self.running:
@@ -969,7 +911,6 @@ class ProcOutput:
                 os.kill(self.proc.pid, SIGTERM)
             except:
                 pass
-            self.outfile.close()
             self.running = False
 
     def read_line(self):
@@ -977,15 +918,10 @@ class ProcOutput:
         line = self.proc.stdout.readline()
         if line == '':
             # process exited
-            self.outfile.close()
-            if self.proc.wait() == 127:
-                # command not found
-                os.remove(self.output)
-                self.failed = True
-                output_ts("%s failed" % self.command)
+            status = self.proc.wait()
             self.running = False
-        else:
-            self.outfile.write(line)
+        elif self.inst:
+            self.inst.write(line)
 
 def run_procs(procs):
     # launch all processes
@@ -996,22 +932,36 @@ def run_procs(procs):
         pipes = [p.proc.stdout for p in procs if p.running]
         if len(pipes) == 0:
             # all finished
-            return
+            break
 
         (i, o, x) = select(pipes, [], [], 1.0)
         now = int(time.time())
 
         # handle process output
-        for p in procs:
+        for p in [proc for proc in procs if proc.running]:
             if p.proc.stdout in i:
                 p.read_line()
 
             # handle timeout
             if p.running and now > p.timeout:
-                output_ts("%s timed out" % p.command)
+                output_ts("'%s' timed out" % ' '.join(p.command))
+                if p.inst:
+                    p.inst.write("\n** timeout **\n")
                 p.timed_out = True
-                p.outfile.write("\n** timeout **\n")
                 p.terminate()
+
+
+def pidof(name):
+    pids = []
+
+    for d in [p for p in os.listdir('/proc') if p.isdigit()]:
+        try:
+            if os.path.basename(os.readlink('/proc/%s/exe' % d)) == name:
+                pids.append(int(d))
+        except:
+            pass
+        
+    return pids
 
 
 if __name__ == "__main__":
@@ -1019,5 +969,4 @@ if __name__ == "__main__":
         sys.exit(main())
     except KeyboardInterrupt:
         print "\nInterrupted."
-        shutil.rmtree(TMP_DIR, ignore_errors = True)
         sys.exit(3)
