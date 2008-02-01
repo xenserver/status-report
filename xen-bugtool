@@ -384,7 +384,15 @@ def main(argv = None):
         print >>sys.stderr, opterr
         return 2
 
-    entries = caps.keys()
+    if  os.getenv('XEN_RT'):
+        entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
+                   CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, 
+                   CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, 
+                   CAP_SYSTEM_LOGS, CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_SUBPROCESS, 
+                   CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
+                   CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_YUM]
+    else:
+        entries = caps.keys()
 
     for (k, v) in options:
         if k == '--capabilities':
@@ -457,7 +465,8 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [DF, '-alTi'])
     for d in disk_list():
         cmd_output(CAP_DISK_INFO, [HDPARM, '-I', '/dev/%s' % d])
-    cmd_output(CAP_DISK_INFO, [ISCSIADM, '-m', 'node'])
+    if len(pidof('iscsid')) != 0:
+        cmd_output(CAP_DISK_INFO, [ISCSIADM, '-m', 'node'])
     cmd_output(CAP_DISK_INFO, [VGSCAN])
     cmd_output(CAP_DISK_INFO, [PVS])
     cmd_output(CAP_DISK_INFO, [VGS])
