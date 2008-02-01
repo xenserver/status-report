@@ -316,12 +316,14 @@ def func_output(cap, label, func):
         data[label] = {'cap': cap, 'func': func}
 
 def collect_data():
-    process_list = []
+    process_lists = {}
 
     for v in data.values():
         if v.has_key('cmd_args'):
             v['output'] = StringIO.StringIO()
-            process_list.append(ProcOutput(v['cmd_args'], caps[v['cap']][MAX_TIME], v['output']))
+            if not process_lists.has_key(v['cap']):
+                process_lists[v['cap']] = []
+            process_lists[v['cap']].append(ProcOutput(v['cmd_args'], caps[v['cap']][MAX_TIME], v['output']))
         elif v.has_key('filename') and v['filename'].startswith('/proc/'):
             # proc files must be read into memory
             try:
@@ -337,7 +339,7 @@ def collect_data():
                 s = str(e)
             v['output'] = StringIO.StringIO(s)
 
-    run_procs(process_list)
+    run_procs(process_lists.values())
 
     # filter passwords out of XAPI database
     if data.has_key('xapi-db.xml') and data['xapi-db.xml'].has_key('output'):
@@ -894,8 +896,10 @@ class ProcOutput:
         self.max_time = max_time
         self.inst = inst
         self.running = False
+        self.status = None
         self.timed_out = False
         self.failed = False
+        self.timeout = int(time.time()) + self.max_time
 
     def __del__(self):
         self.terminate()
@@ -906,7 +910,6 @@ class ProcOutput:
             self.proc = Popen(self.command, bufsize=1, stdin=dev_null, stdout=PIPE, stderr=dev_null)
             old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
             fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
-            self.timeout = int(time.time()) + self.max_time
             self.running = True
             self.failed = False
         except:
@@ -921,24 +924,35 @@ class ProcOutput:
             except:
                 pass
             self.running = False
+            self.status = SIGTERM
 
     def read_line(self):
         assert self.running
         line = self.proc.stdout.readline()
         if line == '':
             # process exited
-            status = self.proc.wait()
+            self.status = self.proc.wait()
             self.running = False
         elif self.inst:
             self.inst.write(line)
 
 def run_procs(procs):
-    # launch all processes
-    for p in procs:
-        p.run()
+    while True:
+        pipes = []
+        active_procs = []
 
-    while len(procs) > 0:
-        pipes = [p.proc.stdout for p in procs if p.running]
+        for pp in procs:
+            for p in pp:
+                if p.running:
+                    active_procs.append(p)
+                    pipes.append(p.proc.stdout)
+                    break
+                elif p.status == None and not p.failed and not p.timed_out:
+                    p.run()
+                    active_procs.append(p)
+                    pipes.append(p.proc.stdout)
+                    break
+
         if len(pipes) == 0:
             # all finished
             break
@@ -947,7 +961,7 @@ def run_procs(procs):
         now = int(time.time())
 
         # handle process output
-        for p in [proc for proc in procs if proc.running]:
+        for p in active_procs:
             if p.proc.stdout in i:
                 p.read_line()
 
