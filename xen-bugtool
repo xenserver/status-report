@@ -464,7 +464,7 @@ exclude those logs from the archive.
     # assemble potential data
     file_output(CAP_BOOT_LOADER, [GRUB_CONFIG])
     cmd_output(CAP_BOOT_LOADER, [LS, '-lR', '/boot'])
-    cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD])
+    cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD], label='vmlinuz-initrd.md5sum')
 
     cmd_output(CAP_DISK_INFO, [FDISK, '-l'])
     file_output(CAP_DISK_INFO, [PROC_PARTITIONS, PROC_MOUNTS])
