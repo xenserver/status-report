@@ -527,6 +527,7 @@ exclude those logs from the archive.
                     cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-S', p])
                     cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-k', p])
                     cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-i', p])
+                    cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-c', p])
             except:
                 pass
 
