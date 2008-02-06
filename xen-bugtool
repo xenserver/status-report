@@ -932,6 +932,7 @@ class ProcOutput:
                 os.kill(self.proc.pid, SIGTERM)
             except:
                 pass
+            self.proc = None
             self.running = False
             self.status = SIGTERM
 
@@ -941,6 +942,7 @@ class ProcOutput:
         if line == '':
             # process exited
             self.status = self.proc.wait()
+            self.proc = None
             self.running = False
         elif self.inst:
             self.inst.write(line)
