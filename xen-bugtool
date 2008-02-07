@@ -431,7 +431,8 @@ def main(argv = None):
         if k == '--outfd':
             output_fd = int(v)
             try:
-                os.fstat(output_fd)
+                old = fcntl.fcntl(output_fd, fcntl.F_GETFD)
+                fcntl.fcntl(output_fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             except:
                 print >>sys.stderr, "Invalid output file descriptor", output_fd
                 return 2
