@@ -41,6 +41,7 @@ import sys
 import tarfile
 import time
 import commands
+import pprint
 from xml.dom.minidom import parse, getDOMImplementation
 import zipfile
 from subprocess import Popen, PIPE
@@ -629,19 +630,22 @@ def clean_tapdisk_logs():
 def dump_xapi_subprocess_info():
     """Check which fds are open by xapi and its subprocesses to diagnose faults like CA-10543.
        Returns a string containing a pretty-printed pstree-like structure. """
-    pids = filter(lambda x: os.path.exists("/proc/" + x + "/cmdline"), os.listdir("/proc"))
+    pids = filter(lambda x: x.isdigit(), os.listdir("/proc"))
     def readlines(filename):
-    	f = open(filename, "r")
+        lines = ''
 	try:
-		return f.readlines()
-	finally:
-		f.close()
+            f = open(filename, "r")
+            lines = f.readlines()
+            f.close()
+        except:
+            pass
+        return lines
     def cmdline(pid):
     	all = readlines("/proc/" + pid + "/cmdline")
 	if all == []:
 	   return ""
 	else:
-	   return all[0]
+	   return all[0].replace('\x00', ' ')
     def parent(pid):
     	for i in readlines("/proc/" + pid + "/status"):
 	    if i.startswith("PPid:"):
@@ -656,7 +660,10 @@ def dump_xapi_subprocess_info():
 	result['children'] = children
 	fds = { }
 	for fd in os.listdir("/proc/" + pid + "/fd"):
-	    fds[fd] = os.readlink("/proc/" + pid + "/fd/" + fd)
+            try:
+                fds[fd] = os.readlink("/proc/" + pid + "/fd/" + fd)
+            except:
+                pass
 	result['fds'] = fds
 	return result	
     xapis = filter(lambda x: cmdline(x).startswith("/opt/xensource/bin/xapi"), pids)
