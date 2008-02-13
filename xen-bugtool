@@ -598,8 +598,11 @@ exclude those logs from the archive.
     collect_data()
 
     # create archive
-    if not os.path.exists(BUG_DIR):
-        os.makedirs(BUG_DIR)
+    if output_fd == -1 and not os.path.exists(BUG_DIR):
+        try:
+            os.makedirs(BUG_DIR)
+        except:
+            pass
 
     if output_type.startswith('tar'):
         make_tar(output_type, output_fd)
