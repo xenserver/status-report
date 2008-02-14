@@ -575,9 +575,14 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
 
     try:
+        def xen_dmesg(xc):
+            xc.send_debug_keys('q')
+            time.sleep(1)
+            return xc.readconsolering()
+
         xc = xen.lowlevel.xc.xc()
 
-        func_output(CAP_XEN_INFO, 'xen-dmesg', xc.readconsolering)
+        func_output(CAP_XEN_INFO, 'xen-dmesg', lambda: xen_dmesg(xc))
         func_output(CAP_XEN_INFO, 'physinfo', lambda: prettyDict(xc.physinfo()))
         func_output(CAP_XEN_INFO, 'xeninfo', lambda: prettyDict(xc.xeninfo()))
     except:
