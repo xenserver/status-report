@@ -108,6 +108,7 @@ HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
 X11_LOGS_DIR = VAR_LOG_DIR
 X11_LOGS_RE = re.compile(r'.*/Xorg\..*$')
+XAPI_DEBUG_DIR = '/var/xapi/debug'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
 XAPI_STATE_DB = '/var/xapi/state.db'
 XAPI_STATE_DB_GENERATION = '/var/xapi/state.db.generation'
@@ -218,6 +219,7 @@ CAP_PROCESS_LIST         = 'process-list'
 CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_X11_LOGS             = 'X11'
+CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
 CAP_XENSERVER_CONFIG     = 'xenserver-config'
 CAP_XENSERVER_DOMAINS    = 'xenserver-domains'
@@ -261,6 +263,7 @@ cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=10*KB,
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=64*KB)
 cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
+cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=KB,
     max_time=10)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=1*KB,
@@ -398,7 +401,7 @@ def main(argv = None):
         entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, 
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, 
-                   CAP_SYSTEM_LOGS, CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_SUBPROCESS, 
+                   CAP_SYSTEM_LOGS, CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_YUM]
     else:
@@ -564,6 +567,8 @@ exclude those logs from the archive.
         generate_tapdisk_logs()
 
     tree_output(CAP_X11_LOGS, X11_LOGS_DIR, X11_LOGS_RE)
+
+    tree_output(CAP_XAPI_DEBUG, XAPI_DEBUG_DIR)
 
     func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
 
@@ -837,6 +842,7 @@ def update_capabilities():
     update_cap_size(CAP_HOST_CRASHDUMP_DUMPS,
                     size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_RE,
                                 True))
+    update_cap_size(CAP_XAPI_DEBUG, size_of_dir(XAPI_DEBUG_DIR))
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(XENSERVER_LOGS))
 
 
