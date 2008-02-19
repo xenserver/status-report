@@ -150,6 +150,7 @@ LSPCI = '/sbin/lspci'
 LVS = '/usr/sbin/lvs'
 MD5SUM = '/usr/bin/md5sum'
 NETSTAT = '/bin/netstat'
+OMREPORT = '/opt/dell/srvadmin/oma/bin/omreport'
 PS = '/bin/ps'
 PVS = '/usr/sbin/pvs'
 ROUTE = '/sbin/route'
@@ -534,6 +535,18 @@ exclude those logs from the archive.
                 pass
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
+    if os.path.exists(OMREPORT):
+        cmd_output(CAP_OEM, [OMREPORT, 'system', 'alertlog'])
+        cmd_output(CAP_OEM, [OMREPORT, 'system', 'cmdlog'])
+        cmd_output(CAP_OEM, [OMREPORT, 'system', 'esmlog'])
+        cmd_output(CAP_OEM, [OMREPORT, 'system', 'postlog'])
+        cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'fans'])
+        cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'memory'])
+        cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'temps'])
+        cmd_output(CAP_OEM, [OMREPORT, 'storage', 'controller'])
+        for i in range(0, 3):
+            cmd_output(CAP_OEM, [OMREPORT, 'storage', 'adisk', 'controller=%d' % i])
+            cmd_output(CAP_OEM, [OMREPORT, 'storage', 'vdisk', 'controller=%d' % i])
 
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,wchan:25,args'], label='process-tree')
 
