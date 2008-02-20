@@ -916,7 +916,7 @@ def yes(prompt):
     return len(yn) == 0 or yn.lower()[0] == 'y'
 
 
-partition_re = re.compile(r'(.*[0-9]+$)|^x')
+partition_re = re.compile(r'(.*[0-9]+$)|(^xvd)')
 
 def disk_list():
     disks = []
