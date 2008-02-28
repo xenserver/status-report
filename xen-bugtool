@@ -598,7 +598,6 @@ exclude those logs from the archive.
             data = xc.readconsolering()
             xc.send_debug_keys('q')
             time.sleep(1)
-            data += xc.readconsolering()
             return data
 
         xc = xen.lowlevel.xc.xc()
