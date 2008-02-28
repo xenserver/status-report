@@ -395,7 +395,8 @@ def main(argv = None):
 
     inventory = readKeyValueFile('/etc/xensource-inventory')
     if inventory.has_key('OEM_BUILD_NUMBER'):
-        cap(CAP_OEM,                 PII_MAYBE,                 max_size=5*MB)
+        cap(CAP_OEM,                 PII_MAYBE,                 max_size=5*MB,
+            max_time=90)
 
     if  os.getenv('XEN_RT'):
         entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
