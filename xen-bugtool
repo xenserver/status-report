@@ -594,9 +594,11 @@ exclude those logs from the archive.
 
     try:
         def xen_dmesg(xc):
+            data = xc.readconsolering()
             xc.send_debug_keys('q')
             time.sleep(1)
-            return xc.readconsolering()
+            data += xc.readconsolering()
+            return data
 
         xc = xen.lowlevel.xc.xc()
 
