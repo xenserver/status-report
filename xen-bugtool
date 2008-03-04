@@ -259,7 +259,7 @@ cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
     max_time=30)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=10*KB,
-    max_time=10, checked=False)
+    max_time=10)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=64*KB)
 cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
