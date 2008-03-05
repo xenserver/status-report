@@ -709,10 +709,10 @@ def make_tar(suffix, output_fd):
     mode = 'w'
     if suffix == 'tar.bz2':
         mode = 'w:bz2'
-    date_string = time.strftime("%Y%m%d%H%M%S")
 
-    filename = "%s/bug-report-%s.%s" % (BUG_DIR, date_string, suffix)
-    subdir = "bug-report-%s" % date_string
+    subdir = os.getenv('XENRT_BUGTOOL_BASENAME', 
+                       "bug-report-%s" % time.strftime("%Y%m%d%H%M%S"))
+    filename = "%s/%s.%s" % (BUG_DIR, subdir, suffix)
 
     now = time.time()
 
@@ -752,10 +752,9 @@ def make_tar(suffix, output_fd):
 def make_zip():
     global SILENT_MODE, data
 
-    date_string = time.strftime("%Y%m%d%H%M%S")
-
-    filename = "%s/bug-report-%s.zip" % (BUG_DIR, date_string)
-    subdir = "bug-report-%s" % date_string
+    subdir = os.getenv('XENRT_BUGTOOL_BASENAME', 
+                       "bug-report-%s" % time.strftime("%Y%m%d%H%M%S"))
+    filename = "%s/%s.zip" % (BUG_DIR, subdir)
 
     # include inventory
     data['inventory.xml'] = {'cap': None, 'output': StringIO.StringIO(make_inventory(data, subdir))}
