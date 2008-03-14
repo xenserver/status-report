@@ -97,6 +97,8 @@ HOSTS_ALLOW = '/etc/hosts.allow'
 HOSTS_DENY = '/etc/hosts.deny'
 DHCP_LEASE_DIR = '/var/lib/dhclient'
 DELL_OMSA_LOGS = '/var/log/dell'
+DELL_CMA_LOG = '/var/spool/compaq/cma.log'
+DELL_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
 VAR_LOG_DIR = '/var/log/'
 XENSOURCE_INVENTORY = '/etc/xensource-inventory'
 VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
@@ -539,6 +541,7 @@ exclude those logs from the archive.
                 pass
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
+    file_output(CAP_OEM, [DELL_CMA_LOG, DELL_HPASMD_LOG])
     if os.path.exists(OMREPORT):
         cmd_output(CAP_OEM, [OMREPORT, 'system', 'alertlog'])
         cmd_output(CAP_OEM, [OMREPORT, 'system', 'cmdlog'])
