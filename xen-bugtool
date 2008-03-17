@@ -390,7 +390,7 @@ def main(argv = None):
     try:
         (options, params) = getopt.gnu_getopt(
             argv, 'sy', ['capabilities', 'silent', 'yestoall', 'entries=',
-                         'output=', 'outfd='])
+                         'output=', 'outfd=', 'all'])
     except getopt.GetoptError, opterr:
         print >>sys.stderr, opterr
         return 2
@@ -408,7 +408,7 @@ def main(argv = None):
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_YUM]
     else:
-        entries = caps.keys()
+        entries = [e for e in caps.keys() if caps[e][CHECKED]]
 
     for (k, v) in options:
         if k == '--capabilities':
@@ -444,6 +444,9 @@ def main(argv = None):
             except:
                 print >>sys.stderr, "Invalid output file descriptor", output_fd
                 return 2
+
+        elif k == '--all':
+            entries = caps.keys()
 
     if len(params) != 1:
         print >>sys.stderr, "Invalid additional arguments", str(params)
