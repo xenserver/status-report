@@ -159,6 +159,7 @@ PVS = '/usr/sbin/pvs'
 ROUTE = '/sbin/route'
 RPM = '/bin/rpm'
 SQLITE = '/usr/bin/sqlite3'
+STATIC_VDIS = '/opt/xensource/bin/static-vdis'
 SYSCTL = '/sbin/sysctl'
 UPTIME = '/usr/bin/uptime'
 VGS = '/usr/sbin/vgs'
@@ -581,6 +582,8 @@ exclude those logs from the archive.
 
     file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
+
+    cmd_output(CAP_XENSERVER_CONFIG, [STATIC_VDIS, 'list'])
 
     cmd_output(CAP_XENSERVER_DATABASES, [XAPI_DB_PROCESS, '-xmltostdout'], label='xapi-db.xml')
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
