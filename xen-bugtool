@@ -261,7 +261,7 @@ cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=80*KB,
     max_time=5)
-cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB)
+cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=10*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
@@ -570,7 +570,7 @@ exclude those logs from the archive.
 
     file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
-           [ 'syslog', 'messages', 'secure', 'debug', 'dmesg', 'boot.msg' ] +
+           [ 'syslog', 'messages', 'secure', 'debug', 'dmesg', 'boot.msg', 'xha.log' ] +
            [ 'messages.%d' % y for y in range(1,20)] +
            [ 'messages.%d.gz' % y for y in range(1,20)] +
            [ 'secure.%d' % y for y in range(1,20)] +
