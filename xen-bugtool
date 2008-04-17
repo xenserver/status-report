@@ -145,6 +145,7 @@ DMESG = '/bin/dmesg'
 DMIDECODE = '/usr/sbin/dmidecode'
 ETHTOOL = '/sbin/ethtool'
 FDISK = '/sbin/fdisk'
+HA_QUERY_LIVESET = '/opt/xensource/debug/debug_ha_query_liveset'
 HDPARM = '/sbin/hdparm'
 IFCONFIG = '/sbin/ifconfig'
 IPTABLES = '/sbin/iptables'
@@ -234,6 +235,7 @@ CAP_XENSERVER_DATABASES  = 'xenserver-databases'
 CAP_XENSERVER_INSTALL    = 'xenserver-install'
 CAP_XENSERVER_LOGS       = 'xenserver-logs'
 CAP_XEN_INFO             = 'xen-info'
+CAP_XHA_LIVESET          = 'xha-liveset'
 CAP_YUM                  = 'yum'
 
 KB = 1024
@@ -283,6 +285,8 @@ cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
 cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=50*KB)
 cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=50*MB)
 cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=5*KB,
+    max_time=10)
+cap(CAP_XHA_LIVESET,         PII_MAYBE,                 max_size=10*KB,
     max_time=10)
 cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=5*KB,
     max_time=30)
@@ -412,7 +416,7 @@ def main(argv = None):
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, 
                    CAP_SYSTEM_LOGS, CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
-                   CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_YUM]
+                   CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
         entries = [e for e in caps.keys() if caps[e][CHECKED]]
 
@@ -624,6 +628,8 @@ exclude those logs from the archive.
     except:
         pass
     file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
+
+    cmd_output(CAP_XHA_LIVESET, [HA_QUERY_LIVESET])
 
     file_output(CAP_YUM, [YUM_LOG])
     tree_output(CAP_YUM, YUM_REPOS_DIR)
