@@ -150,6 +150,7 @@ IFCONFIG = '/sbin/ifconfig'
 IPTABLES = '/sbin/iptables'
 ISCSIADM = '/sbin/iscsiadm'
 LIST_DOMAINS = '/opt/xensource/bin/list_domains'
+LOSETUP = '/sbin/losetup'
 LS = '/bin/ls'
 LSPCI = '/sbin/lspci'
 LVS = '/usr/sbin/lvs'
@@ -217,6 +218,7 @@ CAP_HDPARM_T             = 'hdparm-t'
 CAP_HOST_CRASHDUMP_DUMPS = 'host-crashdump-dumps'
 CAP_HOST_CRASHDUMP_LOGS  = 'host-crashdump-logs'
 CAP_KERNEL_INFO          = 'kernel-info'
+CAP_LOSETUP_A            = 'loopback-devices'
 CAP_NETWORK_CONFIG       = 'network-config'
 CAP_NETWORK_STATUS       = 'network-status'
 CAP_OEM                  = 'oem'
@@ -259,6 +261,7 @@ cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=80*KB,
     max_time=5)
+cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=10*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
@@ -405,7 +408,7 @@ def main(argv = None):
 
     if  os.getenv('XEN_RT'):
         entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
-                   CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, 
+                   CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, 
                    CAP_SYSTEM_LOGS, CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
@@ -517,6 +520,8 @@ exclude those logs from the archive.
                                   PROC_FILESYSTEMS, PROC_CMDLINE])
     cmd_output(CAP_KERNEL_INFO, [ZCAT, PROC_CONFIG], label='config')
     cmd_output(CAP_KERNEL_INFO, [SYSCTL, '-A'])
+
+    cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF])
