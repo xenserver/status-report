@@ -258,7 +258,7 @@ cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=18*KB,
     max_time=5)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=KB,
-    min_time=20, max_time=60, checked=False)
+    min_time=20, max_time=90, checked=False)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=80*KB,
@@ -270,7 +270,8 @@ cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
     max_time=30)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=10*KB,
     max_time=10)
-cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB)
+cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
+    max_time=5)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=64*KB)
 cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
