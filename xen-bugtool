@@ -834,11 +834,14 @@ def make_inventory(inventory, subdir):
     return document.toprettyxml()
 
 def inventory_entry(document, subdir, k, v):
-    el = document.createElement(INVENTORY_XML_ELEMENT)
-    el.setAttribute('capability', v['cap'])
-    el.setAttribute('filename', os.path.join(subdir, construct_filename(k, v)))
-    el.setAttribute('md5sum', md5sum(v))
-    document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(el)
+    try:
+        el = document.createElement(INVENTORY_XML_ELEMENT)
+        el.setAttribute('capability', v['cap'])
+        el.setAttribute('filename', os.path.join(subdir, construct_filename(k, v)))
+        el.setAttribute('md5sum', md5sum(v))
+        document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(el)
+    except:
+        pass
 
 
 def md5sum(d):
