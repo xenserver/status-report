@@ -129,6 +129,8 @@ XENSERVER_LOGS = \
       [ 'xen/xenstored-access.log.%d' % y for y in range(1,20)] +
       [ 'xen/xenstored-access.log.%d.gz' % y for y in range(1,20)]] \
       + glob.glob('/tmp/qemu.[0-9]*')
+XHA_LOG = '/var/log/xha.log'
+XHAD_CONF = '/etc/xensource/xhad.conf'
 YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 
@@ -216,6 +218,7 @@ CAP_DISK_INFO            = 'disk-info'
 CAP_FIRSTBOOT            = 'firstboot'
 CAP_HARDWARE_INFO        = 'hardware-info'
 CAP_HDPARM_T             = 'hdparm-t'
+CAP_HIGH_AVAILABILITY    = 'high-availability'
 CAP_HOST_CRASHDUMP_DUMPS = 'host-crashdump-dumps'
 CAP_HOST_CRASHDUMP_LOGS  = 'host-crashdump-logs'
 CAP_KERNEL_INFO          = 'kernel-info'
@@ -259,6 +262,7 @@ cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=18*KB,
     max_time=5)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=KB,
     min_time=20, max_time=90, checked=False)
+cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=80*KB,
@@ -414,7 +418,7 @@ def main(argv = None):
     if  os.getenv('XEN_RT'):
         entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
-                   CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, 
+                   CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_SYSTEM_LOGS, CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
@@ -516,6 +520,8 @@ exclude those logs from the archive.
     for d in disk_list():
         cmd_output(CAP_HDPARM_T, [HDPARM, '-tT', '/dev/%s' % d])
 
+    file_output(CAP_HIGH_AVAILABILITY, [XHAD_CONF, XHA_LOG])
+
     tree_output(CAP_HOST_CRASHDUMP_DUMPS, HOST_CRASHDUMPS_DIR,
                 HOST_CRASHDUMP_LOGS_RE, True)
     tree_output(CAP_HOST_CRASHDUMP_LOGS, HOST_CRASHDUMPS_DIR,
@@ -575,7 +581,7 @@ exclude those logs from the archive.
 
     file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
-           [ 'syslog', 'messages', 'secure', 'debug', 'dmesg', 'boot.msg', 'xha.log' ] +
+           [ 'syslog', 'messages', 'secure', 'debug', 'dmesg', 'boot.msg' ] +
            [ 'messages.%d' % y for y in range(1,20)] +
            [ 'messages.%d.gz' % y for y in range(1,20)] +
            [ 'secure.%d' % y for y in range(1,20)] +
