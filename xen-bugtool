@@ -142,6 +142,7 @@ YUM_REPOS_DIR = '/etc/yum.repos.d'
 ARP = '/sbin/arp'
 BRCTL = '/usr/sbin/brctl'
 CAT = '/bin/cat'
+CHKCONFIG = '/sbin/chkconfig'
 DF = '/bin/df'
 DMESG = '/bin/dmesg'
 DMIDECODE = '/usr/sbin/dmidecode'
@@ -228,6 +229,7 @@ CAP_NETWORK_STATUS       = 'network-status'
 CAP_OEM                  = 'oem'
 CAP_PROCESS_LIST         = 'process-list'
 CAP_SYSTEM_LOGS          = 'system-logs'
+CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_X11_LOGS             = 'X11'
 CAP_XAPI_DEBUG           = 'xapi-debug'
@@ -276,6 +278,8 @@ cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=10*KB,
     max_time=10)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
     max_time=5)
+cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=5*KB,
+    max_time=20)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=64*KB)
 cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
@@ -419,7 +423,8 @@ def main(argv = None):
         entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
-                   CAP_SYSTEM_LOGS, CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
+                   CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES,
+                   CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
@@ -588,6 +593,8 @@ exclude those logs from the archive.
            [ 'secure.%d.gz' % y for y in range(1,20)]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
+
+    cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
 
     if CAP_TAPDISK_LOGS in entries:
         generate_tapdisk_logs()
