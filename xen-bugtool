@@ -776,16 +776,18 @@ def make_tar(suffix, output_fd):
             tar_filename = os.path.join(subdir, construct_filename(k, v))
             ti = tarfile.TarInfo(tar_filename)
 
-            ti.mtime = now
             ti.uname = 'root'
             ti.gname = 'root'
 
             if v.has_key('output'):
+                ti.mtime = now
                 ti.size = len(v['output'].getvalue())
                 v['output'].seek(0)
                 tf.addfile(ti, v['output'])
             elif v.has_key('filename'):
-                ti.size = os.stat(v['filename']).st_size
+                s = os.stat(v['filename'])
+                ti.mtime = s.st_mtime
+                ti.size = s.st_size
                 tf.addfile(ti, file(v['filename']))
     finally:
         tf.close()
