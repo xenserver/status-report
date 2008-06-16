@@ -111,6 +111,8 @@ HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
 X11_LOGS_DIR = VAR_LOG_DIR
 X11_LOGS_RE = re.compile(r'.*/Xorg\..*$')
+X11_AUTH_DIR = '/root/'
+X11_AUTH_RE = re.compile(r'.*/\.((Xauthority)|(serverauth\.[0-9]*))$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
 XAPI_STATE_DB = '/var/xapi/state.db'
@@ -234,6 +236,7 @@ CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_X11_LOGS             = 'X11'
+CAP_X11_AUTH             = 'X11-auth'
 CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
 CAP_XENSERVER_CONFIG     = 'xenserver-config'
@@ -286,6 +289,7 @@ cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=5*KB,
     max_time=20)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=64*KB)
 cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
+cap(CAP_X11_AUTH,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=KB,
     max_time=10)
@@ -429,7 +433,7 @@ def main(argv = None):
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PERSISTENT_STATS,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES,
-                   CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
+                   CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
@@ -606,6 +610,7 @@ exclude those logs from the archive.
         generate_tapdisk_logs()
 
     tree_output(CAP_X11_LOGS, X11_LOGS_DIR, X11_LOGS_RE)
+    tree_output(CAP_X11_AUTH, X11_AUTH_DIR, X11_AUTH_RE)
 
     tree_output(CAP_XAPI_DEBUG, XAPI_DEBUG_DIR)
 
