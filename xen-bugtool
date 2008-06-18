@@ -677,6 +677,9 @@ exclude those logs from the archive.
         except:
             pass
 
+    if output_fd == -1:
+        output_ts('Creating output file')
+
     if output_type.startswith('tar'):
         make_tar(output_type, output_fd)
     else:
