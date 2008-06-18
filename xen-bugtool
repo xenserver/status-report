@@ -51,11 +51,13 @@ import md5
 import platform
 import fcntl
 import glob
+import urllib
 
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
 
 import xen.lowlevel.xc
+import XenAPI
 
 OS_RELEASE = platform.release()
 
@@ -117,7 +119,6 @@ XAPI_DEBUG_DIR = '/var/xapi/debug'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
 XAPI_STATE_DB = '/var/xapi/state.db'
 XAPI_STATE_DB_GENERATION = '/var/xapi/state.db.generation'
-RRD_DIR = '/var/xapi/blobs/rrds'
 
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
@@ -370,7 +371,7 @@ def collect_data():
                 pass
         elif v.has_key('func'):
             try:
-                s = v['func']()
+                s = v['func'](v['cap'])
             except Exception, e:
                 s = str(e)
             v['output'] = StringIO.StringIO(s)
@@ -591,7 +592,7 @@ exclude those logs from the archive.
             cmd_output(CAP_OEM, [OMREPORT, 'storage', 'adisk', 'controller=%d' % i])
             cmd_output(CAP_OEM, [OMREPORT, 'storage', 'vdisk', 'controller=%d' % i])
 
-    tree_output(CAP_PERSISTENT_STATS, RRD_DIR)
+    func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', dump_xapi_rrds)
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,wchan:25,args'], label='process-tree')
 
     file_output(CAP_SYSTEM_LOGS,
@@ -647,9 +648,9 @@ exclude those logs from the archive.
 
         xc = xen.lowlevel.xc.xc()
 
-        func_output(CAP_XEN_INFO, 'xen-dmesg', lambda: xen_dmesg(xc))
-        func_output(CAP_XEN_INFO, 'physinfo', lambda: prettyDict(xc.physinfo()))
-        func_output(CAP_XEN_INFO, 'xeninfo', lambda: prettyDict(xc.xeninfo()))
+        func_output(CAP_XEN_INFO, 'xen-dmesg', lambda x: xen_dmesg(xc))
+        func_output(CAP_XEN_INFO, 'physinfo', lambda x: prettyDict(xc.physinfo()))
+        func_output(CAP_XEN_INFO, 'xeninfo', lambda x: prettyDict(xc.xeninfo()))
     except:
         pass
     file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
@@ -702,7 +703,7 @@ def clean_tapdisk_logs():
         except :
             pass
 
-def dump_xapi_subprocess_info():
+def dump_xapi_subprocess_info(cap):
     """Check which fds are open by xapi and its subprocesses to diagnose faults like CA-10543.
        Returns a string containing a pretty-printed pstree-like structure. """
     pids = filter(lambda x: x.isdigit(), os.listdir("/proc"))
@@ -748,6 +749,30 @@ def dump_xapi_subprocess_info():
     	result[xapi] = pstree(xapi)
     pp = pprint.PrettyPrinter(indent=4)
     return pp.pformat(result)
+
+def dump_xapi_rrds(cap):
+    session = XenAPI.xapi_local()
+    session.xenapi.login_with_password('', '')
+
+    for vm in session.xenapi.VM.get_all_records().values():
+        if not vm['is_a_template']:
+            rrd = urllib.urlopen('http://localhost/vm_rrd?session_id=%s&uuid=%s' % (session._session, vm['uuid']))
+            try:
+                data['xapi_rrd-%s' % vm['uuid']] = {'cap': cap, 
+                                                    'output': StringIO.StringIO(rrd.read())}
+            finally:
+                rrd.close()
+
+    output = ''
+    rrd = urllib.urlopen('http://localhost/host_rrd?session_id=%s' % session._session)
+    try:
+        for line in rrd:
+            output += line
+    finally:
+        rrd.close()
+        
+    session.xenapi.session.logout()
+    return output
 
 
 def make_tar(suffix, output_fd):
