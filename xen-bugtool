@@ -778,22 +778,25 @@ def make_tar(suffix, output_fd):
 
     try:
         for (k, v) in data.items():
-            tar_filename = os.path.join(subdir, construct_filename(k, v))
-            ti = tarfile.TarInfo(tar_filename)
+            try:
+                tar_filename = os.path.join(subdir, construct_filename(k, v))
+                ti = tarfile.TarInfo(tar_filename)
 
-            ti.uname = 'root'
-            ti.gname = 'root'
+                ti.uname = 'root'
+                ti.gname = 'root'
 
-            if v.has_key('output'):
-                ti.mtime = now
-                ti.size = len(v['output'].getvalue())
-                v['output'].seek(0)
-                tf.addfile(ti, v['output'])
-            elif v.has_key('filename'):
-                s = os.stat(v['filename'])
-                ti.mtime = s.st_mtime
-                ti.size = s.st_size
-                tf.addfile(ti, file(v['filename']))
+                if v.has_key('output'):
+                    ti.mtime = now
+                    ti.size = len(v['output'].getvalue())
+                    v['output'].seek(0)
+                    tf.addfile(ti, v['output'])
+                elif v.has_key('filename'):
+                    s = os.stat(v['filename'])
+                    ti.mtime = s.st_mtime
+                    ti.size = s.st_size
+                    tf.addfile(ti, file(v['filename']))
+            except:
+                pass
     finally:
         tf.close()
 
@@ -822,16 +825,19 @@ def make_zip():
 
     try:
         for (k, v) in data.items():
-            dest = os.path.join(subdir, construct_filename(k, v))
-
-            if v.has_key('output'):
-                zf.writestr(dest, v['output'].getvalue())
-            else:
-                if os.stat(v['filename']).st_size < 50:
-                    compress_type = zipfile.ZIP_STORED
+            try:
+                dest = os.path.join(subdir, construct_filename(k, v))
+            
+                if v.has_key('output'):
+                    zf.writestr(dest, v['output'].getvalue())
                 else:
-                    compress_type = zipfile.ZIP_DEFLATED
-                zf.write(v['filename'], dest, compress_type)
+                    if os.stat(v['filename']).st_size < 50:
+                        compress_type = zipfile.ZIP_STORED
+                    else:
+                        compress_type = zipfile.ZIP_DEFLATED
+                    zf.write(v['filename'], dest, compress_type)
+            except:
+                pass
     finally:
         zf.close()
     
