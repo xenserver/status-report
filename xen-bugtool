@@ -92,6 +92,7 @@ PROC_XEN_BALLOON = '/proc/xen/balloon'
 SYSCONFIG_NETWORK = '/etc/sysconfig/network'
 SYSCONFIG_NETWORK_SCRIPTS = '/etc/sysconfig/network-scripts'
 IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
+ROUTE_RE = re.compile(r'^.*/route-.*')
 RESOLV_CONF = '/etc/resolv.conf'
 NSSWITCH_CONF = '/etc/nsswitch.conf'
 NTP_CONF = '/etc/ntp.conf'
@@ -550,6 +551,7 @@ exclude those logs from the archive.
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
+    tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF])
     file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
 
