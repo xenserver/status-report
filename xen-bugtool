@@ -94,6 +94,7 @@ SYSCONFIG_NETWORK_SCRIPTS = '/etc/sysconfig/network-scripts'
 IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
 ROUTE_RE = re.compile(r'^.*/route-.*')
 RESOLV_CONF = '/etc/resolv.conf'
+MULTIPATH_CONF = '/etc/multipath.conf'
 NSSWITCH_CONF = '/etc/nsswitch.conf'
 NTP_CONF = '/etc/ntp.conf'
 IPTABLES_CONFIG = '/etc/sysconfig/iptables-config'
@@ -164,6 +165,7 @@ LS = '/bin/ls'
 LSPCI = '/sbin/lspci'
 LVS = '/usr/sbin/lvs'
 MD5SUM = '/usr/bin/md5sum'
+MULTIPATH = '/sbin/multipath'
 NETSTAT = '/bin/netstat'
 OMREPORT = '/opt/dell/srvadmin/oma/bin/omreport'
 PS = '/bin/ps'
@@ -229,6 +231,7 @@ CAP_HOST_CRASHDUMP_DUMPS = 'host-crashdump-dumps'
 CAP_HOST_CRASHDUMP_LOGS  = 'host-crashdump-logs'
 CAP_KERNEL_INFO          = 'kernel-info'
 CAP_LOSETUP_A            = 'loopback-devices'
+CAP_MULTIPATH            = 'multipath'
 CAP_NETWORK_CONFIG       = 'network-config'
 CAP_NETWORK_STATUS       = 'network-status'
 CAP_OEM                  = 'oem'
@@ -277,6 +280,8 @@ cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=80*KB,
     max_time=5)
 cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
+cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=5*KB,
+    max_time=10)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=10*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
@@ -433,7 +438,7 @@ def main(argv = None):
         entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
-                   CAP_PERSISTENT_STATS,
+                   CAP_PERSISTENT_STATS, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES,
                    CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
@@ -549,6 +554,9 @@ exclude those logs from the archive.
     cmd_output(CAP_KERNEL_INFO, [SYSCTL, '-A'])
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
+
+    file_output(CAP_MULTIPATH, [MULTIPATH_CONF])
+    cmd_output(CAP_MULTIPATH, [MULTIPATH, '-ll'])
 
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
