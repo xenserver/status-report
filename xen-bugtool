@@ -89,6 +89,8 @@ PROC_CMDLINE = '/proc/cmdline'
 PROC_CONFIG = '/proc/config.gz'
 PROC_USB_DEV = '/proc/bus/usb/devices'
 PROC_XEN_BALLOON = '/proc/xen/balloon'
+BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
+BOOT_TIME_MEMORY = '/etc/xensource/boot_time_memory'
 SYSCONFIG_NETWORK = '/etc/sysconfig/network'
 SYSCONFIG_NETWORK_SCRIPTS = '/etc/sysconfig/network-scripts'
 IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
@@ -107,10 +109,15 @@ DELL_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
 VAR_LOG_DIR = '/var/log/'
 XENSOURCE_INVENTORY = '/etc/xensource-inventory'
 VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
-XAPI_LOCAL_DB = '/var/xapi/local.db'
+STATIC_VDIS = '/etc/xensource/static-vdis'
 POOL_CONF = '/etc/xensource/pool.conf'
+PTOKEN = '/etc/xensource/ptoken'
 XAPI_CONF = '/etc/xensource/xapi.conf'
 XAPI_SSL_CONF = '/etc/xensource/xapi-ssl.conf'
+DB_CONF = '/etc/xensource/db.conf'
+DB_CONF_RIO = '/etc/xensource/db.conf.rio'
+DB_DEFAULT_FIELDS = '/etc/xensource/db-default-fields'
+DB_SCHEMA_SQL = '/etc/xensource/db_schema.sql'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
 X11_LOGS_DIR = VAR_LOG_DIR
@@ -118,10 +125,7 @@ X11_LOGS_RE = re.compile(r'.*/Xorg\..*$')
 X11_AUTH_DIR = '/root/'
 X11_AUTH_RE = re.compile(r'.*/\.((Xauthority)|(serverauth\.[0-9]*))$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
-XAPI_LOCAL_DB = '/var/xapi/local.db'
-XAPI_STATE_DB = '/var/xapi/state.db'
-XAPI_STATE_DB_GENERATION = '/var/xapi/state.db.generation'
-
+LOG_CONF = '/etc/xensource/log.conf'
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
       ['xensource.log', 'SMlog'] +
@@ -536,6 +540,7 @@ exclude those logs from the archive.
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-n'])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-vv'])
     file_output(CAP_HARDWARE_INFO, [PROC_USB_DEV, PROC_SCSI])
+    file_output(CAP_HARDWARE_INFO, [BOOT_TIME_CPUS, BOOT_TIME_MEMORY])
     # FIXME IDE?
 
     for d in disk_list():
@@ -629,13 +634,15 @@ exclude those logs from the archive.
 
     func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
 
-    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
+    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS,
+                                       XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
 
     cmd_output(CAP_XENSERVER_CONFIG, [STATIC_VDIS, 'list'])
 
     cmd_output(CAP_XENSERVER_DATABASES, [XAPI_DB_PROCESS, '-xmltostdout'], label='xapi-db.xml')
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
+    file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
 
@@ -650,6 +657,7 @@ exclude those logs from the archive.
                     'vgscan-log']])
 
     file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
+    file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
 
     try:
         def xen_dmesg(xc):
