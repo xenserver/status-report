@@ -388,27 +388,6 @@ def collect_data():
 
     run_procs(process_lists.values())
 
-    # filter passwords out of XAPI database
-    if data.has_key('xapi-db.xml') and data['xapi-db.xml'].has_key('output'):
-        ih = data['xapi-db.xml']['output']
-        ih.seek(0)
-        oh = StringIO.StringIO()
-        remain = ''
-        rec = ih.read(2048)
-        while True:
-            p = rec.find('>')
-            if p != -1:
-                remain = rec[p+1:]
-                oh.write(re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', rec[:p+1]))
-            else:
-                remain = rec
-            new_data = ih.read(2048)
-            if new_data == '':
-                break
-            rec = remain + new_data
-        oh.write(remain)
-        data['xapi-db.xml']['output'] = oh
-
 
 def main(argv = None):
     global ANSWER_YES_TO_ALL, SILENT_MODE
@@ -640,7 +619,7 @@ exclude those logs from the archive.
 
     cmd_output(CAP_XENSERVER_CONFIG, [STATIC_VDIS, 'list'])
 
-    cmd_output(CAP_XENSERVER_DATABASES, [XAPI_DB_PROCESS, '-xmltostdout'], label='xapi-db.xml')
+    func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
 
@@ -795,6 +774,55 @@ def dump_xapi_rrds(cap):
         rrd.close()
         
     session.xenapi.session.logout()
+    return output
+
+def dump_filtered_xapi_db(cap):
+    db_file = None
+    format = None
+
+    # determine db format
+    c = open(DB_CONF, 'r')
+    try:
+        for line in c:
+            l = line.rstrip('\n')
+            if l.startswith('['):
+                db_file = l[1:-1]
+            if l.startswith('format:'):
+                format = l[7:]
+                break
+    finally:
+        c.close()
+
+    pipe = None
+    ih = None
+    output = ''
+
+    if format == 'sqlite':
+        pipe = Popen([XAPI_DB_PROCESS, '-xmltostdout'], bufsize=1, stdin=dev_null, 
+                     stdout=PIPE, stderr=dev_null)
+        ih = pipe.stdout
+    elif db_file:
+        ih = open(db_file, 'r')
+
+    if not ih:
+        return ''
+
+    remain = ''
+    rec = ih.read(2048)
+    while rec != '':
+        p = rec.find('>')
+        if p != -1:
+            remain = rec[p+1:]
+            output += re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', rec[:p+1])
+        else:
+            remain = rec
+        rec = remain + ih.read(2048)
+    output += remain
+
+    if pipe:
+        pipe.wait()
+    else:
+        ih.close()
     return output
 
 
