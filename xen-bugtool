@@ -613,15 +613,26 @@ exclude those logs from the archive.
 
     func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
 
-    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS,
-                                       XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
+    server_config = [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS, 
+                     XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY]
+    file_output(CAP_XENSERVER_CONFIG, server_config)
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
-
     cmd_output(CAP_XENSERVER_CONFIG, [STATIC_VDIS, 'list'])
+    try:
+        for d in os.listdir('/var/xsconfig'):
+            file_output(CAP_XENSERVER_CONFIG, [ '/var/xsconfig/%s%s' % (d, f) for f in server_config ])
+    except:
+        pass
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
-    file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
+    db_config = [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL]
+    file_output(CAP_XENSERVER_DATABASES, db_config)
+    try:
+        for d in os.listdir('/var/xsconfig'):
+            file_output(CAP_XENSERVER_CONFIG, [ '/var/xsconfig/%s%s' % (d, f) for f in db_config ])
+    except:
+        pass
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
 
