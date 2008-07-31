@@ -107,6 +107,7 @@ DELL_OMSA_LOGS = '/var/log/dell'
 DELL_CMA_LOG = '/var/spool/compaq/cma.log'
 DELL_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
 VAR_LOG_DIR = '/var/log/'
+VNCTERM_CORE_DIR = '/var/xen/vncterm'
 XENSOURCE_INVENTORY = '/etc/xensource-inventory'
 VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
 STATIC_VDIS = '/etc/xensource/static-vdis'
@@ -244,6 +245,7 @@ CAP_PERSISTENT_STATS     = 'persistent-stats'
 CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
+CAP_VNCTERM              = 'vncterm'
 CAP_X11_LOGS             = 'X11'
 CAP_X11_AUTH             = 'X11-auth'
 CAP_XAPI_DEBUG           = 'xapi-debug'
@@ -299,6 +301,7 @@ cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
 cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=5*KB,
     max_time=20)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=64*KB)
+cap(CAP_VNCTERM,             PII_MAYBE, checked = False)
 cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
 cap(CAP_X11_AUTH,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
@@ -309,7 +312,7 @@ cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=1*KB,
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=5)
 cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
-    max_time=20, mime=MIME_DATA)
+    max_time=20)
 cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=50*KB)
 cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=50*MB)
 cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=5*KB,
@@ -422,8 +425,8 @@ def main(argv = None):
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PERSISTENT_STATS, CAP_MULTIPATH,
-                   CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES,
-                   CAP_TAPDISK_LOGS, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
+                   CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
+                   CAP_VNCTERM, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
                    CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
@@ -605,6 +608,8 @@ exclude those logs from the archive.
 
     if CAP_TAPDISK_LOGS in entries:
         generate_tapdisk_logs()
+
+    tree_output(CAP_VNCTERM, VNCTERM_CORE_DIR)
 
     tree_output(CAP_X11_LOGS, X11_LOGS_DIR, X11_LOGS_RE)
     tree_output(CAP_X11_AUTH, X11_AUTH_DIR, X11_AUTH_RE)
