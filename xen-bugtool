@@ -109,6 +109,10 @@ DELL_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
 VAR_LOG_DIR = '/var/log/'
 VNCTERM_CORE_DIR = '/var/xen/vncterm'
 XENSOURCE_INVENTORY = '/etc/xensource-inventory'
+OEM_CONFIG_DIR = '/var/xsconfig'
+OEM_CONFIG_FILES_RE = re.compile(r'^.*xensource-inventory$')
+OEM_DB_FILES_RE = re.compile(r'^.*state\.db')
+INITIAL_INVENTORY = '/opt/xensource/etc/initial-inventory'
 VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
 STATIC_VDIS = '/etc/xensource/static-vdis'
 POOL_CONF = '/etc/xensource/pool.conf'
@@ -620,26 +624,17 @@ exclude those logs from the archive.
 
     func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
 
-    server_config = [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS, 
-                     XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY]
-    file_output(CAP_XENSERVER_CONFIG, server_config)
+    file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
+    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS, 
+                                       XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
     cmd_output(CAP_XENSERVER_CONFIG, [STATIC_VDIS, 'list'])
-    try:
-        for d in os.listdir('/var/xsconfig'):
-            file_output(CAP_XENSERVER_CONFIG, [ '/var/xsconfig/%s%s' % (d, f) for f in server_config ])
-    except:
-        pass
+    tree_output(CAP_XENSERVER_CONFIG, OEM_CONFIG_DIR, OEM_CONFIG_FILES_RE)
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
-    db_config = [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL]
-    file_output(CAP_XENSERVER_DATABASES, db_config)
-    try:
-        for d in os.listdir('/var/xsconfig'):
-            file_output(CAP_XENSERVER_CONFIG, [ '/var/xsconfig/%s%s' % (d, f) for f in db_config ])
-    except:
-        pass
+    file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
+    tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
 
