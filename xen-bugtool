@@ -90,6 +90,7 @@ PROC_CMDLINE = '/proc/cmdline'
 PROC_CONFIG = '/proc/config.gz'
 PROC_USB_DEV = '/proc/bus/usb/devices'
 PROC_XEN_BALLOON = '/proc/xen/balloon'
+PROC_NET_BONDING_DIR = '/proc/net/bonding'
 BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
 BOOT_TIME_MEMORY = '/etc/xensource/boot_time_memory'
 SYSCONFIG_NETWORK = '/etc/sysconfig/network'
@@ -580,6 +581,7 @@ exclude those logs from the archive.
                     cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-c', p])
             except:
                 pass
+    tree_output(CAP_NETWORK_STATUS, PROC_NET_BONDING_DIR)
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
     file_output(CAP_OEM, [DELL_CMA_LOG, DELL_HPASMD_LOG])
