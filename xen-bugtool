@@ -125,6 +125,7 @@ DB_CONF = '/etc/xensource/db.conf'
 DB_CONF_RIO = '/etc/xensource/db.conf.rio'
 DB_DEFAULT_FIELDS = '/etc/xensource/db-default-fields'
 DB_SCHEMA_SQL = '/etc/xensource/db_schema.sql'
+XENSTORED_DB = '/var/lib/xenstored/tdb'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'^.*\.log$')
 X11_LOGS_DIR = VAR_LOG_DIR
@@ -638,6 +639,7 @@ exclude those logs from the archive.
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
+    file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
 
