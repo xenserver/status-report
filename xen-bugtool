@@ -147,6 +147,7 @@ XENSERVER_LOGS = \
       [ 'xen/xenstored-access.log.%d' % y for y in range(1,20)] +
       [ 'xen/xenstored-access.log.%d.gz' % y for y in range(1,20)]] \
       + glob.glob('/tmp/qemu.[0-9]*')
+OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
 XHA_LOG = '/var/log/xha.log'
 XHAD_CONF = '/etc/xensource/xhad.conf'
 YUM_LOG = '/var/log/yum.log'
@@ -655,6 +656,7 @@ exclude those logs from the archive.
 
     file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
     file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
+    tree_output(CAP_XENSERVER_LOGS, OEM_CONFIG_DIR, OEM_XENSERVER_LOGS_RE)
 
     try:
         def xen_dmesg(xc):
