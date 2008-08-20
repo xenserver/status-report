@@ -94,6 +94,7 @@ PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
 BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
 BOOT_TIME_MEMORY = '/etc/xensource/boot_time_memory'
+SYSCONFIG_HWCONF = '/etc/sysconfig/hwconf'
 SYSCONFIG_NETWORK = '/etc/sysconfig/network'
 SYSCONFIG_NETWORK_SCRIPTS = '/etc/sysconfig/network-scripts'
 IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
@@ -533,6 +534,7 @@ exclude those logs from the archive.
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-vv'])
     file_output(CAP_HARDWARE_INFO, [PROC_USB_DEV, PROC_SCSI])
     file_output(CAP_HARDWARE_INFO, [BOOT_TIME_CPUS, BOOT_TIME_MEMORY])
+    file_output(CAP_HARDWARE_INFO, [SYSCONFIG_HWCONF])
     # FIXME IDE?
 
     for d in disk_list():
