@@ -288,7 +288,7 @@ cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=15*KB,
     max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=18*KB,
-    max_time=5)
+    max_time=20)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=KB,
     min_time=20, max_time=90, checked=False)
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
