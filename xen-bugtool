@@ -188,6 +188,7 @@ PS = '/bin/ps'
 PVS = '/usr/sbin/pvs'
 ROUTE = '/sbin/route'
 RPM = '/bin/rpm'
+SG_MAP = '/usr/bin/sg_map'
 SQLITE = '/usr/bin/sqlite3'
 STATIC_VDIS = '/opt/xensource/bin/static-vdis'
 SYSCTL = '/sbin/sysctl'
@@ -525,6 +526,11 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [VGS])
     cmd_output(CAP_DISK_INFO, [LVS])
     file_output(CAP_DISK_INFO, [LVM_CACHE])
+    cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/scsi_host'])
+    cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/scsi_disk'])
+    cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/fc_transport'])
+    cmd_output(CAP_DISK_INFO, [SG_MAP, '-x'])
+    func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
 
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
@@ -858,6 +864,31 @@ def dump_filtered_xapi_db(cap):
         ih.close()
     return output
 
+def dump_scsi_hosts(cap):
+    output = ''
+    l = os.listdir('/sys/class/scsi_host')
+    l.sort()
+
+    for h in l:
+        procname = ''
+        try:
+                f = open('/sys/class/scsi_host/%s/proc_name' % h)
+                procname = f.readline().strip("\n")
+                f.close()
+        except:
+                pass
+        modelname = None
+        try:
+                f = open('/sys/class/scsi_host/%s/model_name' % h)
+                modelname = f.readline().strip("\n")
+                f.close()
+        except:
+                pass
+
+        output += "%s:\n" %h
+        output += "    %s%s\n" % (procname, modelname and (" -> %s" % modelname) or '')
+
+    return output
 
 def make_tar(suffix, output_fd):
     global SILENT_MODE, data
