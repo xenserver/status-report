@@ -276,22 +276,25 @@ KB = 1024
 MB = 1024 * 1024
 
 caps = {}
-
+cap_sizes = {}
+unlimited_data = False
+dbg = False
 
 def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
         max_time=-1, mime=MIME_TEXT, checked=True):
     caps[key] = (key, pii, min_size, max_size, min_time, max_time, mime,
                  checked)
+    cap_sizes[key] = 0
 
 
 cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=5)
-cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=15*KB,
+cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=25*KB,
     max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
-cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=18*KB,
+cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=20*KB,
     max_time=20)
-cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=KB,
+cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
     min_time=20, max_time=90, checked=False)
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
@@ -299,10 +302,10 @@ cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=80*KB,
     max_time=5)
 cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
-cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=5*KB,
+cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=10*KB,
     max_time=10)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
-                                        min_size=0,     max_size=10*KB)
+                                        min_size=0,     max_size=20*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
     max_time=30)
 cap(CAP_PERSISTENT_STATS,    PII_MAYBE,                 max_size=50*MB,
@@ -318,21 +321,21 @@ cap(CAP_VNCTERM,             PII_MAYBE, checked = False)
 cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
 cap(CAP_X11_AUTH,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
-cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=KB,
+cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
-cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=1*KB,
+cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=50*KB,
     max_time=5)
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=5)
 cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
     max_time=20)
-cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=50*KB)
+cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=100*KB)
 cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=50*MB)
-cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=5*KB,
+cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=20*KB,
     max_time=10)
 cap(CAP_XHA_LIVESET,         PII_MAYBE,                 max_size=10*KB,
     max_time=10)
-cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=5*KB,
+cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=10*KB,
     max_time=30)
 
 ANSWER_YES_TO_ALL = False
@@ -361,7 +364,16 @@ def file_output(cap, path_list):
     if cap in entries:
         for p in path_list:
             if os.path.exists(p):
-                data[p] = {'cap': cap, 'filename': p}
+                if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
+                        cap_sizes[cap] < caps[cap][MAX_SIZE]:
+                    data[p] = {'cap': cap, 'filename': p}
+                    try:
+                        s = os.stat(p)
+                        cap_sizes[cap] += s.st_size
+                    except:
+                        pass
+                else:
+                    output("Omitting %s, size constraint of %s exceeded" % (p, cap))
 
 def tree_output(cap, path, pattern = None, negate = False):
     if cap in entries:
@@ -381,26 +393,38 @@ def func_output(cap, label, func):
 def collect_data():
     process_lists = {}
 
-    for v in data.values():
+    for (k, v) in data.items():
+        cap = v['cap']
         if v.has_key('cmd_args'):
             v['output'] = StringIO.StringIO()
-            if not process_lists.has_key(v['cap']):
-                process_lists[v['cap']] = []
-            process_lists[v['cap']].append(ProcOutput(v['cmd_args'], caps[v['cap']][MAX_TIME], v['output']))
+            if not process_lists.has_key(cap):
+                process_lists[cap] = []
+            process_lists[cap].append(ProcOutput(v['cmd_args'], caps[cap][MAX_TIME], v['output']))
         elif v.has_key('filename') and v['filename'].startswith('/proc/'):
             # proc files must be read into memory
             try:
                 f = open(v['filename'], 'r')
-                v['output'] = StringIO.StringIO(f.read())
+                s = f.read()
                 f.close()
+                if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
+                        cap_sizes[cap] < caps[cap][MAX_SIZE]:
+                    v['output'] = StringIO.StringIO(s)
+                    cap_sizes[cap] += len(s)
+                else:
+                    output("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
             except:
                 pass
         elif v.has_key('func'):
             try:
-                s = v['func'](v['cap'])
+                s = v['func'](cap)
             except Exception, e:
                 s = str(e)
-            v['output'] = StringIO.StringIO(s)
+            if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
+                    cap_sizes[cap] < caps[cap][MAX_SIZE]:
+                v['output'] = StringIO.StringIO(s)
+                cap_sizes[cap] += len(s)
+            else:
+                output("Omitting %s, size constraint of %s exceeded" % (k, cap))
 
     run_procs(process_lists.values())
 
@@ -423,7 +447,7 @@ def main(argv = None):
     try:
         (options, params) = getopt.gnu_getopt(
             argv, 'sy', ['capabilities', 'silent', 'yestoall', 'entries=',
-                         'output=', 'outfd=', 'all'])
+                         'output=', 'outfd=', 'all', 'unlimited', 'debug'])
     except getopt.GetoptError, opterr:
         print >>sys.stderr, opterr
         return 2
@@ -482,6 +506,10 @@ def main(argv = None):
 
         elif k == '--all':
             entries = caps.keys()
+        elif k == '--unlimited':
+            unlimited_data = True
+        elif k == '--debug':
+            dbg = True
 
     if len(params) != 1:
         print >>sys.stderr, "Invalid additional arguments", str(params)
@@ -718,6 +746,12 @@ exclude those logs from the archive.
         make_zip()
 
     clean_tapdisk_logs()
+
+    if dbg:
+        print >>sys.stderr, "Category sizes (max, actual):\n"
+        for c in caps.keys():
+            print >>sys.stderr, "    %s (%d, %d)" % (c, caps[c][MAX_SIZE], 
+                                                     cap_sizes[c])
     return 0
     
 def generate_tapdisk_logs():
