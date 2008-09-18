@@ -138,16 +138,10 @@ XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
-      ['xensource.log', 'SMlog'] +
-      ['xensource.log.%d' % y for y in range(1,21)] +
-      ['xensource.log.%d.gz' % y for y in range(1,21)] +
-      ['SMlog.%d' % y for y in range(1,20)] +
-      ['SMlog.%d.gz' % y for y in range(1,20)] +
-      ['xen/xenstored-trace.log',
-       'xen/xen-hotplug.log',
-       'xen/domain-builder-ng.log'] +
-      [ 'xen/xenstored-access.log.%d' % y for y in range(1,20)] +
-      [ 'xen/xenstored-access.log.%d.gz' % y for y in range(1,20)]] \
+      ['xensource.log', 'SMlog', 'xen/xenstored-trace.log', 'xen/xen-hotplug.log', 'xen/domain-builder-ng.log'] +
+      [ f % n for n in range(1, 20) \
+            for f in ['xensource.log.%d', 'xensource.log.%d.gz','SMlog.%d', 'SMlog.%d.gz',
+                      'xen/xenstored-access.log.%d', 'xen/xenstored-access.log.%d.gz' ]]] \
       + glob.glob('/tmp/qemu.[0-9]*')
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
 XHA_LOG = '/var/log/xha.log'
@@ -648,12 +642,9 @@ exclude those logs from the archive.
     file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
            [ 'syslog', 'messages', 'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg' ] +
-           [ 'messages.%d' % y for y in range(1,20)] +
-           [ 'messages.%d.gz' % y for y in range(1,20)] +
-           [ 'monitor_memory.log.%d' % y for y in range(1,20)] +
-           [ 'monitor_memory.log.%d.gz' % y for y in range(1,20)] +
-           [ 'secure.%d' % y for y in range(1,20)] +
-           [ 'secure.%d.gz' % y for y in range(1,20)]])
+           [ f % n for n in range(1, 20) \
+                 for f in ['messages.%d', 'messages.%d.gz', 'monitor_memory.log.%d', 
+                           'monitor_memory.log.%d.gz', 'secure.%d', 'secure.%d.gz']]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
 
@@ -696,8 +687,8 @@ exclude those logs from the archive.
                     'pci-log', 'processes-log', 'tty-log', 'uname-log',
                     'vgscan-log']])
 
-    file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
     file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
+    file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
     tree_output(CAP_XENSERVER_LOGS, OEM_CONFIG_DIR, OEM_XENSERVER_LOGS_RE)
 
     try:
