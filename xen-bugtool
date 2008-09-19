@@ -67,6 +67,7 @@ OS_RELEASE = platform.release()
 #
 
 BUG_DIR = "/var/opt/xen/bug-report"
+XAPI_BLOBS = '/var/xapi/blobs'
 GRUB_CONFIG = '/boot/grub/menu.lst'
 BOOT_KERNEL = '/boot/vmlinuz-' + OS_RELEASE
 BOOT_INITRD = '/boot/initrd-' + OS_RELEASE + '.img'
@@ -233,6 +234,7 @@ CAP_XML_ROOT = "system-status-capabilities"
 CAP_XML_ELEMENT = 'capability'
 
 
+CAP_BLOBS                = 'blobs'
 CAP_BOOT_LOADER          = 'boot-loader'
 CAP_DISK_INFO            = 'disk-info'
 CAP_FIRSTBOOT            = 'firstboot'
@@ -281,6 +283,7 @@ def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
     cap_sizes[key] = 0
 
 
+cap(CAP_BLOBS,               PII_NO,                    max_size=5*MB)
 cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=5)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=25*KB,
@@ -446,13 +449,13 @@ def main(argv = None):
         print >>sys.stderr, opterr
         return 2
 
-    inventory = readKeyValueFile('/etc/xensource-inventory')
+    inventory = readKeyValueFile(XENSOURCE_INVENTORY)
     if inventory.has_key('OEM_BUILD_NUMBER'):
         cap(CAP_OEM,                 PII_MAYBE,                 max_size=5*MB,
             max_time=90)
 
     if  os.getenv('XEN_RT'):
-        entries = [CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
+        entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PERSISTENT_STATS, CAP_MULTIPATH,
@@ -531,6 +534,8 @@ exclude those logs from the archive.
 ''' % output_type)
 
     # assemble potential data
+    tree_output(CAP_BLOBS, XAPI_BLOBS)
+
     file_output(CAP_BOOT_LOADER, [GRUB_CONFIG])
     cmd_output(CAP_BOOT_LOADER, [LS, '-lR', '/boot'])
     cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD], label='vmlinuz-initrd.md5sum')
