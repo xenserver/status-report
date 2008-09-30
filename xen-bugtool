@@ -635,7 +635,7 @@ exclude those logs from the archive.
         cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'memory'])
         cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'temps'])
         cmd_output(CAP_OEM, [OMREPORT, 'storage', 'controller'])
-        for i in range(0, 3):
+        for i in range(0, 4):
             cmd_output(CAP_OEM, [OMREPORT, 'storage', 'adisk', 'controller=%d' % i])
             cmd_output(CAP_OEM, [OMREPORT, 'storage', 'vdisk', 'controller=%d' % i])
     cmd_output(CAP_OEM, [FIND, '/.state', '-size', '+20k', '-exec', 'ls', '-l', '{}',';'], 
