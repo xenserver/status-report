@@ -186,7 +186,7 @@ ROUTE = '/sbin/route'
 RPM = '/bin/rpm'
 SG_MAP = '/usr/bin/sg_map'
 SQLITE = '/usr/bin/sqlite3'
-STATIC_VDIS = '/opt/xensource/bin/static-vdis'
+BIN_STATIC_VDIS = '/opt/xensource/bin/static-vdis'
 SYSCTL = '/sbin/sysctl'
 UPTIME = '/usr/bin/uptime'
 VGS = '/usr/sbin/vgs'
@@ -671,7 +671,7 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS, 
                                        XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
-    cmd_output(CAP_XENSERVER_CONFIG, [STATIC_VDIS, 'list'])
+    cmd_output(CAP_XENSERVER_CONFIG, [BIN_STATIC_VDIS, 'list'])
     tree_output(CAP_XENSERVER_CONFIG, OEM_CONFIG_DIR, OEM_CONFIG_FILES_RE)
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
