@@ -93,6 +93,7 @@ PROC_USB_DEV = '/proc/bus/usb/devices'
 PROC_XEN_BALLOON = '/proc/xen/balloon'
 PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
+PROC_DRIVER_CCISS_DIR = '/proc/driver/cciss'
 BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
 BOOT_TIME_MEMORY = '/etc/xensource/boot_time_memory'
 SYSCONFIG_HWCONF = '/etc/sysconfig/hwconf'
@@ -559,6 +560,7 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/fc_transport'])
     cmd_output(CAP_DISK_INFO, [SG_MAP, '-x'])
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
+    tree_output(CAP_DISK_INFO, PROC_DRIVER_CCISS_DIR)
 
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
