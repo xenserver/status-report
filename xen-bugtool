@@ -94,6 +94,8 @@ PROC_XEN_BALLOON = '/proc/xen/balloon'
 PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
 PROC_DRIVER_CCISS_DIR = '/proc/driver/cciss'
+MODPROBE_CONF = '/etc/modprobe.conf'
+MODPROBE_DIR = '/etc/modprobe.d'
 BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
 BOOT_TIME_MEMORY = '/etc/xensource/boot_time_memory'
 SYSCONFIG_HWCONF = '/etc/sysconfig/hwconf'
@@ -587,6 +589,8 @@ exclude those logs from the archive.
                                   PROC_FILESYSTEMS, PROC_CMDLINE])
     cmd_output(CAP_KERNEL_INFO, [ZCAT, PROC_CONFIG], label='config')
     cmd_output(CAP_KERNEL_INFO, [SYSCTL, '-A'])
+    file_output(CAP_KERNEL_INFO, [MODPROBE_CONF])
+    tree_output(CAP_KERNEL_INFO, MODPROBE_DIR)
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
