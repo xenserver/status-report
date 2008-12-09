@@ -142,7 +142,8 @@ XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
-      ['xensource.log', 'SMlog', 'xen/xenstored-trace.log', 'xen/xen-hotplug.log', 'xen/domain-builder-ng.log'] +
+      ['xensource.log', 'xenstored-access.log', 'SMlog', 'xen/xenstored-trace.log', 
+       'xen/xen-hotplug.log', 'xen/domain-builder-ng.log'] +
       [ f % n for n in range(1, 20) \
             for f in ['xensource.log.%d', 'xensource.log.%d.gz','SMlog.%d', 'SMlog.%d.gz',
                       'xenstored-access.log.%d', 'xenstored-access.log.%d.gz', \
