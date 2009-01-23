@@ -401,7 +401,7 @@ def collect_data():
     for (k, v) in data.items():
         cap = v['cap']
         if v.has_key('cmd_args'):
-            v['output'] = StringIO.StringIO()
+            v['output'] = StringIOmtime()
             if not process_lists.has_key(cap):
                 process_lists[cap] = []
             process_lists[cap].append(ProcOutput(v['cmd_args'], caps[cap][MAX_TIME], v['output']))
@@ -413,7 +413,7 @@ def collect_data():
                 f.close()
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                         cap_sizes[cap] < caps[cap][MAX_SIZE]:
-                    v['output'] = StringIO.StringIO(s)
+                    v['output'] = StringIOmtime(s)
                     cap_sizes[cap] += len(s)
                 else:
                     output("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
@@ -426,7 +426,7 @@ def collect_data():
                 s = str(e)
             if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                     cap_sizes[cap] < caps[cap][MAX_SIZE]:
-                v['output'] = StringIO.StringIO(s)
+                v['output'] = StringIOmtime(s)
                 cap_sizes[cap] += len(s)
             else:
                 output("Omitting %s, size constraint of %s exceeded" % (k, cap))
@@ -515,6 +515,7 @@ def main(argv = None):
             unlimited_data = True
         elif k == '--debug':
             dbg = True
+            ProcOutput.debug = True
 
     if len(params) != 1:
         print >>sys.stderr, "Invalid additional arguments", str(params)
@@ -848,7 +849,7 @@ def dump_xapi_rrds(cap):
                 (i, o, x) = select([rrd], [], [], 5.0)
                 if len(i) == 1:
                     data['xapi_rrd-%s' % vm['uuid']] = {'cap': cap, 
-                                                        'output': StringIO.StringIO(rrd.read())}
+                                                        'output': StringIOmtime(rrd.read())}
             finally:
                 rrd.close()
 
@@ -954,10 +955,8 @@ def make_tar(suffix, output_fd):
         subdir = "bug-report-%s" % time.strftime("%Y%m%d%H%M%S")
     filename = "%s/%s.%s" % (BUG_DIR, subdir, suffix)
 
-    now = time.time()
-
     # include inventory
-    data['inventory.xml'] = {'cap': None, 'output': StringIO.StringIO(make_inventory(data, subdir))}
+    data['inventory.xml'] = {'cap': None, 'output': StringIOmtime(make_inventory(data, subdir))}
 
     if output_fd == -1:
         tf = tarfile.open(filename, mode)
@@ -974,7 +973,7 @@ def make_tar(suffix, output_fd):
                 ti.gname = 'root'
 
                 if v.has_key('output'):
-                    ti.mtime = now
+                    ti.mtime = v['output'].mtime
                     ti.size = len(v['output'].getvalue())
                     v['output'].seek(0)
                     tf.addfile(ti, v['output'])
@@ -1007,7 +1006,7 @@ def make_zip():
     filename = "%s/%s.zip" % (BUG_DIR, subdir)
 
     # include inventory
-    data['inventory.xml'] = {'cap': None, 'output': StringIO.StringIO(make_inventory(data, subdir))}
+    data['inventory.xml'] = {'cap': None, 'output': StringIOmtime(make_inventory(data, subdir))}
 
     zf = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
 
@@ -1192,6 +1191,7 @@ def disk_list():
 
 
 class ProcOutput:
+    debug = False
     def __init__(self, command, max_time, inst=None):
         self.command = command
         self.max_time = max_time
@@ -1208,6 +1208,8 @@ class ProcOutput:
     def run(self):
         self.timed_out = False
         try:
+            if ProcOutput.debug:
+                output_ts("Starting '%s'" % ' '.join(self.command))
             self.proc = Popen(self.command, bufsize=1, stdin=dev_null, stdout=PIPE, stderr=dev_null)
             old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
             fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
@@ -1315,6 +1317,16 @@ def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_
         defs = [ (a, quotestrip(b)) for (a,b) in defs ]
 
     return dict(defs)
+
+
+class StringIOmtime(StringIO.StringIO):
+    def __init__(self, buf = ''):
+        StringIO.StringIO.__init__(self, buf)
+        self.mtime = time.time()
+
+    def write(self, s):
+        StringIO.StringIO.write(self, s)
+        self.mtime = time.time()
 
 
 if __name__ == "__main__":
