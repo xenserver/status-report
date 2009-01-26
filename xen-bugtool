@@ -900,13 +900,16 @@ def dump_filtered_xapi_db(cap):
     remain = ''
     rec = ih.read(2048)
     while rec != '':
-        p = rec.find('>')
-        if p != -1:
-            remain = rec[p+1:]
-            output += re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', rec[:p+1])
-        else:
-            remain = rec
-        rec = remain + ih.read(2048)
+        remain += rec
+        p = remain.find('>')
+        while p != -1:
+            str = remain[:p+1]
+            remain = remain[p+1:]
+            str = re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', str)
+            str = re.sub(r'(wlb_password=")[^"]+(")', r'\1REMOVED\2', str)
+            output += str
+            p = remain.find('>')
+        rec = ih.read(2048)
     output += remain
 
     if pipe:
