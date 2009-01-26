@@ -194,6 +194,7 @@ SG_MAP = '/usr/bin/sg_map'
 SQLITE = '/usr/bin/sqlite3'
 BIN_STATIC_VDIS = '/opt/xensource/bin/static-vdis'
 SYSCTL = '/sbin/sysctl'
+TC = '/sbin/tc'
 UPTIME = '/usr/bin/uptime'
 VGS = '/usr/sbin/vgs'
 VGSCAN = '/sbin/vgscan'
@@ -635,6 +636,7 @@ exclude those logs from the archive.
                 pass
     tree_output(CAP_NETWORK_STATUS, PROC_NET_BONDING_DIR)
     tree_output(CAP_NETWORK_STATUS, PROC_NET_VLAN_DIR)
+    cmd_output(CAP_NETWORK_STATUS, [TC, '-s', 'qdisc'])
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
     file_output(CAP_OEM, [DELL_CMA_LOG, DELL_HPASMD_LOG])
