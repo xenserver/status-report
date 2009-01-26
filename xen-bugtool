@@ -701,7 +701,7 @@ exclude those logs from the archive.
 
     file_output(CAP_XENSERVER_INSTALL,
                 [ VAR_LOG_DIR + x for x in 
-                  [ 'firstboot-SR-commands-log',
+                  [ 'firstboot-SR-commands-log', 'installer', 
                     'upgrade-commands-log', 'generate-iscsi-iqn-log']] +
                 [ '/root/' + x for x in 
                   [ 'blockdevs-log', 'cmdline-log', 'devcontents-log',
