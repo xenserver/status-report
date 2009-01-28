@@ -835,6 +835,7 @@ def dump_xapi_subprocess_info(cap):
     return pp.pformat(result)
 
 def dump_xapi_rrds(cap):
+    socket.setdefaulttimeout(5)
     session = XenAPI.xapi_local()
     session.xenapi.login_with_password('', '')
     this_host = session.xenapi.session.get_this_host(session._session)
@@ -842,7 +843,6 @@ def dump_xapi_rrds(cap):
     pool = session.xenapi.pool.get_all_records().values()[0]
     i_am_master = (this_host == pool['master'])
 
-    socket.setdefaulttimeout(5)
     for vm in session.xenapi.VM.get_all_records().values():
         if vm['is_a_template'] or vm['is_control_domain']:
             continue
