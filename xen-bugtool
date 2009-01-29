@@ -94,6 +94,7 @@ PROC_USB_DEV = '/proc/bus/usb/devices'
 PROC_XEN_BALLOON = '/proc/xen/balloon'
 PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
+PROC_NET_SOFTNET_STAT = '/proc/net/softnet_stat'
 PROC_DRIVER_CCISS_DIR = '/proc/driver/cciss'
 MODPROBE_CONF = '/etc/modprobe.conf'
 MODPROBE_DIR = '/etc/modprobe.d'
@@ -638,6 +639,7 @@ exclude those logs from the archive.
     tree_output(CAP_NETWORK_STATUS, PROC_NET_BONDING_DIR)
     tree_output(CAP_NETWORK_STATUS, PROC_NET_VLAN_DIR)
     cmd_output(CAP_NETWORK_STATUS, [TC, '-s', 'qdisc'])
+    file_output(CAP_NETWORK_STATUS, [PROC_NET_SOFTNET_STAT])
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
     file_output(CAP_OEM, [DELL_CMA_LOG, DELL_HPASMD_LOG])
