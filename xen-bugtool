@@ -68,6 +68,7 @@ OS_RELEASE = platform.release()
 
 BUG_DIR = "/var/opt/xen/bug-report"
 XAPI_BLOBS = '/var/xapi/blobs'
+EXTLINUX_CONFIG = '/boot/extlinux.conf'
 GRUB_CONFIG = '/boot/grub/menu.lst'
 BOOT_KERNEL = '/boot/vmlinuz-' + OS_RELEASE
 BOOT_INITRD = '/boot/initrd-' + OS_RELEASE + '.img'
@@ -546,7 +547,7 @@ exclude those logs from the archive.
     # assemble potential data
     tree_output(CAP_BLOBS, XAPI_BLOBS)
 
-    file_output(CAP_BOOT_LOADER, [GRUB_CONFIG])
+    file_output(CAP_BOOT_LOADER, [GRUB_CONFIG, EXTLINUX_CONFIG])
     cmd_output(CAP_BOOT_LOADER, [LS, '-lR', '/boot'])
     cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD], label='vmlinuz-initrd.md5sum')
 
