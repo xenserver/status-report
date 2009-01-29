@@ -297,7 +297,7 @@ cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=25*KB,
     max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
-cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=20*KB,
+cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=30*KB,
     max_time=20)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
     min_time=20, max_time=90, checked=False)
