@@ -114,8 +114,8 @@ HOSTS_ALLOW = '/etc/hosts.allow'
 HOSTS_DENY = '/etc/hosts.deny'
 DHCP_LEASE_DIR = '/var/lib/dhclient'
 DELL_OMSA_LOGS = '/var/log/dell'
-DELL_CMA_LOG = '/var/spool/compaq/cma.log'
-DELL_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
+HP_CMA_LOG = '/var/spool/compaq/cma.log'
+HP_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
 VAR_LOG_DIR = '/var/log/'
 VNCTERM_CORE_DIR = '/var/xen/vncterm'
 XENSOURCE_INVENTORY = '/etc/xensource-inventory'
@@ -642,7 +642,7 @@ exclude those logs from the archive.
     file_output(CAP_NETWORK_STATUS, [PROC_NET_SOFTNET_STAT])
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
-    file_output(CAP_OEM, [DELL_CMA_LOG, DELL_HPASMD_LOG])
+    file_output(CAP_OEM, [HP_CMA_LOG, HP_HPASMD_LOG])
     if os.path.exists(OMREPORT):
         cmd_output(CAP_OEM, [OMREPORT, 'system', 'alertlog'])
         cmd_output(CAP_OEM, [OMREPORT, 'system', 'cmdlog'])
