@@ -748,6 +748,17 @@ exclude those logs from the archive.
     output_ts('Running commands to collect data')
     collect_data()
 
+    subdir = os.getenv('XENRT_BUGTOOL_BASENAME')
+    if subdir:
+        subdir = os.path.basename(subdir)
+        if subdir == '..' or subdir == '.':
+            subdir = None
+    if not subdir:
+        subdir = "bug-report-%s" % time.strftime("%Y%m%d%H%M%S")
+
+    # include inventory
+    data['inventory.xml'] = {'cap': None, 'output': StringIOmtime(make_inventory(data, subdir))}
+
     # create archive
     if output_fd == -1 and not os.path.exists(BUG_DIR):
         try:
@@ -759,9 +770,9 @@ exclude those logs from the archive.
         output_ts('Creating output file')
 
     if output_type.startswith('tar'):
-        make_tar(output_type, output_fd)
+        make_tar(subdir, output_type, output_fd)
     else:
-        make_zip()
+        make_zip(subdir)
 
     clean_tapdisk_logs()
 
@@ -948,24 +959,13 @@ def dump_scsi_hosts(cap):
 
     return output
 
-def make_tar(suffix, output_fd):
+def make_tar(subdir, suffix, output_fd):
     global SILENT_MODE, data
 
     mode = 'w'
     if suffix == 'tar.bz2':
         mode = 'w:bz2'
-
-    subdir = os.getenv('XENRT_BUGTOOL_BASENAME')
-    if subdir:
-        subdir = os.path.basename(subdir)
-        if subdir == '..' or subdir == '.':
-            subdir = None
-    if not subdir:
-        subdir = "bug-report-%s" % time.strftime("%Y%m%d%H%M%S")
     filename = "%s/%s.%s" % (BUG_DIR, subdir, suffix)
-
-    # include inventory
-    data['inventory.xml'] = {'cap': None, 'output': StringIOmtime(make_inventory(data, subdir))}
 
     if output_fd == -1:
         tf = tarfile.open(filename, mode)
@@ -1002,21 +1002,10 @@ def make_tar(suffix, output_fd):
             print filename
 
 
-def make_zip():
+def make_zip(subdir):
     global SILENT_MODE, data
 
-    subdir = os.getenv('XENRT_BUGTOOL_BASENAME')
-    if subdir:
-        subdir = os.path.basename(subdir)
-        if subdir == '..' or subdir == '.':
-            subdir = None
-    if not subdir:
-        subdir = "bug-report-%s" % time.strftime("%Y%m%d%H%M%S")
     filename = "%s/%s.zip" % (BUG_DIR, subdir)
-
-    # include inventory
-    data['inventory.xml'] = {'cap': None, 'output': StringIOmtime(make_inventory(data, subdir))}
-
     zf = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
 
     try:
