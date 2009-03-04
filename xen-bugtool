@@ -201,6 +201,7 @@ UPTIME = '/usr/bin/uptime'
 VGS = '/usr/sbin/vgs'
 VGSCAN = '/sbin/vgscan'
 XAPI_DB_PROCESS = '/opt/xensource/bin/xapi-db-process'
+XE = '/opt/xensource/bin/xe'
 XENSTORE_LS = '/usr/bin/xenstore-ls'
 ZCAT = '/bin/zcat'
 
@@ -360,13 +361,13 @@ def output(x):
 def output_ts(x):
     output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
 
-def cmd_output(cap, args, label = None):
+def cmd_output(cap, args, label = None, filter = None):
     if cap in entries:
         a = [aa for aa in args]
         a[0] = os.path.basename(a[0])
         if not label:
             label = ' '.join(a)
-        data[label] = {'cap': cap, 'cmd_args': args}
+        data[label] = {'cap': cap, 'cmd_args': args, 'filter': filter}
 
 def file_output(cap, path_list):
     if cap in entries:
@@ -407,7 +408,7 @@ def collect_data():
             v['output'] = StringIOmtime()
             if not process_lists.has_key(cap):
                 process_lists[cap] = []
-            process_lists[cap].append(ProcOutput(v['cmd_args'], caps[cap][MAX_TIME], v['output']))
+            process_lists[cap].append(ProcOutput(v['cmd_args'], caps[cap][MAX_TIME], v['output'], v['filter']))
         elif v.has_key('filename') and v['filename'].startswith('/proc/'):
             # proc files must be read into memory
             try:
@@ -699,6 +700,8 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
     file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
+    cmd_output(CAP_XENSERVER_DATABASES, [XE, 'pool-dump-database', 'file-name='], 
+               label="xapi-db-dumped.xml", filter=filter_db_pii)
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
 
@@ -881,6 +884,11 @@ def dump_xapi_rrds(cap):
     session.xenapi.session.logout()
     return output
 
+def filter_db_pii(str):
+    str = re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', str)
+    str = re.sub(r'(wlb_password=")[^"]+(")', r'\1REMOVED\2', str)
+    return str
+
 def dump_filtered_xapi_db(cap):
     db_file = None
     format = None
@@ -920,9 +928,7 @@ def dump_filtered_xapi_db(cap):
         while p != -1:
             str = remain[:p+1]
             remain = remain[p+1:]
-            str = re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', str)
-            str = re.sub(r'(wlb_password=")[^"]+(")', r'\1REMOVED\2', str)
-            output += str
+            output += filter_db_pii(str)
             p = remain.find('>')
         rec = ih.read(2048)
     output += remain
@@ -1190,7 +1196,7 @@ def disk_list():
 
 class ProcOutput:
     debug = False
-    def __init__(self, command, max_time, inst=None):
+    def __init__(self, command, max_time, inst=None, filter=None):
         self.command = command
         self.max_time = max_time
         self.inst = inst
@@ -1199,6 +1205,7 @@ class ProcOutput:
         self.timed_out = False
         self.failed = False
         self.timeout = int(time.time()) + self.max_time
+        self.filter = filter
 
     def __del__(self):
         self.terminate()
@@ -1236,8 +1243,11 @@ class ProcOutput:
             self.status = self.proc.wait()
             self.proc = None
             self.running = False
-        elif self.inst:
-            self.inst.write(line)
+        else:
+            if self.filter:
+                line = self.filter(line)
+            if self.inst:
+                self.inst.write(line)
 
 def run_procs(procs):
     while True:
