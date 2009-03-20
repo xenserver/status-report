@@ -233,6 +233,7 @@ MIN_TIME = 4
 MAX_TIME = 5
 MIME     = 6
 CHECKED  = 7
+HIDDEN   = 8
 
 MIME_DATA = 'application/data'
 MIME_TEXT = 'text/plain'
@@ -288,9 +289,9 @@ unlimited_data = False
 dbg = False
 
 def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
-        max_time=-1, mime=MIME_TEXT, checked=True):
+        max_time=-1, mime=MIME_TEXT, checked=True, hidden=False):
     caps[key] = (key, pii, min_size, max_size, min_time, max_time, mime,
-                 checked)
+                 checked, hidden)
     cap_sizes[key] = 0
 
 
@@ -303,7 +304,7 @@ cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=30*KB,
     max_time=20)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
-    min_time=20, max_time=90, checked=False)
+    min_time=20, max_time=90, checked=False, hidden=True)
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
@@ -1148,7 +1149,7 @@ def size_of(f, pattern, negate):
 def print_capabilities():
     document = getDOMImplementation().createDocument(
         "ns", CAP_XML_ROOT, None)
-    map(lambda key: capability(document, key), caps.keys())
+    map(lambda key: capability(document, key), [k for k in caps.keys() if not caps[k][HIDDEN]])
     print document.toprettyxml()
 
 def capability(document, key):
