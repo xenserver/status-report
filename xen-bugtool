@@ -185,6 +185,7 @@ LS = '/bin/ls'
 LSPCI = '/sbin/lspci'
 LVS = '/usr/sbin/lvs'
 MD5SUM = '/usr/bin/md5sum'
+MODINFO = '/sbin/modinfo'
 MULTIPATH = '/sbin/multipath'
 NETSTAT = '/bin/netstat'
 OMREPORT = '/opt/dell/srvadmin/oma/bin/omreport'
@@ -308,7 +309,7 @@ cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
-cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=80*KB,
+cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=120*KB,
     max_time=5)
 cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
 cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=10*KB,
@@ -602,6 +603,7 @@ exclude those logs from the archive.
     cmd_output(CAP_KERNEL_INFO, [SYSCTL, '-A'])
     file_output(CAP_KERNEL_INFO, [MODPROBE_CONF])
     tree_output(CAP_KERNEL_INFO, MODPROBE_DIR)
+    func_output(CAP_KERNEL_INFO, 'modinfo', module_info)
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
@@ -965,6 +967,20 @@ def dump_scsi_hosts(cap):
         output += "    %s%s\n" % (procname, modelname and (" -> %s" % modelname) or '')
 
     return output
+
+def module_info(cap):
+    output = StringIO.StringIO()
+    modules = open(PROC_MODULES, 'r')
+    procs = []
+
+    for line in modules:
+        module = line.split()[0]
+        procs.append(ProcOutput([MODINFO, module], caps[cap][MAX_TIME], output))
+    modules.close()
+
+    run_procs([procs])
+
+    return output.getvalue()
 
 def make_tar(subdir, suffix, output_fd):
     global SILENT_MODE, data
