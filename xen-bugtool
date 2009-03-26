@@ -142,6 +142,7 @@ X11_AUTH_DIR = '/root/'
 X11_AUTH_RE = re.compile(r'.*/\.((Xauthority)|(serverauth\.[0-9]*))$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
+INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
       ['xensource.log', 'xenstored-access.log', 'SMlog', 'xen/xenstored-trace.log', 
@@ -340,7 +341,7 @@ cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=5)
 cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
     max_time=20)
-cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=100*KB)
+cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=300*KB)
 cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=50*MB)
 cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=20*KB,
     max_time=10)
@@ -718,6 +719,7 @@ exclude those logs from the archive.
                     'dmesg-log', 'install-log', 'lspci-log', 'modules-log',
                     'pci-log', 'processes-log', 'tty-log', 'uname-log',
                     'vgscan-log']])
+    tree_output(CAP_XENSERVER_INSTALL, INSTALLED_REPOS_DIR)
 
     file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
     file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
