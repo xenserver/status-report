@@ -53,6 +53,7 @@ import fcntl
 import glob
 import urllib
 import socket
+import base64
 
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
@@ -169,6 +170,7 @@ BIOSDEVNAME = '/sbin/biosdevname'
 BRCTL = '/usr/sbin/brctl'
 CAT = '/bin/cat'
 CHKCONFIG = '/sbin/chkconfig'
+CSL = '/opt/Citrix/StorageLink/v1.0/bin/csl'
 DF = '/bin/df'
 DMESG = '/bin/dmesg'
 DMIDECODE = '/usr/sbin/dmidecode'
@@ -249,6 +251,7 @@ CAP_XML_ELEMENT = 'capability'
 
 CAP_BLOBS                = 'blobs'
 CAP_BOOT_LOADER          = 'boot-loader'
+CAP_CVSM                 = 'CVSM'
 CAP_DISK_INFO            = 'disk-info'
 CAP_FIRSTBOOT            = 'firstboot'
 CAP_HARDWARE_INFO        = 'hardware-info'
@@ -300,6 +303,8 @@ def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
 cap(CAP_BLOBS,               PII_NO,                    max_size=5*MB)
 cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=5)
+cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
+    max_time=60)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=25*KB,
     max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
@@ -555,6 +560,8 @@ exclude those logs from the archive.
     file_output(CAP_BOOT_LOADER, [GRUB_CONFIG, EXTLINUX_CONFIG])
     cmd_output(CAP_BOOT_LOADER, [LS, '-lR', '/boot'])
     cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD], label='vmlinuz-initrd.md5sum')
+
+    func_output(CAP_CVSM, 'csl_logs', csl_logs)
 
     cmd_output(CAP_DISK_INFO, [FDISK, '-l'])
     file_output(CAP_DISK_INFO, [PROC_PARTITIONS, PROC_MOUNTS])
@@ -979,6 +986,56 @@ def module_info(cap):
         module = line.split()[0]
         procs.append(ProcOutput([MODINFO, module], caps[cap][MAX_TIME], output))
     modules.close()
+
+    run_procs([procs])
+
+    return output.getvalue()
+
+def csl_logs(cap):
+    socket.setdefaulttimeout(5)
+    session = XenAPI.xapi_local()
+    session.xenapi.login_with_password('', '')
+    this_host = session.xenapi.session.get_this_host(session._session)
+    # better way to find pool master?
+    pool = session.xenapi.pool.get_all_records().values()[0]
+    i_am_master = (this_host == pool['master'])
+
+    output = StringIO.StringIO()
+    procs = []
+
+    def rotate_string(x, n):
+        transtbl = ""
+        for a in range(0, 256):
+            transtbl = transtbl + chr(a)
+        transtbl = transtbl[n:] + transtbl[0:n]
+        return x.translate(transtbl)
+
+    def _untransform_string(str, remove_trailing_nulls=False):
+        """De-obfuscate string. To cope with an obfuscation bug in Rio, the argument
+        remove_trailing_nulls should be set to True"""
+        tmp = base64.decodestring(str)
+        if remove_trailing_nulls:
+            tmp = tmp.rstrip('\x00')
+        return rotate_string(tmp, -13)
+
+    for pbd in session.xenapi.PBD.get_all_records().values():
+        if pbd.has_key('device_config') and pbd['device_config'].has_key('target'):
+            sr = session.xenapi.SR.get_record(pbd['SR'])
+            if sr.has_key('type') and sr['type'] == 'cslg':
+                if sr['shared'] and pbd['host'] != this_host and not i_am_master:
+                    continue
+                
+                dev_cfg = pbd['device_config']
+                server = "server=%s" % socket.gethostbyname(dev_cfg['target'])
+                if dev_cfg.has_key('port'):
+                    server += ':' + dev_cfg['port']
+                if dev_cfg.has_key('username'):
+                    server += ',' + dev_cfg['username']
+                if dev_cfg.has_key('password_transformed'):
+                    server += ',' + _untransform_string(dev_cfg['password_transformed'])
+                procs.append(ProcOutput([CSL, server, 'srv-log-get'], caps[cap][MAX_TIME], output))
+
+    session.xenapi.session.logout()
 
     run_procs([procs])
 
