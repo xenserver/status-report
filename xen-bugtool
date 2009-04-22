@@ -876,7 +876,7 @@ def dump_xapi_rrds(cap):
     i_am_master = (this_host == pool['master'])
 
     for vm in session.xenapi.VM.get_all_records().values():
-        if vm['is_a_template'] or vm['is_control_domain']:
+        if vm['is_a_template']:
             continue
         if vm['resident_on'] == this_host or (i_am_master and vm['power_state'] in ['Suspended', 'Halted']):
             rrd = urllib.urlopen('http://localhost/vm_rrd?session_id=%s&uuid=%s' % (session._session, vm['uuid']))
