@@ -159,6 +159,7 @@ XHAD_CONF = '/etc/xensource/xhad.conf'
 YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 PAM_DIR = '/etc/pam.d'
+FIST_RE = re.compile(r'.*/fist_')
 
 
 #
@@ -277,6 +278,7 @@ CAP_X11_LOGS             = 'X11'
 CAP_X11_AUTH             = 'X11-auth'
 CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
+CAP_XENRT                = 'xenrt'
 CAP_XENSERVER_CONFIG     = 'xenserver-config'
 CAP_XENSERVER_DOMAINS    = 'xenserver-domains'
 CAP_XENSERVER_DATABASES  = 'xenserver-databases'
@@ -341,6 +343,8 @@ cap(CAP_X11_AUTH,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
+cap(CAP_XENRT,               PII_NO,    min_size=0,     max_size=5*KB,
+    checked=False, hidden=True)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=50*KB,
     max_time=5)
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
@@ -482,7 +486,7 @@ def main(argv = None):
                    CAP_PAM, CAP_PERSISTENT_STATS, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
                    CAP_VNCTERM, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
-                   CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
+                   CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
         entries = [e for e in caps.keys() if caps[e][CHECKED]]
@@ -699,6 +703,8 @@ exclude those logs from the archive.
     tree_output(CAP_XAPI_DEBUG, XAPI_DEBUG_DIR)
 
     func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
+
+    tree_output(CAP_XENRT, '/tmp', FIST_RE)
 
     file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
     file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS, 
