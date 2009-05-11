@@ -144,6 +144,7 @@ X11_AUTH_RE = re.compile(r'.*/\.((Xauthority)|(serverauth\.[0-9]*))$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
+PATCH_APPLIED_DIR = '/var/patch/applied'
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
       ['xensource.log', 'xenstored-access.log', 'SMlog', 'xen/xenstored-trace.log', 
@@ -736,6 +737,7 @@ exclude those logs from the archive.
                     'pci-log', 'processes-log', 'tty-log', 'uname-log',
                     'vgscan-log']])
     tree_output(CAP_XENSERVER_INSTALL, INSTALLED_REPOS_DIR)
+    tree_output(CAP_XENSERVER_INSTALL, PATCH_APPLIED_DIR)
 
     file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
     file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
