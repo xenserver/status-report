@@ -176,6 +176,7 @@ CSL = '/opt/Citrix/StorageLink/bin/csl'
 DF = '/bin/df'
 DMESG = '/bin/dmesg'
 DMIDECODE = '/usr/sbin/dmidecode'
+DMSETUP = '/sbin/dmsetup'
 ETHTOOL = '/sbin/ethtool'
 FDISK = '/sbin/fdisk'
 FIND = '/usr/bin/find'
@@ -191,7 +192,7 @@ LSPCI = '/sbin/lspci'
 LVS = '/usr/sbin/lvs'
 MD5SUM = '/usr/bin/md5sum'
 MODINFO = '/sbin/modinfo'
-MULTIPATH = '/sbin/multipath'
+MULTIPATHD = '/sbin/multipathd'
 NETSTAT = '/bin/netstat'
 OMREPORT = '/opt/dell/srvadmin/oma/bin/omreport'
 PS = '/bin/ps'
@@ -625,7 +626,8 @@ exclude those logs from the archive.
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
     file_output(CAP_MULTIPATH, [MULTIPATH_CONF])
-    cmd_output(CAP_MULTIPATH, [MULTIPATH, '-ll'])
+    cmd_output(CAP_MULTIPATH, [DMSETUP, 'status'])
+    func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
 
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
@@ -1056,6 +1058,13 @@ def csl_logs(cap):
     run_procs([procs])
 
     return output.getvalue()
+
+def multipathd_topology(cap):
+    pipe = Popen([MULTIPATHD, '-k'], bufsize=1, stdin=PIPE, 
+                     stdout=PIPE, stderr=dev_null)
+    stdout, stderr = pipe.communicate('show topology')
+
+    return stdout
 
 def make_tar(subdir, suffix, output_fd):
     global SILENT_MODE, data
