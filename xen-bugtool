@@ -114,6 +114,8 @@ IPTABLES_CONFIG = '/etc/sysconfig/iptables-config'
 HOSTS_ALLOW = '/etc/hosts.allow'
 HOSTS_DENY = '/etc/hosts.deny'
 DHCP_LEASE_DIR = '/var/lib/dhclient'
+VSWITCH_CORE_DIR = '/var/lib/openvswitch'
+OVS_VSWITCH_CONF = '/etc/ovs-vswitchd.conf'
 DELL_OMSA_LOGS = '/var/log/dell'
 HP_CMA_LOG = '/var/spool/compaq/cma.log'
 HP_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
@@ -195,6 +197,8 @@ MODINFO = '/sbin/modinfo'
 MULTIPATHD = '/sbin/multipathd'
 NETSTAT = '/bin/netstat'
 OMREPORT = '/opt/dell/srvadmin/oma/bin/omreport'
+OVS_DPCTL = '/usr/bin/ovs-dpctl'
+OVS_OFCTL = '/usr/bin/ovs-ofctl'
 PS = '/bin/ps'
 PVS = '/usr/sbin/pvs'
 ROUTE = '/sbin/route'
@@ -633,6 +637,7 @@ exclude those logs from the archive.
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF])
     file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
+    file_output(CAP_NETWORK_CONFIG, [OVS_VSWITCH_CONF])
 
     cmd_output(CAP_NETWORK_STATUS, [IFCONFIG, '-a'])
     cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
@@ -663,6 +668,13 @@ exclude those logs from the archive.
     tree_output(CAP_NETWORK_STATUS, PROC_NET_VLAN_DIR)
     cmd_output(CAP_NETWORK_STATUS, [TC, '-s', 'qdisc'])
     file_output(CAP_NETWORK_STATUS, [PROC_NET_SOFTNET_STAT])
+    cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'show'])
+    tree_output(CAP_NETWORK_STATUS, VSWITCH_CORE_DIR)
+    for d in dp_list():
+        cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'show', d])
+        cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'status', d])
+        cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'dump-flows', d])
+        cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'dump-flows', d])
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
     file_output(CAP_OEM, [HP_CMA_LOG, HP_HPASMD_LOG])
@@ -1065,6 +1077,17 @@ def multipathd_topology(cap):
     stdout, stderr = pipe.communicate('show topology')
 
     return stdout
+
+def dp_list():
+    output = StringIO.StringIO()
+    procs = [ProcOutput([OVS_DPCTL, 'dump-dps'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
+
+    run_procs([procs])
+
+    if not procs[0].timed_out:
+        return output.getvalue().splitlines()
+    return ''
+    
 
 def make_tar(subdir, suffix, output_fd):
     global SILENT_MODE, data
