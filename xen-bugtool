@@ -612,6 +612,7 @@ exclude those logs from the archive.
     file_output(CAP_HARDWARE_INFO, [PROC_USB_DEV, PROC_SCSI])
     file_output(CAP_HARDWARE_INFO, [BOOT_TIME_CPUS, BOOT_TIME_MEMORY])
     file_output(CAP_HARDWARE_INFO, [SYSCONFIG_HWCONF])
+    cmd_output(CAP_HARDWARE_INFO, [LS, '-lR', '/dev'])
     # FIXME IDE?
 
     for d in disk_list():
