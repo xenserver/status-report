@@ -68,6 +68,7 @@ OS_RELEASE = platform.release()
 #
 
 BUG_DIR = "/var/opt/xen/bug-report"
+PLUGIN_DIR = "/etc/xensource/bugtool"
 XAPI_BLOBS = '/var/xapi/blobs'
 EXTLINUX_CONFIG = '/boot/extlinux.conf'
 GRUB_CONFIG = '/boot/grub/menu.lst'
@@ -385,10 +386,13 @@ def output_ts(x):
 
 def cmd_output(cap, args, label = None, filter = None):
     if cap in entries:
-        a = [aa for aa in args]
-        a[0] = os.path.basename(a[0])
         if not label:
-            label = ' '.join(a)
+            if isinstance(args, list):
+                a = [aa for aa in args]
+                a[0] = os.path.basename(a[0])
+                label = ' '.join(a)
+            else:
+                label = args
         data[label] = {'cap': cap, 'cmd_args': args, 'filter': filter}
 
 def file_output(cap, path_list):
@@ -502,6 +506,7 @@ def main(argv = None):
 
     for (k, v) in options:
         if k == '--capabilities':
+            load_plugins(True)
             update_capabilities()
             print_capabilities()
             return 0
@@ -783,6 +788,11 @@ exclude those logs from the archive.
     file_output(CAP_YUM, [YUM_LOG])
     tree_output(CAP_YUM, YUM_REPOS_DIR)
     cmd_output(CAP_YUM, [RPM, '-qa'])
+
+    try:
+        load_plugins()
+    except:
+        pass
     
     # permit the user to filter out data
     for k in sorted(data.keys()):
@@ -1089,6 +1099,69 @@ def dp_list():
     return ''
     
 
+def load_plugins(just_capabilities = False):
+    def getText(nodelist):
+        rc = ""
+        for node in nodelist:
+            if node.nodeType == node.TEXT_NODE:
+                rc += node.data
+        return rc.encode()
+
+    def getBoolAttr(el, attr, default = False):
+        ret = default
+        val = el.getAttribute(attr).lower()
+        if val in ['true', 'false', 'yes', 'no']:
+            ret = val in ['true', 'yes']
+        return ret
+        
+    for dir in [d for d in os.listdir(PLUGIN_DIR) if os.path.isdir(os.path.join(PLUGIN_DIR, d))]:
+        if not caps.has_key(dir):
+            if not os.path.exists("%s/%s.xml" % (PLUGIN_DIR, dir)):
+                continue
+            xmldoc = parse("%s/%s.xml" % (PLUGIN_DIR, dir))
+            assert xmldoc.documentElement.tagName == "capability"
+
+            pii, min_size, max_size, min_time, max_time, mime = \
+                 PII_MAYBE, -1,-1,-1,-1, MIME_TEXT
+
+            if xmldoc.documentElement.getAttribute("pii") in [PII_NO, PII_YES, PII_MAYBE, PII_IF_CUSTOMIZED]:
+                pii = xmldoc.documentElement.getAttribute("pii")
+            if xmldoc.documentElement.getAttribute("min_size") != '':
+                min_size = long(xmldoc.documentElement.getAttribute("min_size"))
+            if xmldoc.documentElement.getAttribute("max_size") != '':
+                max_size = long(xmldoc.documentElement.getAttribute("max_size"))
+            if xmldoc.documentElement.getAttribute("min_time") != '':
+                min_time = int(xmldoc.documentElement.getAttribute("min_time"))
+            if xmldoc.documentElement.getAttribute("max_time") != '':
+                max_time = int(xmldoc.documentElement.getAttribute("max_time"))
+            if xmldoc.documentElement.getAttribute("mime") in [MIME_DATA, MIME_TEXT]:
+                mime = xmldoc.documentElement.getAttribute("mime")
+            checked = getBoolAttr(xmldoc.documentElement, 'checked', True)
+            hidden = getBoolAttr(xmldoc.documentElement, 'hidden', False)
+
+            cap(dir, pii, min_size, max_size, min_time, max_time, mime, checked, hidden)
+
+        if just_capabilities:
+            continue
+                    
+        plugdir = os.path.join(PLUGIN_DIR, dir)
+        for file in [f for f in os.listdir(plugdir) if f.endswith('.xml')]:
+            xmldoc = parse(os.path.join(plugdir, file))
+            assert xmldoc.documentElement.tagName == "collect"
+
+            for el in xmldoc.documentElement.getElementsByTagName("*"):
+                if el.tagName == "files":
+                    file_output(dir, getText(el.childNodes).split())
+                elif el.tagName == "directory":
+                    pattern = el.getAttribute("pattern")
+                    if pattern == '': pattern = None
+                    negate = getBoolAttr(el, 'negate')
+                    tree_output(dir, getText(el.childNodes), pattern and re.compile(pattern) or None, negate)
+                elif el.tagName == "command":
+                    label = el.getAttribute("label")
+                    if label == '': label = None
+                    cmd_output(dir, getText(el.childNodes), label)
+
 def make_tar(subdir, suffix, output_fd):
     global SILENT_MODE, data
 
@@ -1320,6 +1393,7 @@ def disk_list():
 
 class ProcOutput:
     debug = False
+
     def __init__(self, command, max_time, inst=None, filter=None):
         self.command = command
         self.max_time = max_time
@@ -1334,18 +1408,21 @@ class ProcOutput:
     def __del__(self):
         self.terminate()
 
+    def cmdAsStr(self):
+        return isinstance(self.command, list) and ' '.join(self.command) or self.command
+
     def run(self):
         self.timed_out = False
         try:
             if ProcOutput.debug:
-                output_ts("Starting '%s'" % ' '.join(self.command))
-            self.proc = Popen(self.command, bufsize=1, stdin=dev_null, stdout=PIPE, stderr=dev_null)
+                output_ts("Starting '%s'" % self.cmdAsStr())
+            self.proc = Popen(self.command, bufsize=1, stdin=dev_null, stdout=PIPE, stderr=dev_null, shell=isinstance(self.command, str))
             old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
             fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             self.running = True
             self.failed = False
         except:
-            output_ts("'%s' failed" % ' '.join(self.command))
+            output_ts("'%s' failed" % self.cmdAsStr())
             self.running = False
             self.failed = True
 
@@ -1405,7 +1482,7 @@ def run_procs(procs):
 
             # handle timeout
             if p.running and now > p.timeout:
-                output_ts("'%s' timed out" % ' '.join(p.command))
+                output_ts("'%s' timed out" % self.cmdAsStr())
                 if p.inst:
                     p.inst.write("\n** timeout **\n")
                 p.timed_out = True
