@@ -356,7 +356,7 @@ cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
 cap(CAP_XENRT,               PII_NO,    min_size=0,     max_size=5*KB,
     checked=False, hidden=True)
-cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=50*KB,
+cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=80*KB,
     max_time=5)
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=5)
@@ -735,11 +735,13 @@ exclude those logs from the archive.
     tree_output(CAP_XENRT, '/tmp', FIST_RE)
 
     file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
-    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, STATIC_VDIS, 
+    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, 
                                        XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
     cmd_output(CAP_XENSERVER_CONFIG, [BIN_STATIC_VDIS, 'list'])
     tree_output(CAP_XENSERVER_CONFIG, OEM_CONFIG_DIR, OEM_CONFIG_FILES_RE)
+    tree_output(CAP_XENSERVER_CONFIG, STATIC_VDIS)
+    cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', STATIC_VDIS])
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
