@@ -193,6 +193,7 @@ LOSETUP = '/sbin/losetup'
 LS = '/bin/ls'
 LSPCI = '/sbin/lspci'
 LVS = '/usr/sbin/lvs'
+LVDISPLAY = '/usr/sbin/lvdisplay'
 MD5SUM = '/usr/bin/md5sum'
 MODINFO = '/sbin/modinfo'
 MULTIPATHD = '/sbin/multipathd'
@@ -602,6 +603,7 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [SG_MAP, '-x'])
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
     tree_output(CAP_DISK_INFO, PROC_DRIVER_CCISS_DIR)
+    cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
 
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
