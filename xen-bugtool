@@ -507,7 +507,10 @@ def main(argv = None):
 
     for (k, v) in options:
         if k == '--capabilities':
-            load_plugins(True)
+            try:
+                load_plugins(True)
+            except:
+                pass
             update_capabilities()
             print_capabilities()
             return 0
