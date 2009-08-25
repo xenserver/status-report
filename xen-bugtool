@@ -1490,7 +1490,7 @@ def run_procs(procs):
 
             # handle timeout
             if p.running and now > p.timeout:
-                output_ts("'%s' timed out" % self.cmdAsStr())
+                output_ts("'%s' timed out" % p.cmdAsStr())
                 if p.inst:
                     p.inst.write("\n** timeout **\n")
                 p.timed_out = True
