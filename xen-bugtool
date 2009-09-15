@@ -945,8 +945,7 @@ def dump_xapi_rrds(cap):
     return output
 
 def filter_db_pii(str):
-    str = re.sub(r'(password_transformed&quot; &quot;)[^ ]+(&quot;)', r'\1REMOVED\2', str)
-    str = re.sub(r'(wlb_password=")[^"]+(")', r'\1REMOVED\2', str)
+    str = re.sub(r'(secret=")[^"]+(")', r'\1REMOVED\2', str)
     return str
 
 def dump_filtered_xapi_db(cap):
