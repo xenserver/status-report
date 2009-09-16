@@ -682,13 +682,14 @@ exclude those logs from the archive.
     tree_output(CAP_NETWORK_STATUS, PROC_NET_VLAN_DIR)
     cmd_output(CAP_NETWORK_STATUS, [TC, '-s', 'qdisc'])
     file_output(CAP_NETWORK_STATUS, [PROC_NET_SOFTNET_STAT])
-    cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'show'])
     tree_output(CAP_NETWORK_STATUS, VSWITCH_CORE_DIR)
-    for d in dp_list():
-        cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'show', d])
-        cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'status', d])
-        cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'dump-flows', d])
-        cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'dump-flows', d])
+    if os.path.exists('/var/run/ovs-vswitchd.pid'):
+        cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'show'])
+        for d in dp_list():
+            cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'show', d])
+            cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'status', d])
+            cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'dump-flows', d])
+            cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'dump-flows', d])
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
     file_output(CAP_OEM, [HP_CMA_LOG, HP_HPASMD_LOG])
