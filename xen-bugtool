@@ -118,6 +118,7 @@ DHCP_LEASE_DIR = '/var/lib/dhclient'
 VSWITCH_CORE_DIR = '/var/lib/openvswitch'
 OVS_VSWITCH_CONF = '/etc/ovs-vswitchd.conf'
 OVS_VSWITCH_DBCACHE = '/var/lib/openvswitch/dbcache'
+OVS_VSWITCHD_PID = '/var/run/ovs-vswitchd.pid'
 DELL_OMSA_LOGS = '/var/log/dell'
 HP_CMA_LOG = '/var/spool/compaq/cma.log'
 HP_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
@@ -210,6 +211,8 @@ NETSTAT = '/bin/netstat'
 OMREPORT = '/opt/dell/srvadmin/oma/bin/omreport'
 OVS_DPCTL = '/usr/bin/ovs-dpctl'
 OVS_OFCTL = '/usr/bin/ovs-ofctl'
+OVS_VSCTL = '/usr/bin/ovs-vsctl'
+OVS_APPCTL = '/usr/bin/ovs-appctl'
 PS = '/bin/ps'
 PVS = '/usr/sbin/pvs'
 ROUTE = '/sbin/route'
@@ -690,13 +693,23 @@ exclude those logs from the archive.
     cmd_output(CAP_NETWORK_STATUS, [TC, '-s', 'qdisc'])
     file_output(CAP_NETWORK_STATUS, [PROC_NET_SOFTNET_STAT])
     tree_output(CAP_NETWORK_STATUS, VSWITCH_CORE_DIR)
-    if os.path.exists('/var/run/ovs-vswitchd.pid'):
+    if os.path.exists(OVS_VSWITCHD_PID):
         cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'show'])
         for d in dp_list():
             cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'show', d])
             cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'status', d])
             cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'dump-flows', d])
             cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'dump-flows', d])
+        try:
+            vspidfile = open(OVS_VSWITCHD_PID)
+            vspid = int(vspidfile.readline().strip())
+            vspidfile.close()
+            for b in bond_list(vspid):
+                cmd_output(CAP_NETWORK_STATUS,
+                           [OVS_APPCTL, '-t', '/var/run/ovs-vswitchd.%s.ctl' % vspid, '-e' 'bond/show %s' % b],
+                           'ovs-appctl-bond-show-%s.out' % b)
+        except e:
+            pass
 
     tree_output(CAP_OEM, DELL_OMSA_LOGS)
     file_output(CAP_OEM, [HP_CMA_LOG, HP_HPASMD_LOG])
@@ -1115,8 +1128,18 @@ def dp_list():
 
     if not procs[0].timed_out:
         return output.getvalue().splitlines()
-    return ''
-    
+    return []
+
+def bond_list(pid):
+    output = StringIO.StringIO()
+    procs = [ProcOutput([OVS_APPCTL, '-t', '/var/run/ovs-vswitchd.%s.ctl' % pid, '-e' 'bond/list'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
+
+    run_procs([procs])
+
+    if not procs[0].timed_out:
+        bonds = output.getvalue().splitlines()[1:]
+        return [x.split('\t')[1] for x in bonds]
+    return []
 
 def load_plugins(just_capabilities = False):
     def getText(nodelist):
