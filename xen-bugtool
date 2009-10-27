@@ -112,6 +112,7 @@ MULTIPATH_CONF = '/etc/multipath.conf'
 NSSWITCH_CONF = '/etc/nsswitch.conf'
 NTP_CONF = '/etc/ntp.conf'
 IPTABLES_CONFIG = '/etc/sysconfig/iptables-config'
+HOSTS = '/etc/hosts'
 HOSTS_ALLOW = '/etc/hosts.allow'
 HOSTS_DENY = '/etc/hosts.deny'
 DHCP_LEASE_DIR = '/var/lib/dhclient'
@@ -174,7 +175,8 @@ LICENSE_LOGS = \
                ['v6d.log'] +
                [ f % n for n in range(1, 20) \
                  for f in ['v6d.log.%d', 'v6d.log.%d.gz' ]]]
-
+LWIDENTITY_JOIN_LOG = '/tmp/lwidentity.join.log'
+HOSTS_LWIDENTITY_ORIG = '/etc/hosts.lwidentity.orig'
 
 #
 # External programs
@@ -250,7 +252,6 @@ PII_NO            = 'no'
 PII_YES           = 'yes'
 PII_MAYBE         = 'maybe'
 PII_IF_CUSTOMIZED = 'if_customized'
-
 KEY      = 0
 PII      = 1
 MIN_SIZE = 2
@@ -658,7 +659,7 @@ exclude those logs from the archive.
 
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
-    file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF])
+    file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF, HOSTS])
     file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
     file_output(CAP_NETWORK_CONFIG, [OVS_VSWITCH_CONF])
     file_output(CAP_NETWORK_CONFIG, [OVS_VSWITCH_DBCACHE])
@@ -742,6 +743,7 @@ exclude those logs from the archive.
                            'monitor_memory.log.%d.gz', 'secure.%d', 'secure.%d.gz', 'blktap.log.%d']]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
+    file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
 
     cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
 
