@@ -501,6 +501,11 @@ def main(argv = None):
         print >>sys.stderr, opterr
         return 2
 
+    try:
+        load_plugins(True)
+    except:
+        pass
+
     inventory = readKeyValueFile(XENSOURCE_INVENTORY)
     if inventory.has_key('OEM_BUILD_NUMBER'):
         cap(CAP_OEM,                 PII_MAYBE,                 max_size=5*MB,
@@ -520,10 +525,6 @@ def main(argv = None):
 
     for (k, v) in options:
         if k == '--capabilities':
-            try:
-                load_plugins(True)
-            except:
-                pass
             update_capabilities()
             print_capabilities()
             return 0
