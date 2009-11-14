@@ -873,7 +873,10 @@ exclude those logs from the archive.
             print >>sys.stderr, "    %s (%d, %d)" % (c, caps[c][MAX_SIZE], 
                                                      cap_sizes[c])
     return 0
-    
+
+def find_tapdisk_logs():
+    return glob.glob('/var/log/blktap/*.log*')
+
 def generate_tapdisk_logs():
     for pid in pidof('tapdisk'):
 	try:
@@ -883,12 +886,12 @@ def generate_tapdisk_logs():
             pass
     # give processes a second to write their logs
     time.sleep(1)
-    file_output(CAP_TAPDISK_LOGS, ['/tmp/tapdisk.log.%d' % pid for pid in pidof('tapdisk')])
+    file_output(CAP_TAPDISK_LOGS, find_tapdisk_logs())
 
 def clean_tapdisk_logs():
-    for filename in [f for f in os.listdir('/tmp') if f.startswith('tapdisk.log.')]:
+    for filename in find_tapdisk_logs():
         try:
-            os.remove(os.path.join('tmp', filename))
+            os.remove(filename)
         except :
             pass
 
