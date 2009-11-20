@@ -734,7 +734,7 @@ exclude those logs from the archive.
 
     func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', dump_xapi_rrds)
 
-    cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,wchan:25,args'], label='process-tree')
+    cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,nwchan,wchan:25,args'], label='process-tree')
 
     file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
