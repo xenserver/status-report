@@ -738,10 +738,17 @@ exclude those logs from the archive.
 
     file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
-           [ 'syslog', 'messages', 'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg', 'blktap.log' ] +
+           [ 'crit.log', 'kern.log', 'daemon.log', 'user.log', 'syslog', 'messages',
+             'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg', 'blktap.log' ] +
            [ f % n for n in range(1, 20) \
-                 for f in ['messages.%d', 'messages.%d.gz', 'monitor_memory.log.%d', 
-                           'monitor_memory.log.%d.gz', 'secure.%d', 'secure.%d.gz', 'blktap.log.%d']]])
+                 for f in ['crit.log.%d', 'crit.log.%d.gz',
+                           'kern.log.%d', 'kern.log.%d.gz',
+                           'daemon.log.%d', 'daemon.log.%d.gz',
+                           'user.log.%d', 'user.log.%d.gz',
+                           'messages.%d', 'messages.%d.gz',
+                           'monitor_memory.log.%d', 'monitor_memory.log.%d.gz',
+                           'secure.%d', 'secure.%d.gz',
+                           'blktap.log.%d']]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
     file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
