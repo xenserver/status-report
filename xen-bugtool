@@ -133,6 +133,7 @@ INITIAL_INVENTORY = '/opt/xensource/etc/initial-inventory'
 VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
 STATIC_VDIS = '/etc/xensource/static-vdis'
 POOL_CONF = '/etc/xensource/pool.conf'
+NETWORK_CONF = '/etc/xensource/network.conf'
 PTOKEN = '/etc/xensource/ptoken'
 XAPI_CONF = '/etc/xensource/xapi.conf'
 XAPI_SSL_CONF = '/etc/xensource/xapi-ssl.conf'
@@ -658,6 +659,7 @@ exclude those logs from the archive.
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'status'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
 
+    file_output(CAP_NETWORK_CONFIG, [NETWORK_CONF])
     file_output(CAP_NETWORK_CONFIG, [NETWORK_DBCACHE])
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
