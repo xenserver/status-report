@@ -178,6 +178,7 @@ LICENSE_LOGS = \
                  for f in ['v6d.log.%d', 'v6d.log.%d.gz' ]]]
 LWIDENTITY_JOIN_LOG = '/tmp/lwidentity.join.log'
 HOSTS_LWIDENTITY_ORIG = '/etc/hosts.lwidentity.orig'
+KRB5_CONF = '/etc/krb5.conf'
 
 #
 # External programs
@@ -733,6 +734,7 @@ exclude those logs from the archive.
                label = "state+20k")
 
     tree_output(CAP_PAM, PAM_DIR)
+    file_output(CAP_PAM, [KRB5_CONF])
 
     func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', dump_xapi_rrds)
 
