@@ -120,9 +120,6 @@ DHCP_LEASE_DIR = '/var/lib/dhclient'
 VSWITCH_CORE_DIR = '/var/lib/openvswitch'
 OVS_VSWITCH_CONF = '/etc/ovs-vswitchd.conf'
 OVS_VSWITCHD_PID = '/var/run/ovs-vswitchd.pid'
-DELL_OMSA_LOGS = '/var/log/dell'
-HP_CMA_LOG = '/var/spool/compaq/cma.log'
-HP_HPASMD_LOG = '/var/spool/compaq/hpasmd.log'
 VAR_LOG_DIR = '/var/log/'
 VNCTERM_CORE_DIR = '/var/xen/vncterm'
 XENSOURCE_INVENTORY = '/etc/xensource-inventory'
@@ -212,7 +209,6 @@ MD5SUM = '/usr/bin/md5sum'
 MODINFO = '/sbin/modinfo'
 MULTIPATHD = '/sbin/multipathd'
 NETSTAT = '/bin/netstat'
-OMREPORT = '/opt/dell/srvadmin/oma/bin/omreport'
 OVS_DPCTL = '/usr/bin/ovs-dpctl'
 OVS_OFCTL = '/usr/bin/ovs-ofctl'
 OVS_VSCTL = '/usr/bin/ovs-vsctl'
@@ -715,23 +711,6 @@ exclude those logs from the archive.
                            'ovs-appctl-bond-show-%s.out' % b)
         except e:
             pass
-
-    tree_output(CAP_OEM, DELL_OMSA_LOGS)
-    file_output(CAP_OEM, [HP_CMA_LOG, HP_HPASMD_LOG])
-    if os.path.exists(OMREPORT):
-        cmd_output(CAP_OEM, [OMREPORT, 'system', 'alertlog'])
-        cmd_output(CAP_OEM, [OMREPORT, 'system', 'cmdlog'])
-        cmd_output(CAP_OEM, [OMREPORT, 'system', 'esmlog'])
-        cmd_output(CAP_OEM, [OMREPORT, 'system', 'postlog'])
-        cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'fans'])
-        cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'memory'])
-        cmd_output(CAP_OEM, [OMREPORT, 'chassis', 'temps'])
-        cmd_output(CAP_OEM, [OMREPORT, 'storage', 'controller'])
-        for i in range(0, 4):
-            cmd_output(CAP_OEM, [OMREPORT, 'storage', 'adisk', 'controller=%d' % i])
-            cmd_output(CAP_OEM, [OMREPORT, 'storage', 'vdisk', 'controller=%d' % i])
-    cmd_output(CAP_OEM, [FIND, '/.state', '-size', '+20k', '-exec', 'ls', '-l', '{}',';'], 
-               label = "state+20k")
 
     tree_output(CAP_PAM, PAM_DIR)
     file_output(CAP_PAM, [KRB5_CONF])
