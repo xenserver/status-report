@@ -119,6 +119,7 @@ HOSTS_DENY = '/etc/hosts.deny'
 DHCP_LEASE_DIR = '/var/lib/dhclient'
 VSWITCH_CORE_DIR = '/var/lib/openvswitch'
 OVS_VSWITCH_CONF = '/etc/ovs-vswitchd.conf'
+OVS_VSWITCH_CONF_DB = '/etc/ovs-vswitchd.conf.db'
 OVS_VSWITCHD_PID = '/var/run/ovs-vswitchd.pid'
 VAR_LOG_DIR = '/var/log/'
 VNCTERM_CORE_DIR = '/var/xen/vncterm'
@@ -662,7 +663,7 @@ exclude those logs from the archive.
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF, HOSTS])
     file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
-    file_output(CAP_NETWORK_CONFIG, [OVS_VSWITCH_CONF])
+    file_output(CAP_NETWORK_CONFIG, [OVS_VSWITCH_CONF, OVS_VSWITCH_CONF_DB])
 
     cmd_output(CAP_NETWORK_STATUS, [IFCONFIG, '-a'])
     cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
