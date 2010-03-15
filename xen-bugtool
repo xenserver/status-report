@@ -352,7 +352,7 @@ cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
 cap(CAP_PAM,                 PII_NO,                    max_size=10*KB)
 cap(CAP_PERSISTENT_STATS,    PII_MAYBE,                 max_size=50*MB,
     max_time=60)
-cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=10*KB,
+cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
     max_time=20)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
     max_time=5)
@@ -721,6 +721,7 @@ exclude those logs from the archive.
     func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', dump_xapi_rrds)
 
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,nwchan,wchan:25,args'], label='process-tree')
+    func_output(CAP_PROCESS_LIST, 'fd_usage', fd_usage)
 
     file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
@@ -1140,6 +1141,26 @@ def bond_list(pid):
         bonds = output.getvalue().splitlines()[1:]
         return [x.split('\t')[1] for x in bonds]
     return []
+
+def fd_usage(cap):
+    output = ''
+    fd_dict = {}
+    for d in [p for p in os.listdir('/proc') if p.isdigit()]:
+        try:
+            fh = open('/proc/'+d+'/cmdline')
+            name = fh.readline()
+            num_fds = len(os.listdir(os.path.join('/proc/'+d+'/fd')))
+            if num_fds > 0:
+                if not num_fds in fd_dict:
+                    fd_dict[num_fds] = []
+                fd_dict[num_fds].append(name.replace('\0', ' ').strip())
+        finally:
+            fh.close()
+    keys = fd_dict.keys()
+    keys.sort(lambda a, b: int(b) - int(a))
+    for k in keys:
+        output += "%s: %s\n" % (k, str(fd_dict[k]))
+    return output
 
 def load_plugins(just_capabilities = False):
     def getText(nodelist):
