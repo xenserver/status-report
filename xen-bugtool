@@ -969,14 +969,23 @@ def dump_xapi_rrds(cap):
     session.xenapi.session.logout()
     return output
 
-def filter_db_pii(str):
-    if str.startswith("<row"): # match only on DB rows
+def filter_db_pii(str, state):
+    if 'in_secret_table' not in state:
+        state['in_secret_table'] = False
+
+    if str.startswith('<table ') and 'name="secret"' in str:
+        state['in_secret_table'] = True
+    elif str.startswith('</table>'):
+        state['in_secret_table'] = False
+    
+    if state['in_secret_table'] and str.startswith("<row"): # match only on DB rows
         str = re.sub(r'(value=")[^"]+(")', r'\1REMOVED\2', str)
     return str
 
 def dump_filtered_xapi_db(cap):
     db_file = None
     format = None
+    state = {}
 
     # determine db format
     c = open(DB_CONF, 'r')
@@ -1013,7 +1022,7 @@ def dump_filtered_xapi_db(cap):
         while p != -1:
             str = remain[:p+1]
             remain = remain[p+1:]
-            output += filter_db_pii(str)
+            output += filter_db_pii(str, state)
             p = remain.find('>')
         rec = ih.read(2048)
     output += remain
@@ -1467,6 +1476,7 @@ class ProcOutput:
         self.failed = False
         self.timeout = int(time.time()) + self.max_time
         self.filter = filter
+        self.filter_state = {}
 
     def __del__(self):
         self.terminate()
@@ -1509,7 +1519,7 @@ class ProcOutput:
             self.running = False
         else:
             if self.filter:
-                line = self.filter(line)
+                line = self.filter(line, self.filter_state)
             if self.inst:
                 self.inst.write(line)
 
