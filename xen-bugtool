@@ -350,7 +350,7 @@ cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=20*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
     max_time=30)
-cap(CAP_PAM,                 PII_NO,                    max_size=10*KB)
+cap(CAP_PAM,                 PII_NO,                    max_size=30*KB)
 cap(CAP_PERSISTENT_STATS,    PII_MAYBE,                 max_size=50*MB,
     max_time=60)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
