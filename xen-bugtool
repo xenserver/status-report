@@ -749,6 +749,7 @@ exclude those logs from the archive.
 
     tree_output(CAP_VNCTERM, VNCTERM_CORE_DIR)
 
+    cmd_output(CAP_WLB, [XE, 'pool-retrieve-wlb-configuration'])
     cmd_output(CAP_WLB, [XE, 'pool-retrieve-wlb-diagnostics'])
 
     tree_output(CAP_X11_LOGS, X11_LOGS_DIR, X11_LOGS_RE)
