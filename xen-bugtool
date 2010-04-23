@@ -771,7 +771,7 @@ exclude those logs from the archive.
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', STATIC_VDIS])
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
-    cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS])
+    cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'])
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
     file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
