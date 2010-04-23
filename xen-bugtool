@@ -657,7 +657,7 @@ exclude those logs from the archive.
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
     file_output(CAP_MULTIPATH, [MULTIPATH_CONF])
-    cmd_output(CAP_MULTIPATH, [DMSETUP, 'status'])
+    cmd_output(CAP_MULTIPATH, [DMSETUP, 'table'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
 
     file_output(CAP_NETWORK_CONFIG, [NETWORK_CONF])
