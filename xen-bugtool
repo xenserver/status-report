@@ -331,7 +331,7 @@ cap(CAP_BLOBS,               PII_NO,                    max_size=5*MB)
 cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=5)
 cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
-    max_time=60)
+    max_time=120)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=25*KB,
     max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
@@ -1087,24 +1087,12 @@ def csl_logs(cap):
 
     output = StringIO.StringIO()
     procs = []
-
-    def rotate_string(x, n):
-        transtbl = ""
-        for a in range(0, 256):
-            transtbl = transtbl + chr(a)
-        transtbl = transtbl[n:] + transtbl[0:n]
-        return x.translate(transtbl)
-
-    def _untransform_string(str, remove_trailing_nulls=False):
-        """De-obfuscate string. To cope with an obfuscation bug in Rio, the argument
-        remove_trailing_nulls should be set to True"""
-        tmp = base64.decodestring(str)
-        if remove_trailing_nulls:
-            tmp = tmp.rstrip('\x00')
-        return rotate_string(tmp, -13)
+    csl_targets_fetched = []
 
     for pbd in session.xenapi.PBD.get_all_records().values():
         if pbd.has_key('device_config') and pbd['device_config'].has_key('target'):
+            if pbd['device_config']['target'] in csl_targets_fetched:
+                continue
             sr = session.xenapi.SR.get_record(pbd['SR'])
             if sr.has_key('type') and sr['type'] == 'cslg':
                 if sr['shared'] and pbd['host'] != this_host and not i_am_master:
@@ -1116,9 +1104,11 @@ def csl_logs(cap):
                     server += ':' + dev_cfg['port']
                 if dev_cfg.has_key('username'):
                     server += ',' + dev_cfg['username']
-                if dev_cfg.has_key('password_transformed'):
-                    server += ',' + _untransform_string(dev_cfg['password_transformed'])
+                if dev_cfg.has_key('password_secret'):
+                    sec_ref = session.xenapi.secret.get_by_uuid(dev_cfg['password_secret'])
+                    server += ',' + session.xenapi.secret.get_value(sec_ref)
                 procs.append(ProcOutput([CSL, server, 'srv-log-get'], caps[cap][MAX_TIME], output))
+                csl_targets_fetched.append(dev_cfg['target'])
 
     session.xenapi.session.logout()
 
