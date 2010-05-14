@@ -335,7 +335,7 @@ cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=25*KB,
     max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
-cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=30*KB,
+cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=50*KB,
     max_time=20)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
     min_time=20, max_time=90, checked=False, hidden=True)
@@ -348,10 +348,10 @@ cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
 cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=10*KB,
     max_time=10)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
-                                        min_size=0,     max_size=20*KB)
+                                        min_size=0,     max_size=40*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
     max_time=30)
-cap(CAP_PAM,                 PII_NO,                    max_size=30*KB)
+cap(CAP_PAM,                 PII_NO,                    max_size=50*KB)
 cap(CAP_PERSISTENT_STATS,    PII_MAYBE,                 max_size=50*MB,
     max_time=60)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
