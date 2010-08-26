@@ -211,6 +211,7 @@ LVS = '/usr/sbin/lvs'
 LVDISPLAY = '/usr/sbin/lvdisplay'
 MD5SUM = '/usr/bin/md5sum'
 MODINFO = '/sbin/modinfo'
+MPPUTIL = '/usr/sbin/mppUtil'
 MULTIPATHD = '/sbin/multipathd'
 NETSTAT = '/bin/netstat'
 OVS_DPCTL = '/usr/bin/ovs-dpctl'
@@ -623,6 +624,7 @@ exclude those logs from the archive.
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
     tree_output(CAP_DISK_INFO, PROC_DRIVER_CCISS_DIR)
     cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
+    cmd_output(CAP_DISK_INFO, [MPPUTIL, '-a'])
 
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
