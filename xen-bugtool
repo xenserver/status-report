@@ -624,7 +624,6 @@ exclude those logs from the archive.
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
     tree_output(CAP_DISK_INFO, PROC_DRIVER_CCISS_DIR)
     cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
-    cmd_output(CAP_DISK_INFO, [MPPUTIL, '-a'])
 
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
@@ -661,6 +660,9 @@ exclude those logs from the archive.
     file_output(CAP_MULTIPATH, [MULTIPATH_CONF])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'table'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
+    cmd_output(CAP_MULTIPATH, [MPPUTIL, '-a'])
+    if CAP_MULTIPATH in entries:
+        dump_rdac_groups(CAP_MULTIPATH)
 
     file_output(CAP_NETWORK_CONFIG, [NETWORK_CONF])
     file_output(CAP_NETWORK_CONFIG, [NETWORK_DBCACHE])
@@ -1166,6 +1168,23 @@ def fd_usage(cap):
         output += "%s: %s\n" % (k, str(fd_dict[k]))
     return output
 
+def dump_rdac_groups(cap):
+    output = StringIO.StringIO()
+    procs = [ProcOutput([MPPUTIL, '-a'], caps[cap][MAX_TIME], output)]
+
+    run_procs([procs])
+
+    if not procs[0].timed_out:
+        proc_line = 0
+        for line in output.getvalue().splitlines():
+            if line.startswith('ID'):
+                proc_line = 2
+            elif line.startswith('----'):
+                proc_line -= 1
+            elif proc_line > 0:
+                group, _ = line.split(None, 1)
+                cmd_output(cap, [MPPUTIL, '-g', group])
+
 def load_plugins(just_capabilities = False):
     def getText(nodelist):
         rc = ""
@@ -1285,7 +1304,7 @@ def make_zip(subdir):
             
                 if v.has_key('output'):
                     zf.writestr(dest, v['output'].getvalue())
-                else:
+                elif v.has_key('filename'):
                     if os.stat(v['filename']).st_size < 50:
                         compress_type = zipfile.ZIP_STORED
                     else:
