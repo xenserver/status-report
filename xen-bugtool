@@ -323,6 +323,8 @@ dbg = False
 
 def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
         max_time=-1, mime=MIME_TEXT, checked=True, hidden=False):
+    if  os.getenv('XEN_RT') and max_time > 0:
+        max_time *= 5
     caps[key] = (key, pii, min_size, max_size, min_time, max_time, mime,
                  checked, hidden)
     cap_sizes[key] = 0
