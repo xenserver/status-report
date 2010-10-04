@@ -109,6 +109,7 @@ IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
 ROUTE_RE = re.compile(r'^.*/route-.*')
 NETWORK_DBCACHE = '/var/xapi/network.dbcache'
 RESOLV_CONF = '/etc/resolv.conf'
+MPP_CONF = '/etc/mpp.conf'
 MULTIPATH_CONF = '/etc/multipath.conf'
 NSSWITCH_CONF = '/etc/nsswitch.conf'
 NTP_CONF = '/etc/ntp.conf'
@@ -348,7 +349,7 @@ cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=120*KB,
     max_time=5)
 cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
-cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=10*KB,
+cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=20*KB,
     max_time=10)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=40*KB)
@@ -659,7 +660,7 @@ exclude those logs from the archive.
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
-    file_output(CAP_MULTIPATH, [MULTIPATH_CONF])
+    file_output(CAP_MULTIPATH, [MULTIPATH_CONF, MPP_CONF])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'table'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
     cmd_output(CAP_MULTIPATH, [MPPUTIL, '-a'])
