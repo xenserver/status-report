@@ -769,6 +769,7 @@ exclude those logs from the archive.
     tree_output(CAP_XENRT, '/tmp', FIST_RE)
     # CA-45540: capture QEMU core files
     tree_output(CAP_XENRT, '/var/xen/qemu')
+    tree_output(CAP_XENRT, '/tmp', re.compile(r'^.*xen\.qemu-dm\.'))
 
     file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
     file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, 
