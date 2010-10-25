@@ -79,7 +79,8 @@ FSTAB = '/etc/fstab'
 PROC_MOUNTS = '/proc/mounts'
 ISCSI_CONF = '/etc/iscsi/iscsid.conf'
 ISCSI_INITIATOR = '/etc/iscsi/initiatorname.iscsi'
-LVM_CACHE = '/etc/lvm/.cache'
+LVM_CACHE = '/etc/lvm/cache/.cache'
+LVM_CONFIG = '/etc/lvm/lvm.conf'
 PROC_CPUINFO = '/proc/cpuinfo'
 PROC_MEMINFO = '/proc/meminfo'
 PROC_IOPORTS = '/proc/ioports'
@@ -336,7 +337,7 @@ cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=5)
 cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
     max_time=120)
-cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=25*KB,
+cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=50*KB,
     max_time=20)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=50*KB,
@@ -619,7 +620,7 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [PVS])
     cmd_output(CAP_DISK_INFO, [VGS])
     cmd_output(CAP_DISK_INFO, [LVS])
-    file_output(CAP_DISK_INFO, [LVM_CACHE])
+    file_output(CAP_DISK_INFO, [LVM_CACHE, LVM_CONFIG])
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/scsi_host'])
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/scsi_disk'])
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/fc_transport'])
