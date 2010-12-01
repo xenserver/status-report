@@ -983,18 +983,53 @@ def dump_xapi_rrds(cap):
     session.xenapi.session.logout()
     return output
 
-def filter_db_pii(str, state):
-    if 'in_secret_table' not in state:
-        state['in_secret_table'] = False
+'''Filter a Xapi XML database.
 
-    if str.startswith('<table ') and 'name="secret"' in str:
-        state['in_secret_table'] = True
-    elif str.startswith('</table>'):
-        state['in_secret_table'] = False
-    
-    if state['in_secret_table'] and str.startswith("<row"): # match only on DB rows
-        str = re.sub(r'(value=")[^"]+(")', r'\1REMOVED\2', str)
-    return str
+    There is one important assumption made in this class:
+    - the XML document does not contain any characters between the end of one
+      tag and the beginning of the next, ie every > is immediately followed by
+      a <
+'''
+class DBFilter:
+    def __init__(self):
+        self.result = ''
+        self.rest = ''
+        self.state = {}
+
+    def filter_secrets(self, s):
+        if 'in_secret_table' not in self.state:
+            self.state['in_secret_table'] = False
+
+        # this logic doesn't deal with <table name="secret" /> properly!!!
+        if s.startswith('<table ') and 'name="secret"' in s:
+            self.state['in_secret_table'] = True
+        elif s.startswith('</table>'):
+            self.state['in_secret_table'] = False
+        
+        if self.state['in_secret_table'] and s.startswith("<row"): # match only on DB rows
+            s = re.sub(r'(value=")[^"]+(")', r'\1REMOVED\2', s)
+        return s
+
+    def feed(self, s):
+        rem = self.rest + s
+        p = rem.find('>')
+        while p != -1:
+            s = rem[:p+1]
+            rem = rem[p+1:]
+            self.result  += self.filter_secrets(s)
+            p = rem.find('>')
+        self.rest = rem
+
+    def output(self):
+        r = self.result + self.filter_secrets(self.rest)
+        self.result, self.rest = '', ''
+        self.state = {}
+        return r
+
+def filter_db_pii(s, state):
+    dbfilter = DBFilter()
+    dbfilter.feed(s)
+    return dbfilter.output()
 
 def dump_filtered_xapi_db(cap):
     db_file = None
@@ -1028,18 +1063,12 @@ def dump_filtered_xapi_db(cap):
     if not ih:
         return ''
 
-    remain = ''
+    dbfilter = DBFilter()
     rec = ih.read(2048)
     while rec != '':
-        remain += rec
-        p = remain.find('>')
-        while p != -1:
-            str = remain[:p+1]
-            remain = remain[p+1:]
-            output += filter_db_pii(str, state)
-            p = remain.find('>')
+        dbfilter.feed(rec)
         rec = ih.read(2048)
-    output += remain
+    output = dbfilter.output()
 
     if pipe:
         pipe.wait()
