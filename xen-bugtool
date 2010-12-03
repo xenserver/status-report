@@ -1033,33 +1033,23 @@ def filter_db_pii(s, state):
 
 def dump_filtered_xapi_db(cap):
     db_file = None
-    format = None
-    state = {}
 
-    # determine db format
+    ih = None
+    output = ''
+
+    # determine DB file name
     c = open(DB_CONF, 'r')
     try:
         for line in c:
             l = line.rstrip('\n')
-            if l.startswith('['):
+            if (l[0], l[-1]) == ('[', ']'):
                 db_file = l[1:-1]
-            if l.startswith('format:'):
-                format = l[7:]
                 break
     finally:
         c.close()
 
-    pipe = None
-    ih = None
-    output = ''
 
-    if format == 'sqlite':
-        pipe = Popen([XAPI_DB_PROCESS, '-xmltostdout'], bufsize=1, stdin=dev_null, 
-                     stdout=PIPE, stderr=dev_null)
-        ih = pipe.stdout
-    elif db_file:
-        ih = open(db_file, 'r')
-
+    ih = open(db_file, 'r')
     if not ih:
         return ''
 
@@ -1070,10 +1060,7 @@ def dump_filtered_xapi_db(cap):
         rec = ih.read(2048)
     output = dbfilter.output()
 
-    if pipe:
-        pipe.wait()
-    else:
-        ih.close()
+    ih.close()
     return output
 
 def dump_scsi_hosts(cap):
