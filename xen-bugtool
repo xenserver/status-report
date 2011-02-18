@@ -38,7 +38,7 @@ import re
 import os
 import StringIO
 import sys
-import tarfile
+import bugtoolTarfile as tarfile
 import time
 import commands
 import pprint
