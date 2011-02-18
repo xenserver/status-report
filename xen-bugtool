@@ -333,11 +333,11 @@ def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
 
 cap(CAP_BLOBS,               PII_NO,                    max_size=5*MB)
 cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
-    max_time=5)
+    max_time=10)
 cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
     max_time=120)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=50*KB,
-    max_time=20)
+    max_time=60)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=50*KB,
     max_time=20)
@@ -347,13 +347,13 @@ cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=120*KB,
-    max_time=5)
+    max_time=50)
 cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
 cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=20*KB,
     max_time=10)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=40*KB)
-cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=19*KB,
+cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=20*KB,
     max_time=30)
 cap(CAP_PAM,                 PII_NO,                    max_size=50*KB)
 cap(CAP_PERSISTENT_STATS,    PII_MAYBE,                 max_size=50*MB,
@@ -361,7 +361,7 @@ cap(CAP_PERSISTENT_STATS,    PII_MAYBE,                 max_size=50*MB,
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
     max_time=20)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
-    max_time=5)
+    max_time=10)
 cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=5*KB,
     max_time=20)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=64*KB)
@@ -376,9 +376,9 @@ cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
 cap(CAP_XENRT,               PII_NO,    min_size=0,     max_size=500*MB,
     checked=False, hidden=True)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=80*KB,
-    max_time=5)
+    max_time=10)
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
-    max_time=5)
+    max_time=10)
 cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
     max_time=40)
 cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=600*KB)
@@ -1409,13 +1409,22 @@ def update_capabilities():
                                 True))
     update_cap_size(CAP_XAPI_DEBUG, size_of_dir(XAPI_DEBUG_DIR))
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(XENSERVER_LOGS))
-
+    # compute max time & size based on number of PIFs
+    num_pifs = len(filter(lambda x: x.startswith('eth'), os.listdir('/sys/class/net')))
+    max_time = caps[CAP_NETWORK_STATUS][MAX_TIME] * num_pifs
+    update_cap_time(CAP_NETWORK_STATUS, max_time)
+    max_size = caps[CAP_NETWORK_STATUS][MAX_SIZE] * num_pifs
+    update_cap_size(CAP_NETWORK_STATUS, max_size)
 
 def update_cap_size(cap, size):
     update_cap(cap, MIN_SIZE, size)
     update_cap(cap, MAX_SIZE, size)
     update_cap(cap, CHECKED, size > 0)
 
+
+def update_cap_time(cap, time):
+    update_cap(cap, MAX_TIME, time)
+    
 
 def update_cap(cap, k, v):
     global caps
