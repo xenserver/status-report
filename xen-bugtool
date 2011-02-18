@@ -381,7 +381,7 @@ cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=5)
 cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
     max_time=40)
-cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=300*KB)
+cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=600*KB)
 cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=70*MB)
 cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=20*KB,
     max_time=10)
