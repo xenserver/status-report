@@ -885,7 +885,7 @@ def find_tapdisk_logs():
     return glob.glob('/var/log/blktap/*.log*')
 
 def generate_tapdisk_logs():
-    for pid in pidof('tapdisk'):
+    for pid in pidof('tapdisk2'):
 	try:
 	    os.kill(pid, SIGUSR1)
             output_ts("Including logs for tapdisk process %d" % pid)
