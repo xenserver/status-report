@@ -450,12 +450,14 @@ def collect_data():
 
     for (k, v) in data.items():
         cap = v['cap']
+        filename = v.get('filename')
         if v.has_key('cmd_args'):
             v['output'] = StringIOmtime()
             if not process_lists.has_key(cap):
                 process_lists[cap] = []
             process_lists[cap].append(ProcOutput(v['cmd_args'], caps[cap][MAX_TIME], v['output'], v['filter']))
-        elif v.has_key('filename') and v['filename'].startswith('/proc/'):
+        elif filename and (filename.startswith('/proc/') or
+                           filename.startswith('/sys/')):
             # proc files must be read into memory
             try:
                 f = open(v['filename'], 'r')
@@ -751,6 +753,8 @@ exclude those logs from the archive.
 
     cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
 
+    file_output(CAP_TAPDISK_LOGS,
+                glob.glob("/sys/class/blktap2/blktap*/debug"))
     if CAP_TAPDISK_LOGS in entries:
         generate_tapdisk_logs()
 
