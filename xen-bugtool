@@ -181,6 +181,8 @@ HOSTS_LWIDENTITY_ORIG = '/etc/hosts.lwidentity.orig'
 KRB5_CONF = '/etc/krb5.conf'
 LIKEWISE_DIR = '/var/lib/likewise'
 XENGUEST_LOG = '/tmp/xenguest.log'
+QEMU_DIR = '/var/lib/xen'
+QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
 
 #
 # External programs
@@ -279,6 +281,7 @@ CAP_XML_ELEMENT = 'capability'
 CAP_BLOBS                = 'blobs'
 CAP_BOOT_LOADER          = 'boot-loader'
 CAP_CVSM                 = 'CVSM'
+CAP_DEVICE_MODEL         = 'device-model'
 CAP_DISK_INFO            = 'disk-info'
 CAP_FIRSTBOOT            = 'firstboot'
 CAP_HARDWARE_INFO        = 'hardware-info'
@@ -336,6 +339,7 @@ cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=10)
 cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
     max_time=120)
+cap(CAP_DEVICE_MODEL,        PII_YES,   min_size=200*KB, max_size=8*MB)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=50*KB,
     max_time=60)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
@@ -520,7 +524,7 @@ def main(argv = None):
             max_time=90)
 
     if  os.getenv('XEN_RT'):
-        entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_CVSM, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
+        entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_CVSM, CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_PERSISTENT_STATS, CAP_MULTIPATH,
@@ -607,6 +611,8 @@ exclude those logs from the archive.
     cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD], label='vmlinuz-initrd.md5sum')
 
     func_output(CAP_CVSM, 'csl_logs', csl_logs)
+
+    tree_output(CAP_DEVICE_MODEL, QEMU_DIR, QEMU_RESUME_RE)
 
     cmd_output(CAP_DISK_INFO, [FDISK, '-l'])
     file_output(CAP_DISK_INFO, [PROC_PARTITIONS, PROC_MOUNTS])
