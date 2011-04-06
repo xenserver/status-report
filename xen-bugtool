@@ -183,6 +183,7 @@ LIKEWISE_DIR = '/var/lib/likewise'
 XENGUEST_LOG = '/tmp/xenguest.log'
 QEMU_DIR = '/var/lib/xen'
 QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
+INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
 
 #
 # External programs
@@ -682,6 +683,7 @@ exclude those logs from the archive.
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF, HOSTS])
     file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
     file_output(CAP_NETWORK_CONFIG, [OPENVSWITCH_CONF, OPENVSWITCH_CONF_DB])
+    file_output(CAP_NETWORK_CONFIG, [INTERFACE_RENAME_LOG])
 
     cmd_output(CAP_NETWORK_STATUS, [IFCONFIG, '-a'])
     cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
