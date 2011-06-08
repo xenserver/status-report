@@ -106,6 +106,7 @@ SYSCONFIG_HWCONF = '/etc/sysconfig/hwconf'
 SYSCONFIG_NETWORK = '/etc/sysconfig/network'
 SYSCONFIG_NETWORK_SCRIPTS = '/etc/sysconfig/network-scripts'
 SYSCONFIG_RENAME_DATA_DIR = '/etc/sysconfig/network-scripts/interface-rename-data'
+NET_UDEV_RULES = '/etc/udev/rules.d/60-net.rules'
 IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
 ROUTE_RE = re.compile(r'^.*/route-.*')
 NETWORK_DBCACHE = '/var/xapi/network.dbcache'
@@ -684,6 +685,7 @@ exclude those logs from the archive.
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF, HOSTS])
     file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
     file_output(CAP_NETWORK_CONFIG, [OPENVSWITCH_CONF, OPENVSWITCH_CONF_DB])
+    file_output(CAP_NETWORK_CONFIG, [NET_UDEV_RULES])
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_RENAME_DATA_DIR)
     file_output(CAP_NETWORK_CONFIG, [INTERFACE_RENAME_LOG])
 
