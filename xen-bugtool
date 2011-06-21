@@ -1541,7 +1541,6 @@ class ProcOutput:
         self.status = None
         self.timed_out = False
         self.failed = False
-        self.timeout = int(time.time()) + self.max_time
         self.filter = filter
         self.filter_state = {}
 
@@ -1591,6 +1590,8 @@ class ProcOutput:
                 self.inst.write(line)
 
 def run_procs(procs):
+    start = int(time.time())
+
     while True:
         pipes = []
         active_procs = []
@@ -1621,7 +1622,7 @@ def run_procs(procs):
                 p.read_line()
 
             # handle timeout
-            if p.running and now > p.timeout:
+            if p.running and now > (start + p.max_time):
                 output_ts("'%s' timed out" % p.cmdAsStr())
                 if p.inst:
                     p.inst.write("\n** timeout **\n")
