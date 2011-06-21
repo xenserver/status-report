@@ -359,7 +359,7 @@ cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
 cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=20*KB,
     max_time=10)
 cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
-                                        min_size=0,     max_size=300*KB)
+                                        min_size=0,     max_size=700*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=20*KB,
     max_time=30)
 cap(CAP_PAM,                 PII_NO,                    max_size=50*KB)
@@ -410,6 +410,12 @@ def output(x):
 
 def output_ts(x):
     output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
+
+def debug_output(x):
+    global dbg
+
+    if dbg:
+        output_ts(x)
 
 def cmd_output(cap, args, label = None, filter = None):
     if cap in entries:
