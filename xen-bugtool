@@ -411,12 +411,6 @@ def output(x):
 def output_ts(x):
     output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
 
-def debug_output(x):
-    global dbg
-
-    if dbg:
-        output_ts(x)
-
 def cmd_output(cap, args, label = None, filter = None):
     if cap in entries:
         if not label:
