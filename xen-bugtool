@@ -678,6 +678,9 @@ exclude those logs from the archive.
     if CAP_MULTIPATH in entries:
         dump_rdac_groups(CAP_MULTIPATH)
 
+    file_output(CAP_NETWORK_CONFIG, [NET_UDEV_RULES])
+    tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_RENAME_DATA_DIR)
+    file_output(CAP_NETWORK_CONFIG, [INTERFACE_RENAME_LOG])
     file_output(CAP_NETWORK_CONFIG, [NETWORK_CONF])
     file_output(CAP_NETWORK_CONFIG, [NETWORK_DBCACHE])
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
@@ -685,9 +688,6 @@ exclude those logs from the archive.
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF, HOSTS])
     file_output(CAP_NETWORK_CONFIG, [NTP_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
     file_output(CAP_NETWORK_CONFIG, [OPENVSWITCH_CONF, OPENVSWITCH_CONF_DB])
-    file_output(CAP_NETWORK_CONFIG, [NET_UDEV_RULES])
-    tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_RENAME_DATA_DIR)
-    file_output(CAP_NETWORK_CONFIG, [INTERFACE_RENAME_LOG])
 
     cmd_output(CAP_NETWORK_STATUS, [IFCONFIG, '-a'])
     cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
