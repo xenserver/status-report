@@ -771,8 +771,8 @@ exclude those logs from the archive.
 
     cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
 
-    file_output(CAP_TAPDISK_LOGS,
-                glob.glob("/sys/class/blktap2/blktap*/debug"))
+    #file_output(CAP_TAPDISK_LOGS,
+    #            glob.glob("/sys/class/blktap2/blktap*/debug"))
     if CAP_TAPDISK_LOGS in entries:
         generate_tapdisk_logs()
 
