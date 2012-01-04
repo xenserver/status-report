@@ -193,6 +193,7 @@ INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
 #
 
 ARP = '/sbin/arp'
+ARPTABLES = '/sbin/arptables'
 BIOSDEVNAME = '/sbin/biosdevname'
 BRCTL = '/usr/sbin/brctl'
 CAT = '/bin/cat'
@@ -202,6 +203,7 @@ DF = '/bin/df'
 DMESG = '/bin/dmesg'
 DMIDECODE = '/usr/sbin/dmidecode'
 DMSETUP = '/sbin/dmsetup'
+EBTABLES = '/sbin/ebtables'
 ETHTOOL = '/sbin/ethtool'
 FDISK = '/sbin/fdisk'
 FIND = '/usr/bin/find'
@@ -700,6 +702,8 @@ exclude those logs from the archive.
     cmd_output(CAP_NETWORK_STATUS, [ARP, '-n'])
     cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-an'])
     tree_output(CAP_NETWORK_STATUS, DHCP_LEASE_DIR)
+    cmd_output(CAP_NETWORK_STATUS, [ARPTABLES, '-nL'])
+    cmd_output(CAP_NETWORK_STATUS, [EBTABLES, '-L'])
     cmd_output(CAP_NETWORK_STATUS, [IPTABLES, '-nL'])
     cmd_output(CAP_NETWORK_STATUS, [BRCTL, 'show'])
     cmd_output(CAP_NETWORK_STATUS, [BIOSDEVNAME, '-d'])
