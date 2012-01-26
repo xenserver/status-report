@@ -432,7 +432,10 @@ def cmd_output(cap, args, label = None, filter = None):
 
 def file_output(cap, path_list):
     if cap in entries:
-        for p in path_list:
+        pl = []
+        map(lambda x: pl.extend(glob.glob(x)), path_list)
+
+        for p in pl:
             if os.path.exists(p):
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                         cap_sizes[cap] < caps[cap][MAX_SIZE]:
