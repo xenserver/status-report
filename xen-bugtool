@@ -430,6 +430,17 @@ def cmd_output(cap, args, label = None, filter = None):
                 label = args
         data[label] = {'cap': cap, 'cmd_args': args, 'filter': filter}
 
+def dir_list(cap, path_list, recursive = False):
+    flags = '-l'
+    if recursive:
+        flags = '-lR'
+
+    pl = []
+    map(lambda x: pl.extend(glob.glob(x)), path_list)
+
+    for p in pl:
+        cmd_output(cap, [LS, flags, p])
+
 def file_output(cap, path_list):
     if cap in entries:
         pl = []
