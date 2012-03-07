@@ -103,6 +103,7 @@ MODPROBE_CONF = '/etc/modprobe.conf'
 MODPROBE_DIR = '/etc/modprobe.d'
 BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
 BOOT_TIME_MEMORY = '/etc/xensource/boot_time_memory'
+SYSCONFIG_CLOCK = '/etc/sysconfig/clock'
 SYSCONFIG_HWCONF = '/etc/sysconfig/hwconf'
 SYSCONFIG_NETWORK = '/etc/sysconfig/network'
 SYSCONFIG_NETWORK_SCRIPTS = '/etc/sysconfig/network-scripts'
@@ -824,6 +825,7 @@ exclude those logs from the archive.
     tree_output(CAP_XENSERVER_CONFIG, OEM_CONFIG_DIR, OEM_CONFIG_FILES_RE)
     tree_output(CAP_XENSERVER_CONFIG, STATIC_VDIS)
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', STATIC_VDIS])
+    file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_CLOCK])
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'])
