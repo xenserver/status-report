@@ -112,6 +112,7 @@ NET_UDEV_RULES = '/etc/udev/rules.d/60-net.rules'
 IFCFG_RE = re.compile(r'^.*/ifcfg-.*')
 ROUTE_RE = re.compile(r'^.*/route-.*')
 NETWORK_DBCACHE = '/var/xapi/network.dbcache'
+NETWORKD_DB = '/var/xapi/networkd.db'
 RESOLV_CONF = '/etc/resolv.conf'
 MPP_CONF = '/etc/mpp.conf'
 MULTIPATH_CONF = '/etc/multipath.conf'
@@ -714,6 +715,7 @@ exclude those logs from the archive.
     file_output(CAP_NETWORK_CONFIG, [INTERFACE_RENAME_LOG])
     file_output(CAP_NETWORK_CONFIG, [NETWORK_CONF])
     file_output(CAP_NETWORK_CONFIG, [NETWORK_DBCACHE])
+    file_output(CAP_NETWORK_CONFIG, [NETWORKD_DB])
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, IFCFG_RE)
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_NETWORK_SCRIPTS, ROUTE_RE)
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF, HOSTS])
