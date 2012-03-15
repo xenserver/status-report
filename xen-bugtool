@@ -335,6 +335,7 @@ CAP_NETWORK_CONFIG_OVERHEAD = 10 * MB
 caps = {}
 cap_sizes = {}
 unlimited_data = False
+unlimited_time = False
 dbg = False
 
 def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
@@ -519,6 +520,7 @@ def collect_data():
 def main(argv = None):
     global ANSWER_YES_TO_ALL, SILENT_MODE
     global entries, data, dbg
+    global unlimited_data, unlimited_time
 
     # we need access to privileged files, exit if we are not running as root
     if os.getuid() != 0:
@@ -601,6 +603,7 @@ def main(argv = None):
             entries = caps.keys()
         elif k == '--unlimited':
             unlimited_data = True
+            unlimited_time = True
         elif k == '--debug':
             dbg = True
             ProcOutput.debug = True
@@ -1662,7 +1665,7 @@ def run_procs(procs):
                 p.read_line()
 
             # handle timeout
-            if p.running and now > (start + p.max_time):
+            if not unlimited_time and p.running and now > (start + p.max_time):
                 output_ts("'%s' timed out" % p.cmdAsStr())
                 if p.inst:
                     p.inst.write("\n** timeout **\n")
