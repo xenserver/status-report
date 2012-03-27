@@ -232,6 +232,7 @@ OVS_VSCTL = '/usr/bin/ovs-vsctl'
 OVS_APPCTL = '/usr/bin/ovs-appctl'
 PS = '/bin/ps'
 PVS = '/usr/sbin/pvs'
+QLOGIC_FW = '/usr/bin/strings /lib/firmware/ql2*.bin | /bin/grep -i ver'
 ROUTE = '/sbin/route'
 RPM = '/bin/rpm'
 SG_MAP = '/usr/bin/sg_map'
@@ -696,6 +697,7 @@ exclude those logs from the archive.
     file_output(CAP_KERNEL_INFO, [MODPROBE_CONF])
     tree_output(CAP_KERNEL_INFO, MODPROBE_DIR)
     func_output(CAP_KERNEL_INFO, 'modinfo', module_info)
+    cmd_output(CAP_KERNEL_INFO, QLOGIC_FW, label='qlogic_fw')
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
