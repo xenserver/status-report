@@ -226,6 +226,7 @@ MODINFO = '/sbin/modinfo'
 MPPUTIL = '/usr/sbin/mppUtil'
 MULTIPATHD = '/sbin/multipathd'
 NETSTAT = '/bin/netstat'
+NTPQ = '/usr/sbin/ntpq'
 OVS_DPCTL = '/usr/bin/ovs-dpctl'
 OVS_OFCTL = '/usr/bin/ovs-ofctl'
 OVS_VSCTL = '/usr/bin/ovs-vsctl'
@@ -749,6 +750,7 @@ exclude those logs from the archive.
     tree_output(CAP_NETWORK_STATUS, PROC_NET_BONDING_DIR)
     tree_output(CAP_NETWORK_STATUS, PROC_NET_VLAN_DIR)
     cmd_output(CAP_NETWORK_STATUS, [TC, '-s', 'qdisc'])
+    cmd_output(CAP_NETWORK_STATUS, [NTPQ, '-c', 'peers'])
     file_output(CAP_NETWORK_STATUS, [PROC_NET_SOFTNET_STAT])
     tree_output(CAP_NETWORK_STATUS, OPENVSWITCH_CORE_DIR)
     if os.path.exists(OPENVSWITCH_VSWITCHD_PID):
