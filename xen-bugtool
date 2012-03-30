@@ -247,6 +247,7 @@ VGS = '/usr/sbin/vgs'
 VGSCAN = '/sbin/vgscan'
 XAPI_DB_PROCESS = '/opt/xensource/bin/xapi-db-process'
 XE = '/opt/xensource/bin/xe'
+XENPM = '/usr/sbin/xenpm'
 XS = '/opt/xensource/debug/xs'
 XENSTORE_LS = '/usr/bin/xenstore-ls'
 ZCAT = '/bin/zcat'
@@ -680,6 +681,9 @@ exclude those logs from the archive.
     file_output(CAP_HARDWARE_INFO, [BOOT_TIME_CPUS, BOOT_TIME_MEMORY])
     file_output(CAP_HARDWARE_INFO, [SYSCONFIG_HWCONF])
     cmd_output(CAP_HARDWARE_INFO, [LS, '-lR', '/dev'])
+    cmd_output(CAP_HARDWARE_INFO, [XENPM, 'get-cpu-topology'])
+    cmd_output(CAP_HARDWARE_INFO, [XENPM, 'get-cpufreq-states'])
+    cmd_output(CAP_HARDWARE_INFO, [XENPM, 'get-cpuidle-states'])
     # FIXME IDE?
 
     for d in disk_list():
