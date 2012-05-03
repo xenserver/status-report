@@ -496,7 +496,7 @@ def collect_data():
             # proc files must be read into memory
             try:
                 f = open(v['filename'], 'r')
-                s = f.read()
+                s = f.read(unlimited_data and -1 or caps[cap][MAX_SIZE])
                 f.close()
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                         cap_sizes[cap] < caps[cap][MAX_SIZE]:
