@@ -765,6 +765,7 @@ exclude those logs from the archive.
         cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list', 'port'])
         cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list', 'interface'])
         cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list-br'])
+	cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list', 'controller'])
         for b in br_list():
             cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list-ports', b])
             cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list-ifaces', b])
