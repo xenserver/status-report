@@ -1624,6 +1624,7 @@ class ProcOutput:
     def terminate(self):
         if self.running:
             try:
+                self.proc.stdout.close()
                 os.kill(self.proc.pid, SIGTERM)
             except:
                 pass
