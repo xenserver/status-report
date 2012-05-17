@@ -243,6 +243,7 @@ SQLITE = '/usr/bin/sqlite3'
 BIN_STATIC_VDIS = '/opt/xensource/bin/static-vdis'
 SYSCTL = '/sbin/sysctl'
 TC = '/sbin/tc'
+ULIMIT = ['/bin/sh', '-c', 'ulimit -a']
 UPTIME = '/usr/bin/uptime'
 VGS = '/usr/sbin/vgs'
 VGSCAN = '/sbin/vgscan'
@@ -706,6 +707,7 @@ exclude those logs from the archive.
     tree_output(CAP_KERNEL_INFO, MODPROBE_DIR)
     func_output(CAP_KERNEL_INFO, 'modinfo', module_info)
     cmd_output(CAP_KERNEL_INFO, QLOGIC_FW, label='qlogic_fw')
+    cmd_output(CAP_KERNEL_INFO, ULIMIT, label='ulimit-a')
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
