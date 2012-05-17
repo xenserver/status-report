@@ -679,7 +679,7 @@ exclude those logs from the archive.
     cmd_output(CAP_HARDWARE_INFO, [DMIDECODE])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-n'])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-tv'])
-    cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-vvxxxx'])
+    cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-vv'])
     file_output(CAP_HARDWARE_INFO, [PROC_USB_DEV, PROC_SCSI])
     file_output(CAP_HARDWARE_INFO, [BOOT_TIME_CPUS, BOOT_TIME_MEMORY])
     file_output(CAP_HARDWARE_INFO, [SYSCONFIG_HWCONF])
