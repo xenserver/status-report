@@ -736,9 +736,9 @@ exclude those logs from the archive.
     cmd_output(CAP_NETWORK_STATUS, [ARP, '-n'])
     cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-an'])
     tree_output(CAP_NETWORK_STATUS, DHCP_LEASE_DIR)
-    cmd_output(CAP_NETWORK_STATUS, [ARPTABLES, '-nL'])
+    cmd_output(CAP_NETWORK_STATUS, [ARPTABLES, '-nvL'])
     cmd_output(CAP_NETWORK_STATUS, [EBTABLES, '-L'])
-    cmd_output(CAP_NETWORK_STATUS, [IPTABLES, '-nL'])
+    cmd_output(CAP_NETWORK_STATUS, [IPTABLES, '-nvL'])
     cmd_output(CAP_NETWORK_STATUS, [BRCTL, 'show'])
     cmd_output(CAP_NETWORK_STATUS, [BIOSDEVNAME, '-d'])
     for p in os.listdir('/sys/class/net/'):
