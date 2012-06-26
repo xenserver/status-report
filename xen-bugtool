@@ -370,7 +370,7 @@ cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
 cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
-cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=120*KB,
+cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=360*KB,
     max_time=50)
 cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
 cap(CAP_MULTIPATH,           PII_MAYBE,                 max_size=20*KB,
