@@ -150,10 +150,6 @@ XENSTORED_DB = '/var/lib/xenstored/tdb'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_DUMPS_RE = re.compile(r'(?:.*/\.)|(?:.*\.log$)')
 HOST_CRASHDUMP_LOGS_RE = re.compile(r'.*\.log$')
-X11_LOGS_DIR = VAR_LOG_DIR
-X11_LOGS_RE = re.compile(r'.*/Xorg\..*$')
-X11_AUTH_DIR = '/root/'
-X11_AUTH_RE = re.compile(r'.*/\.((Xauthority)|(serverauth\.[0-9]*))$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
@@ -320,8 +316,6 @@ CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_VNCTERM              = 'vncterm'
 CAP_WLB                  = 'wlb'
-CAP_X11_LOGS             = 'X11'
-CAP_X11_AUTH             = 'X11-auth'
 CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
 CAP_XENRT                = 'xenrt'
@@ -393,8 +387,6 @@ cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=700*KB)
 cap(CAP_VNCTERM,             PII_MAYBE, checked = False)
 cap(CAP_WLB,                 PII_NO,                    max_size=3*MB,
     max_time=20)
-cap(CAP_X11_LOGS,            PII_NO,                    max_size=100*KB)
-cap(CAP_X11_AUTH,            PII_NO,                    max_size=100*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
@@ -565,7 +557,7 @@ def main(argv = None):
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_PERSISTENT_STATS, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
-                   CAP_VNCTERM, CAP_WLB, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS,
+                   CAP_VNCTERM, CAP_WLB, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS,
                    CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
@@ -826,9 +818,6 @@ exclude those logs from the archive.
 
     cmd_output(CAP_WLB, [XE, 'pool-retrieve-wlb-configuration'])
     cmd_output(CAP_WLB, [XE, 'pool-retrieve-wlb-diagnostics'])
-
-    tree_output(CAP_X11_LOGS, X11_LOGS_DIR, X11_LOGS_RE)
-    tree_output(CAP_X11_AUTH, X11_AUTH_DIR, X11_AUTH_RE)
 
     tree_output(CAP_XAPI_DEBUG, XAPI_DEBUG_DIR)
 
