@@ -535,8 +535,8 @@ def main(argv = None):
 
     try:
         (options, params) = getopt.gnu_getopt(
-            argv, 'sy', ['capabilities', 'silent', 'yestoall', 'entries=',
-                         'output=', 'outfd=', 'all', 'unlimited', 'debug'])
+            argv, 'adsuy', ['capabilities', 'silent', 'yestoall', 'entries=',
+                            'output=', 'outfd=', 'all', 'unlimited', 'debug'])
     except getopt.GetoptError, opterr:
         print >>sys.stderr, opterr
         return 2
@@ -599,12 +599,12 @@ def main(argv = None):
                 print >>sys.stderr, "Invalid output file descriptor", output_fd
                 return 2
 
-        elif k == '--all':
+        elif k in ['-a', '--all']:
             entries = caps.keys()
-        elif k == '--unlimited':
+        elif k in ['-u', '--unlimited']:
             unlimited_data = True
             unlimited_time = True
-        elif k == '--debug':
+        elif k in ['-d', '--debug']:
             dbg = True
             ProcOutput.debug = True
 
