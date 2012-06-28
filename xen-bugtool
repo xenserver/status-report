@@ -198,6 +198,7 @@ INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
 # External programs
 #
 
+ACPIDUMP = '/usr/sbin/acpidump'
 ARP = '/sbin/arp'
 ARPTABLES = '/sbin/arptables'
 BIOSDEVNAME = '/sbin/biosdevname'
@@ -363,8 +364,8 @@ cap(CAP_DEVICE_MODEL,        PII_YES,   min_size=200*KB, max_size=8*MB)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=50*KB,
     max_time=60)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
-cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=200*KB,
-    max_time=20)
+cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=800*KB,
+    max_time=60)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
     min_time=20, max_time=90, checked=False, hidden=True)
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
@@ -681,6 +682,7 @@ exclude those logs from the archive.
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-n'])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-tv'])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-vv'])
+    cmd_output(CAP_HARDWARE_INFO, [ACPIDUMP])
     file_output(CAP_HARDWARE_INFO, [PROC_USB_DEV, PROC_SCSI])
     file_output(CAP_HARDWARE_INFO, [BOOT_TIME_CPUS, BOOT_TIME_MEMORY])
     file_output(CAP_HARDWARE_INFO, [SYSCONFIG_HWCONF])
