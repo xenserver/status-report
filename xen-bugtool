@@ -58,7 +58,6 @@ import base64
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
 
-import xen.lowlevel.xc
 import XenAPI
 
 OS_RELEASE = platform.release()
@@ -252,6 +251,7 @@ VGSCAN = '/sbin/vgscan'
 XAPI_DB_PROCESS = '/opt/xensource/bin/xapi-db-process'
 XE = '/opt/xensource/bin/xe'
 XENPM = '/usr/sbin/xenpm'
+XL = '/usr/sbin/xl'
 XS = '/opt/xensource/debug/xs'
 XENSTORE_LS = '/usr/bin/xenstore-ls'
 ZCAT = '/bin/zcat'
@@ -879,20 +879,8 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_LOGS, LICENSE_LOGS)
     tree_output(CAP_XENSERVER_LOGS, OEM_CONFIG_DIR, OEM_XENSERVER_LOGS_RE)
 
-    try:
-        def xen_dmesg(xc):
-            data = xc.readconsolering()
-            xc.send_debug_keys('q')
-            time.sleep(1)
-            return data
-
-        xc = xen.lowlevel.xc.xc()
-
-        func_output(CAP_XEN_INFO, 'xen-dmesg', lambda x: xen_dmesg(xc))
-        func_output(CAP_XEN_INFO, 'physinfo', lambda x: prettyDict(xc.physinfo()))
-        func_output(CAP_XEN_INFO, 'xeninfo', lambda x: prettyDict(xc.xeninfo()))
-    except:
-        pass
+    cmd_output(CAP_XEN_INFO, [XL, 'dmesg'])
+    cmd_output(CAP_XEN_INFO, [XL, 'info'])
     file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
 
     cmd_output(CAP_XHA_LIVESET, [HA_QUERY_LIVESET])
