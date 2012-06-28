@@ -160,7 +160,7 @@ INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 PATCH_APPLIED_DIR = '/var/patch/applied'
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
-      ['xensource.log', 'audit.log', 'xenstored-access.log', 'SMlog', 'VMPRlog', 'isl_trace.log',  'xen/xenstored-trace.log', 
+      ['xensource.log', 'audit.log', 'xenstored-access.log', 'SMlog', 'VMPRlog', 'isl_trace.log',  'xen/xenstored-trace.log',
        'xen/xen-hotplug.log', 'xen/domain-builder-ng.log', 'squeezed.log',
        'openvswitch/ovs-brcompatd.log', 'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log', 'xcp-networkd.log' ] +
       [ f % n for n in range(1, 20) \
@@ -537,7 +537,7 @@ def main(argv = None):
 
     output_type = 'tar.bz2'
     output_fd = -1
-    
+
     if argv is None:
         argv = sys.argv
 
@@ -560,13 +560,13 @@ def main(argv = None):
             max_time=90)
 
     if  os.getenv('XEN_RT'):
-        entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_CVSM, CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO, 
+        entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_CVSM, CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO,
                    CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_PERSISTENT_STATS, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
-                   CAP_VNCTERM, CAP_WLB, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, 
-                   CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES, 
+                   CAP_VNCTERM, CAP_WLB, CAP_X11_LOGS, CAP_X11_AUTH, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS,
+                   CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
         entries = [e for e in caps.keys() if caps[e][CHECKED]]
@@ -702,7 +702,7 @@ exclude those logs from the archive.
     tree_output(CAP_HOST_CRASHDUMP_LOGS, HOST_CRASHDUMPS_DIR,
                 HOST_CRASHDUMP_LOGS_RE, False)
 
-    file_output(CAP_KERNEL_INFO, [PROC_VERSION, PROC_MODULES, PROC_DEVICES, 
+    file_output(CAP_KERNEL_INFO, [PROC_VERSION, PROC_MODULES, PROC_DEVICES,
                                   PROC_FILESYSTEMS, PROC_CMDLINE])
     cmd_output(CAP_KERNEL_INFO, [ZCAT, PROC_CONFIG], label='config')
     cmd_output(CAP_KERNEL_INFO, [SYSCTL, '-A'])
@@ -854,7 +854,7 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
     file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
-    cmd_output(CAP_XENSERVER_DATABASES, [XE, 'pool-dump-database', 'file-name='], 
+    cmd_output(CAP_XENSERVER_DATABASES, [XE, 'pool-dump-database', 'file-name='],
                label="xapi-db-dumped.xml", filter=filter_db_pii)
     cmd_output(CAP_XENSERVER_DATABASES, [XS, 'debug', 'watches'])
     cmd_output(CAP_XENSERVER_DATABASES, [XS, 'debug', 'quotas'])
@@ -863,10 +863,10 @@ exclude those logs from the archive.
 
     tree_output(CAP_XENSERVER_INSTALL, VAR_LOG_DIR + 'installer')
     file_output(CAP_XENSERVER_INSTALL,
-                [ VAR_LOG_DIR + x for x in 
-                  [ 'firstboot-SR-commands-log', 
+                [ VAR_LOG_DIR + x for x in
+                  [ 'firstboot-SR-commands-log',
                     'upgrade-commands-log', 'generate-iscsi-iqn-log']] +
-                [ '/root/' + x for x in 
+                [ '/root/' + x for x in
                   [ 'blockdevs-log', 'cmdline-log', 'devcontents-log',
                     'dmesg-log', 'install-log', 'lspci-log', 'modules-log',
                     'pci-log', 'processes-log', 'tty-log', 'uname-log',
@@ -893,7 +893,7 @@ exclude those logs from the archive.
         load_plugins()
     except:
         pass
-    
+
     # permit the user to filter out data
     for k in sorted(data.keys()):
         if not ANSWER_YES_TO_ALL and not yes("Include '%s'? [Y/n]: " % k):
@@ -934,7 +934,7 @@ exclude those logs from the archive.
     if dbg:
         print >>sys.stderr, "Category sizes (max, actual):\n"
         for c in caps.keys():
-            print >>sys.stderr, "    %s (%d, %d)" % (c, caps[c][MAX_SIZE], 
+            print >>sys.stderr, "    %s (%d, %d)" % (c, caps[c][MAX_SIZE],
                                                      cap_sizes[c])
     return 0
 
@@ -997,7 +997,7 @@ def dump_xapi_subprocess_info(cap):
             except:
                 pass
 	result['fds'] = fds
-	return result	
+	return result
     xapis = filter(lambda x: cmdline(x).startswith("/opt/xensource/bin/xapi"), pids)
     xapis = filter(lambda x: parent(x) == "1", xapis)
     result = {}
@@ -1023,7 +1023,7 @@ def dump_xapi_rrds(cap):
             try:
                 (i, o, x) = select([rrd], [], [], 5.0)
                 if len(i) == 1:
-                    data['xapi_rrd-%s' % vm['uuid']] = {'cap': cap, 
+                    data['xapi_rrd-%s' % vm['uuid']] = {'cap': cap,
                                                         'output': StringIOmtime(rrd.read())}
             finally:
                 rrd.close()
@@ -1035,7 +1035,7 @@ def dump_xapi_rrds(cap):
             output += line
     finally:
         rrd.close()
-        
+
     session.xenapi.session.logout()
     return output
 
@@ -1061,7 +1061,7 @@ class DBFilter:
             self.state['in_secret_table'] = True
         elif s.startswith('</table>'):
             self.state['in_secret_table'] = False
-        
+
         if self.state['in_secret_table'] and s.startswith("<row"): # match only on DB rows
             s = re.sub(r'(value=")[^"]+(")', r'\1REMOVED\2', s)
         return s
@@ -1180,7 +1180,7 @@ def csl_logs(cap):
             if sr.has_key('type') and sr['type'] == 'cslg':
                 if sr['shared'] and pbd['host'] != this_host and not i_am_master:
                     continue
-                
+
                 dev_cfg = pbd['device_config']
                 server = "server=%s" % socket.gethostbyname(dev_cfg['target'])
                 if dev_cfg.has_key('port'):
@@ -1200,7 +1200,7 @@ def csl_logs(cap):
     return output.getvalue()
 
 def multipathd_topology(cap):
-    pipe = Popen([MULTIPATHD, '-k'], bufsize=1, stdin=PIPE, 
+    pipe = Popen([MULTIPATHD, '-k'], bufsize=1, stdin=PIPE,
                      stdout=PIPE, stderr=dev_null)
     stdout, stderr = pipe.communicate('show topology')
 
@@ -1288,7 +1288,7 @@ def load_plugins(just_capabilities = False):
         if val in ['true', 'false', 'yes', 'no']:
             ret = val in ['true', 'yes']
         return ret
-        
+
     for dir in [d for d in os.listdir(PLUGIN_DIR) if os.path.isdir(os.path.join(PLUGIN_DIR, d))]:
         if not caps.has_key(dir):
             if not os.path.exists("%s/%s.xml" % (PLUGIN_DIR, dir)):
@@ -1318,7 +1318,7 @@ def load_plugins(just_capabilities = False):
 
         if just_capabilities:
             continue
-                    
+
         plugdir = os.path.join(PLUGIN_DIR, dir)
         for file in [f for f in os.listdir(plugdir) if f.endswith('.xml')]:
             xmldoc = parse(os.path.join(plugdir, file))
@@ -1393,7 +1393,7 @@ def make_zip(subdir):
         for (k, v) in data.items():
             try:
                 dest = os.path.join(subdir, construct_filename(k, v))
-            
+
                 if v.has_key('output'):
                     zf.writestr(dest, v['output'].getvalue())
                 elif v.has_key('filename'):
@@ -1406,7 +1406,7 @@ def make_zip(subdir):
                 pass
     finally:
         zf.close()
-    
+
     output ('Writing archive %s successful.' % filename)
     if SILENT_MODE:
         print filename
@@ -1496,7 +1496,7 @@ def update_cap_size(cap, size):
 
 def update_cap_time(cap, time):
     update_cap(cap, MAX_TIME, time)
-    
+
 
 def update_cap(cap, k, v):
     global caps
@@ -1690,12 +1690,12 @@ def pidof(name):
                 pids.append(int(d))
         except:
             pass
-        
+
     return pids
 
 
 def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_quotes = True):
-    """ Reads a KEY=Value style file (e.g. xensource-inventory). Returns a 
+    """ Reads a KEY=Value style file (e.g. xensource-inventory). Returns a
     dictionary of key/values in the file.  Not designed for use with large files
     as the file is read entirely into memory."""
 
@@ -1707,7 +1707,7 @@ def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_
     if allowed_keys:
         lines = filter(lambda x: True in [x.startswith(y) for y in allowed_keys],
                        lines)
-    
+
     defs = [ (l[:l.find("=")], l[(l.find("=") + 1):]) for l in lines ]
 
     if strip_quotes:
