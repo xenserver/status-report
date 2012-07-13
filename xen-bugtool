@@ -449,17 +449,16 @@ def file_output(cap, path_list):
         map(lambda x: pl.extend(glob.glob(x)), path_list)
 
         for p in pl:
-            if os.path.exists(p):
+            try:
+                s = os.stat(p)
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
-                        cap_sizes[cap] < caps[cap][MAX_SIZE]:
+                        cap_sizes[cap] < caps[cap][MAX_SIZE] or s.st_size == 0:
                     data[p] = {'cap': cap, 'filename': p}
-                    try:
-                        s = os.stat(p)
-                        cap_sizes[cap] += s.st_size
-                    except:
-                        pass
+                    cap_sizes[cap] += s.st_size
                 else:
                     output("Omitting %s, size constraint of %s exceeded" % (p, cap))
+            except:
+                pass
 
 def tree_output(cap, path, pattern = None, negate = False):
     if cap in entries:
@@ -495,7 +494,7 @@ def collect_data():
                 s = f.read(unlimited_data and -1 or caps[cap][MAX_SIZE])
                 f.close()
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
-                        cap_sizes[cap] < caps[cap][MAX_SIZE]:
+                        cap_sizes[cap] < caps[cap][MAX_SIZE] or len(s) == 0:
                     v['output'] = StringIOmtime(s)
                     cap_sizes[cap] += len(s)
                 else:
