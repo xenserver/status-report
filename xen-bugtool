@@ -58,6 +58,17 @@ import base64
 sys.path.append('/usr/lib/python')
 sys.path.append('/usr/lib64/python')
 
+# Monkey-patch zipfile's __del__ function to be less stupid
+#   Specifically, it calls close which further writes to the file, which
+#   fails with ENOSPC if the root filesystem is full
+zipfile_del = zipfile.ZipFile.__del__
+def exceptionless_del(*argl, **kwargs):
+    try:
+        zipfile_del(*argl, **kwargs)
+    except:
+        pass
+zipfile.ZipFile.__del__ = exceptionless_del
+
 import XenAPI
 
 OS_RELEASE = platform.release()
@@ -914,9 +925,9 @@ exclude those logs from the archive.
         output_ts('Creating output file')
 
     if output_type.startswith('tar'):
-        make_tar(subdir, output_type, output_fd)
+        res = make_tar(subdir, output_type, output_fd)
     else:
-        make_zip(subdir)
+        res = make_zip(subdir)
 
     clean_tapdisk_logs()
 
@@ -925,7 +936,7 @@ exclude those logs from the archive.
         for c in caps.keys():
             print >>sys.stderr, "    %s (%d, %d)" % (c, caps[c][MAX_SIZE],
                                                      cap_sizes[c])
-    return 0
+    return res
 
 def find_tapdisk_logs():
     return glob.glob('/var/log/blktap/*.log*')
@@ -1331,6 +1342,7 @@ def load_plugins(just_capabilities = False):
 
 def make_tar(subdir, suffix, output_fd):
     global SILENT_MODE, data
+    cleanup = False
 
     mode = 'w'
     if suffix == 'tar.bz2':
@@ -1361,19 +1373,39 @@ def make_tar(subdir, suffix, output_fd):
                     ti.mtime = s.st_mtime
                     ti.size = s.st_size
                     tf.addfile(ti, file(v['filename']))
-            except:
-                pass
-    finally:
-        tf.close()
 
-    if output_fd == -1:
-        output ('Writing tarball %s successful.' % filename)
-        if SILENT_MODE:
-            print filename
+            except Exception, e:
+                output ("Error for file '%s': '%s'" % (tar_filename, e))
+
+    finally:
+        try:
+            tf.close()
+        except Exception, e:
+            if output_fd == -1:
+                output ("Error closing tar file '%s': '%s'" % (filename, e))
+                cleanup = True
+            else:
+                output ("Error closing tar file descriptor: '%s'" % (e,))
+
+    if cleanup:
+        output ("Cleaning up incomplete file '%s'" % (filename,))
+        try:
+            os.remove(filename)
+        except OSError:
+            pass
+        return 1
+    else:
+        if output_fd == -1:
+            output ('Writing tarball %s successful.' % filename)
+            if SILENT_MODE:
+                print filename
+
+    return 0
 
 
 def make_zip(subdir):
     global SILENT_MODE, data
+    cleanup = False
 
     filename = "%s/%s.zip" % (BUG_DIR, subdir)
     zf = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
@@ -1391,14 +1423,29 @@ def make_zip(subdir):
                     else:
                         compress_type = zipfile.ZIP_DEFLATED
                     zf.write(v['filename'], dest, compress_type)
-            except:
-                pass
-    finally:
-        zf.close()
 
-    output ('Writing archive %s successful.' % filename)
-    if SILENT_MODE:
-        print filename
+            except Exception, e:
+                output ("Error generating zip file: '%s' %s" % (dest, e))
+    finally:
+        try:
+            zf.close()
+        except Exception, e:
+            output ("Error closing zip file '%s': %s" % (filename, e))
+            cleanup = True
+
+    if cleanup:
+        output ("Cleaning up incomplete file '%s'" % (filename,))
+        try:
+            os.remove(filename)
+        except OSError:
+            pass
+        return 1
+    else:
+        output ('Writing archive %s successful.' % filename)
+        if SILENT_MODE:
+            print filename
+
+    return 0
 
 
 def make_inventory(inventory, subdir):
