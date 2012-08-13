@@ -793,7 +793,7 @@ exclude those logs from the archive.
          [ VAR_LOG_DIR + x for x in
            [ 'crit.log', 'kern.log', 'daemon.log', 'user.log', 'syslog', 'messages',
              'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg', 'blktap.log',
-             'xen-dmesg' ] +
+             'xen-dmesg', 'wtmp' ] +
            [ f % n for n in range(1, 20) \
                  for f in ['crit.log.%d', 'crit.log.%d.gz',
                            'kern.log.%d', 'kern.log.%d.gz',
@@ -802,7 +802,7 @@ exclude those logs from the archive.
                            'messages.%d', 'messages.%d.gz',
                            'monitor_memory.log.%d', 'monitor_memory.log.%d.gz',
                            'secure.%d', 'secure.%d.gz',
-                           'blktap.log.%d']]])
+                           'blktap.log.%d', 'wtmp.%d.gz']]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
     file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
