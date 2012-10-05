@@ -374,8 +374,8 @@ cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=800*KB,
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
     min_time=20, max_time=90, checked=False, hidden=True)
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
-cap(CAP_HOST_CRASHDUMP_DUMPS,PII_YES, checked = False)
-cap(CAP_HOST_CRASHDUMP_LOGS, PII_NO)
+cap(CAP_HOST_CRASHDUMP_DUMPS,PII_MAYBE, checked = False)
+cap(CAP_HOST_CRASHDUMP_LOGS, PII_MAYBE)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=360*KB,
     max_time=50)
 cap(CAP_LOSETUP_A,           PII_MAYBE,                 max_size=KB, max_time=5)
