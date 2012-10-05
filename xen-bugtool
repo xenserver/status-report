@@ -1527,7 +1527,6 @@ def update_capabilities():
 def update_cap_size(cap, size):
     update_cap(cap, MIN_SIZE, size)
     update_cap(cap, MAX_SIZE, size)
-    update_cap(cap, CHECKED, size > 0)
 
 
 def update_cap_time(cap, time):
