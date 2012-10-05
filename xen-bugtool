@@ -159,8 +159,8 @@ DB_DEFAULT_FIELDS = '/etc/xensource/db-default-fields'
 DB_SCHEMA_SQL = '/etc/xensource/db_schema.sql'
 XENSTORED_DB = '/var/lib/xenstored/tdb'
 HOST_CRASHDUMPS_DIR = '/var/crash'
-HOST_CRASHDUMP_DUMPS_RE = re.compile(r'(?:.*/\.)|(?:.*\.log$)')
-HOST_CRASHDUMP_LOGS_RE = re.compile(r'.*\.log$')
+# Match all non-dot files and directories
+HOST_CRASHDUMP_LOGS_RE = re.compile(r'^[^.].*')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
@@ -311,7 +311,6 @@ CAP_FIRSTBOOT            = 'firstboot'
 CAP_HARDWARE_INFO        = 'hardware-info'
 CAP_HDPARM_T             = 'hdparm-t'
 CAP_HIGH_AVAILABILITY    = 'high-availability'
-CAP_HOST_CRASHDUMP_DUMPS = 'host-crashdump-dumps'
 CAP_HOST_CRASHDUMP_LOGS  = 'host-crashdump-logs'
 CAP_KERNEL_INFO          = 'kernel-info'
 CAP_LOSETUP_A            = 'loopback-devices'
@@ -374,7 +373,6 @@ cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=800*KB,
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
     min_time=20, max_time=90, checked=False, hidden=True)
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
-cap(CAP_HOST_CRASHDUMP_DUMPS,PII_MAYBE, checked = False)
 cap(CAP_HOST_CRASHDUMP_LOGS, PII_MAYBE)
 cap(CAP_KERNEL_INFO,         PII_MAYBE,                 max_size=360*KB,
     max_time=50)
@@ -563,7 +561,7 @@ def main(argv = None):
 
     if  os.getenv('XEN_RT'):
         entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_CVSM, CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO,
-                   CAP_HOST_CRASHDUMP_DUMPS, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
+                   CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_PERSISTENT_STATS, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
@@ -700,8 +698,6 @@ exclude those logs from the archive.
 
     file_output(CAP_HIGH_AVAILABILITY, [XHAD_CONF, XHA_LOG])
 
-    tree_output(CAP_HOST_CRASHDUMP_DUMPS, HOST_CRASHDUMPS_DIR,
-                HOST_CRASHDUMP_DUMPS_RE, True)
     tree_output(CAP_HOST_CRASHDUMP_LOGS, HOST_CRASHDUMPS_DIR,
                 HOST_CRASHDUMP_LOGS_RE, False)
 
@@ -1510,9 +1506,6 @@ def construct_filename(k, v):
 def update_capabilities():
     update_cap_size(CAP_HOST_CRASHDUMP_LOGS,
                     size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_RE))
-    update_cap_size(CAP_HOST_CRASHDUMP_DUMPS,
-                    size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_RE,
-                                True))
     update_cap_size(CAP_XAPI_DEBUG, size_of_dir(XAPI_DEBUG_DIR))
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(XENSERVER_LOGS))
     # compute max time & size based on number of PIFs
