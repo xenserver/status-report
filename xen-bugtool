@@ -166,11 +166,11 @@ INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 PATCH_APPLIED_DIR = '/var/patch/applied'
 XENSERVER_LOGS = \
     [ VAR_LOG_DIR + x for x in
-      ['xensource.log', 'audit.log', 'xenstored-access.log', 'SMlog', 'VMPRlog', 'isl_trace.log',  'xen/xenstored-trace.log',
+      ['xensource.log', 'audit.log', 'xenstored-access.log', 'SMlog', 'isl_trace.log',  'xen/xenstored-trace.log',
        'xen/xen-hotplug.log', 'xen/domain-builder-ng.log', 'squeezed.log',
        'openvswitch/ovs-brcompatd.log', 'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log', 'xcp-networkd.log' ] +
       [ f % n for n in range(1, 20) \
-            for f in ['xensource.log.%d', 'xensource.log.%d.gz','SMlog.%d', 'SMlog.%d.gz', 'VMPRlog.%d', 'VMPRlog.%d.gz', 'isl_trace.log.%d', 'isl_trace.log.%d.gz',
+            for f in ['xensource.log.%d', 'xensource.log.%d.gz','SMlog.%d', 'SMlog.%d.gz', 'isl_trace.log.%d', 'isl_trace.log.%d.gz',
                       'audit.log.%d', 'audit.log.%d.gz', 'xenstored-access.log.%d', 'xenstored-access.log.%d.gz', \
                       'xen/xenstored-access.log.%d', 'xen/xenstored-access.log.%d.gz', 'squeezed.log.%d', \
                       'openvswitch/ovs-brcompatd.log.%d', 'openvswitch/ovs-brcompatd.log.%d.gz', \
@@ -325,7 +325,6 @@ CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_VNCTERM              = 'vncterm'
-CAP_WLB                  = 'wlb'
 CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
 CAP_XENRT                = 'xenrt'
@@ -394,8 +393,6 @@ cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=5*KB,
     max_time=20)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=700*KB)
 cap(CAP_VNCTERM,             PII_MAYBE, checked = False)
-cap(CAP_WLB,                 PII_NO,                    max_size=3*MB,
-    max_time=20)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
@@ -565,7 +562,7 @@ def main(argv = None):
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_PERSISTENT_STATS, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
-                   CAP_VNCTERM, CAP_WLB, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS,
+                   CAP_VNCTERM, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS,
                    CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
@@ -824,9 +821,6 @@ exclude those logs from the archive.
         generate_tapdisk_logs()
 
     tree_output(CAP_VNCTERM, VNCTERM_CORE_DIR)
-
-    cmd_output(CAP_WLB, [XE, 'pool-retrieve-wlb-configuration'])
-    cmd_output(CAP_WLB, [XE, 'pool-retrieve-wlb-diagnostics'])
 
     tree_output(CAP_XAPI_DEBUG, XAPI_DEBUG_DIR)
 
