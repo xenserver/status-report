@@ -383,8 +383,8 @@ cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=20*KB,
     max_time=30)
 cap(CAP_PAM,                 PII_NO,                    max_size=50*KB)
-cap(CAP_PERSISTENT_STATS,    PII_MAYBE,                 max_size=50*MB,
-    max_time=60)
+cap(CAP_PERSISTENT_STATS,    PII_NO,                    max_size=50*MB,
+    max_time=60, checked=False, hidden=True)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
     max_time=60)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
@@ -560,7 +560,7 @@ def main(argv = None):
         entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_CVSM, CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FIRSTBOOT, CAP_HARDWARE_INFO,
                    CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
-                   CAP_PAM, CAP_PERSISTENT_STATS, CAP_MULTIPATH,
+                   CAP_PAM, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
                    CAP_VNCTERM, CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS,
                    CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
@@ -1023,8 +1023,7 @@ def dump_xapi_rrds(cap):
     output = ''
     rrd = urllib.urlopen('http://localhost/host_rrd?session_id=%s' % session._session)
     try:
-        for line in rrd:
-            output += line
+        output = rrd.read()
     finally:
         rrd.close()
 
