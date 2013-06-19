@@ -1225,7 +1225,7 @@ def bond_list():
 
     if not procs[0].timed_out:
         bonds = output.getvalue().splitlines()[1:]
-        return [x.split('\t')[1] for x in bonds]
+        return [x.split('\t')[0] for x in bonds]
     return []
 
 def fd_usage(cap):
