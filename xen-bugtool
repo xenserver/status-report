@@ -201,6 +201,10 @@ SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
 # External programs
 #
 
+def find_lvm(name):
+    return (os.path.isfile('/sbin/' + name) and '/sbin/' or '/usr/sbin/') + name
+
+
 ACPIDUMP = '/usr/sbin/acpidump'
 ARP = '/sbin/arp'
 ARPTABLES = '/sbin/arptables'
@@ -227,8 +231,8 @@ LIST_DOMAINS = '/opt/xensource/bin/list_domains'
 LOSETUP = '/sbin/losetup'
 LS = '/bin/ls'
 LSPCI = '/sbin/lspci'
-LVDISPLAY = '/usr/sbin/lvdisplay'
-LVS = '/usr/sbin/lvs'
+LVDISPLAY = find_lvm('lvdisplay')
+LVS = find_lvm('lvs')
 MD5SUM = '/usr/bin/md5sum'
 MODINFO = '/sbin/modinfo'
 MPPUTIL = '/usr/sbin/mppUtil'
@@ -240,7 +244,7 @@ OVS_DPCTL = '/usr/bin/ovs-dpctl'
 OVS_OFCTL = '/usr/bin/ovs-ofctl'
 OVS_VSCTL = '/usr/bin/ovs-vsctl'
 PS = '/bin/ps'
-PVS = '/usr/sbin/pvs'
+PVS = find_lvm('pvs')
 QLOGIC_FW = '/usr/bin/strings /lib/firmware/ql2*.bin | /bin/grep -i ver'
 ROUTE = '/sbin/route'
 RPM = '/bin/rpm'
@@ -250,8 +254,8 @@ SYSCTL = '/sbin/sysctl'
 TC = '/sbin/tc'
 ULIMIT = 'ulimit -a'
 UPTIME = '/usr/bin/uptime'
-VGS = '/usr/sbin/vgs'
-VGSCAN = '/sbin/vgscan'
+VGS = find_lvm('vgs')
+VGSCAN = find_lvm('vgscan')
 XAPI_DB_PROCESS = '/opt/xensource/bin/xapi-db-process'
 XE = '/opt/xensource/bin/xe'
 XENPM = '/usr/sbin/xenpm'
