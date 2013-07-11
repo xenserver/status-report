@@ -38,7 +38,7 @@ import re
 import os
 import StringIO
 import sys
-import bugtoolTarfile as tarfile
+import tarfile
 import time
 import commands
 import pprint
@@ -54,9 +54,6 @@ import glob
 import urllib
 import socket
 import base64
-
-sys.path.append('/usr/lib/python')
-sys.path.append('/usr/lib64/python')
 
 # Monkey-patch zipfile's __del__ function to be less stupid
 #   Specifically, it calls close which further writes to the file, which
@@ -1335,15 +1332,15 @@ def make_tar(subdir, suffix, output_fd):
     global SILENT_MODE, data
     cleanup = False
 
-    mode = 'w'
+    mode = 'w|'
     if suffix == 'tar.bz2':
-        mode = 'w:bz2'
+        mode = 'w|bz2'
     filename = "%s/%s.%s" % (BUG_DIR, subdir, suffix)
 
     if output_fd == -1:
         tf = tarfile.open(filename, mode)
     else:
-        tf = tarfile.open(None, 'w', os.fdopen(output_fd, 'a'))
+        tf = tarfile.open(None, 'w|', os.fdopen(output_fd, 'a'))
 
     try:
         for (k, v) in data.items():

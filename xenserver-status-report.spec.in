@@ -1,0 +1,35 @@
+Summary:        A program that generates status reports for a XenServer host
+Name:           xenserver-status-report
+Version:        @XS_VERSION@
+Release:        @XS_RELEASE@
+License:        GPLv2+
+Group:          System Environment/Base
+Source0:        xen-bugtool
+BuildRoot:      %{_tmppath}/%{name}-%{version}
+BuildArch:      noarch
+BuildRequires:  python-devel
+Requires:       hdparm, dmidecode, lvm2, bridge-utils, biosdevname, arptables
+Requires:       ebtables, ethtool, pciutils, pmtools, sg3_utils
+
+%description
+The %{name} package collects various system configuration and state to aid in
+diagnosing issues.
+
+%install
+rm -rf $RPM_BUILD_ROOT
+install -m 755 -d ${RPM_BUILD_ROOT}/%{_sbindir}
+install -m 755 -p %{SOURCE0} ${RPM_BUILD_ROOT}/%{_sbindir}
+ln ${RPM_BUILD_ROOT}/%{_sbindir}/xen-bugtool \
+	${RPM_BUILD_ROOT}/%{_sbindir}/xenserver-status-report
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root,-)
+%{_sbindir}/*
+
+%changelog
+* Thu Jul 11 2013 Frediano Ziglio <frediano.ziglio@citrix.com>
+- First packaged version
+
