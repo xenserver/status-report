@@ -416,6 +416,11 @@ entries = None
 data = {}
 dev_null = open('/dev/null', 'r+')
 
+def no_unicode(x):
+    if isinstance(x, unicode):
+        return x.encode('utf-8')
+    return x
+
 def output(x):
     global SILENT_MODE
     if not SILENT_MODE:
@@ -901,7 +906,7 @@ exclude those logs from the archive.
         subdir = "bug-report-%s" % time.strftime("%Y%m%d%H%M%S")
 
     # include inventory
-    data['inventory.xml'] = {'cap': None, 'output': StringIOmtime(make_inventory(data, subdir))}
+    data['inventory.xml'] = {'cap': None, 'output': StringIOmtime(no_unicode(make_inventory(data, subdir)))}
 
     # create archive
     if output_fd == -1 and not os.path.exists(BUG_DIR):
@@ -1340,13 +1345,13 @@ def make_tar(subdir, suffix, output_fd):
     if output_fd == -1:
         tf = tarfile.open(filename, mode)
     else:
-        tf = tarfile.open(None, 'w|', os.fdopen(output_fd, 'a'))
+        tf = tarfile.open(None, 'w|', os.fdopen(output_fd, 'ab'))
 
     try:
         for (k, v) in data.items():
             try:
                 tar_filename = os.path.join(subdir, construct_filename(k, v))
-                ti = tarfile.TarInfo(tar_filename)
+                ti = tarfile.TarInfo(no_unicode(tar_filename))
 
                 ti.uname = 'root'
                 ti.gname = 'root'
@@ -1360,7 +1365,7 @@ def make_tar(subdir, suffix, output_fd):
                     s = os.stat(v['filename'])
                     ti.mtime = s.st_mtime
                     ti.size = s.st_size
-                    tf.addfile(ti, file(v['filename']))
+                    tf.addfile(ti, file(v['filename'],'rb'))
 
             except Exception, e:
                 output ("Error for file '%s': '%s'" % (tar_filename, e))
