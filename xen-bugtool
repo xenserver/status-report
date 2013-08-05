@@ -215,6 +215,7 @@ CAT = '/bin/cat'
 CHKCONFIG = '/sbin/chkconfig'
 CSL = '/opt/Citrix/StorageLink/bin/csl'
 DF = '/bin/df'
+DU = '/usr/bin/du'
 DMESG = '/bin/dmesg'
 DMIDECODE = '/usr/sbin/dmidecode'
 DMSETUP = '/sbin/dmsetup'
@@ -365,8 +366,8 @@ cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
 cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
     max_time=120)
 cap(CAP_DEVICE_MODEL,        PII_YES,   min_size=200*KB, max_size=8*MB)
-cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=50*KB,
-    max_time=60)
+cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=8*MB,
+    max_time=120)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=800*KB,
     max_time=60)
@@ -660,6 +661,7 @@ exclude those logs from the archive.
     file_output(CAP_DISK_INFO, [FSTAB, ISCSI_CONF, ISCSI_INITIATOR])
     cmd_output(CAP_DISK_INFO, [DF, '-alT'])
     cmd_output(CAP_DISK_INFO, [DF, '-alTi'])
+    cmd_output(CAP_DISK_INFO, [DU, '-ax', '/'])
     for d in disk_list():
         cmd_output(CAP_DISK_INFO, [HDPARM, '-I', '/dev/%s' % d])
     if len(pidof('iscsid')) != 0:
