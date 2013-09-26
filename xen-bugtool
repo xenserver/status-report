@@ -47,13 +47,21 @@ import zipfile
 from subprocess import Popen, PIPE
 from select import select
 from signal import SIGTERM, SIGUSR1
-import md5
 import platform
 import fcntl
 import glob
 import urllib
 import socket
 import base64
+
+try:
+    import hashlib
+    def md5_new():
+        return hashlib.md5()
+except:
+    import md5
+    def md5_new():
+        return md5.new()
 
 # Monkey-patch zipfile's __del__ function to be less stupid
 #   Specifically, it calls close which further writes to the file, which
@@ -1478,7 +1486,7 @@ def inventory_entry(document, subdir, k, v):
 
 
 def md5sum(d):
-    m = md5.new()
+    m = md5_new()
     if d.has_key('filename'):
         f = open(d['filename'])
         data = f.read(1024)
