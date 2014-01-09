@@ -812,7 +812,6 @@ exclude those logs from the archive.
         cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'show', '-s'])
         for d in dp_list():
             cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'show', d])
-            cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'status', d])
             cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'dump-flows', d])
             cmd_output(CAP_NETWORK_STATUS, [OVS_DPCTL, 'dump-flows', d])
         cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'bond/list'])
