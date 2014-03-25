@@ -541,7 +541,10 @@ def collect_data(subdir, archive):
             else:
                 output("Omitting %s, size constraint of %s exceeded" % (k, cap))
         elif filename:
-            archive.addRealFile(name, filename)
+            try:
+                archive.addRealFile(name, filename)
+            except:
+                pass
 
     run_procs(process_lists.values())
 
