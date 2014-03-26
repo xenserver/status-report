@@ -879,8 +879,6 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
     cmd_output(CAP_XENSERVER_DATABASES, [XE, 'pool-dump-database', 'file-name='],
                label="xapi-db-dumped.xml", filter=filter_db_pii)
-    cmd_output(CAP_XENSERVER_DATABASES, [XS, 'debug', 'watches'])
-    cmd_output(CAP_XENSERVER_DATABASES, [XS, 'debug', 'quotas'])
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
 
