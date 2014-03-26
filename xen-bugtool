@@ -419,7 +419,7 @@ cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=20*KB,
     max_time=10)
 cap(CAP_XHA_LIVESET,         PII_MAYBE,                 max_size=10*KB,
     max_time=10)
-cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=10*KB,
+cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=30*KB,
     max_time=30)
 
 ANSWER_YES_TO_ALL = False
