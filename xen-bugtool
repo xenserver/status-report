@@ -244,7 +244,6 @@ LVDISPLAY = find_lvm('lvdisplay')
 LVS = find_lvm('lvs')
 MD5SUM = '/usr/bin/md5sum'
 MODINFO = '/sbin/modinfo'
-MPPUTIL = '/usr/sbin/mppUtil'
 MULTIPATHD = '/sbin/multipathd'
 NETSTAT = '/bin/netstat'
 NTPQ = '/usr/sbin/ntpq'
@@ -749,9 +748,6 @@ exclude those logs from the archive.
     file_output(CAP_MULTIPATH, [MULTIPATH_CONF, MPP_CONF])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'table'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
-    cmd_output(CAP_MULTIPATH, [MPPUTIL, '-a'])
-    if CAP_MULTIPATH in entries:
-        dump_rdac_groups(CAP_MULTIPATH)
 
     file_output(CAP_NETWORK_CONFIG, [NET_UDEV_RULES])
     tree_output(CAP_NETWORK_CONFIG, SYSCONFIG_RENAME_DATA_DIR)
@@ -1296,23 +1292,6 @@ def fd_usage(cap):
     for k in keys:
         output += "%s: %s\n" % (k, str(fd_dict[k]))
     return output
-
-def dump_rdac_groups(cap):
-    output = StringIO.StringIO()
-    procs = [ProcOutput([MPPUTIL, '-a'], caps[cap][MAX_TIME], output)]
-
-    run_procs([procs])
-
-    if not procs[0].timed_out:
-        proc_line = 0
-        for line in output.getvalue().splitlines():
-            if line.startswith('ID'):
-                proc_line = 2
-            elif line.startswith('----'):
-                proc_line -= 1
-            elif proc_line > 0:
-                group, _ = line.split(None, 1)
-                cmd_output(cap, [MPPUTIL, '-g', group])
 
 def load_plugins(just_capabilities = False):
     def getText(nodelist):
