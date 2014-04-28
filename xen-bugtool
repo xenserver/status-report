@@ -970,13 +970,14 @@ def find_tapdisk_logs():
     return glob.glob('/var/log/blktap/*.log*')
 
 def find_tapback_logs():
-    return glob.glob('/var/log/tapback.log*')
+    return glob.glob('/var/log/tapback/tapback*')
 
 def generate_tapdisk_logs():
-    try:
-        os.kill(pidof('tapback')[0], SIGHUP)
-    except:
-        pass
+    for pid in pidof('tapback'):
+        try:
+            os.kill(pid, SIGHUP)
+        except:
+            pass
     for pid in pidof('tapdisk2'):
 	try:
 	    os.kill(pid, SIGUSR1)
