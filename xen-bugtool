@@ -873,7 +873,7 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_CLOCK])
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
-    cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'])
+    cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'], filter=filter_xenstore_secrets)
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
     file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
@@ -1120,6 +1120,14 @@ def filter_db_pii(s, state):
     dbfilter = DBFilter()
     dbfilter.feed(s)
     return dbfilter.output()
+
+clipboard_match = re.compile(r'^/local/domain/(\d+)/data/((set)|(report))_clipboard')
+def filter_xenstore_secrets(s, state):
+    match = clipboard_match.search(s)
+    if match:
+        return '/local/domain/%s/data/%s_clipboard = <filtered for security>' % (match.group(1), match.group(2))
+    else:
+        return s
 
 def dump_filtered_xapi_db(cap):
     db_file = None
