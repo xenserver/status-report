@@ -1125,7 +1125,7 @@ clipboard_match = re.compile(r'^/local/domain/(\d+)/data/((set)|(report))_clipbo
 def filter_xenstore_secrets(s, state):
     match = clipboard_match.search(s)
     if match:
-        return '/local/domain/%s/data/%s_clipboard = <filtered for security>' % (match.group(1), match.group(2))
+        return '/local/domain/%s/data/%s_clipboard = <filtered for security>\n' % (match.group(1), match.group(2))
     else:
         return s
 
