@@ -9,7 +9,7 @@ SPEC := $(RPM_SPECSDIR)/xenserver-status-report.spec
 SRPM := $(RPM_SRPMSDIR)/xenserver-status-report-$(VERSION)-$(RELEASE).src.rpm
 
 build: $(SPEC) $(MY_SOURCES)/MANIFEST
-	cp xen-bugtool $(RPM_SOURCESDIR)/
+	cp xen-bugtool help2man $(RPM_SOURCESDIR)/
 	$(RPMBUILD) -ba $(SPEC)
 
 $(SPEC): xenserver-status-report.spec.in $(RPM_DIRECTORIES) Makefile

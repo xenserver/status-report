@@ -5,9 +5,10 @@ Release:        @XS_RELEASE@
 License:        GPLv2+
 Group:          System Environment/Base
 Source0:        xen-bugtool
+Source1:        help2man
 BuildRoot:      %{_tmppath}/%{name}-%{version}
 BuildArch:      noarch
-BuildRequires:  python-devel
+BuildRequires:  python-devel xapi-core
 Requires:       hdparm, dmidecode, lvm2, bridge-utils, biosdevname, arptables
 Requires:       ebtables, ethtool, pciutils, pmtools, sg3_utils
 
@@ -22,12 +23,22 @@ install -m 755 -p %{SOURCE0} ${RPM_BUILD_ROOT}/%{_sbindir}
 ln ${RPM_BUILD_ROOT}/%{_sbindir}/xen-bugtool \
 	${RPM_BUILD_ROOT}/%{_sbindir}/xenserver-status-report
 
+install -m 755 -d ${RPM_BUILD_ROOT}/%{_mandir}/man1
+%{SOURCE1} -n 'pack diagnostic information' -s 1 -m 'User Commands' -N \
+	-S 'XenServer commands' --version-string=%{version} \
+	-o ${RPM_BUILD_ROOT}/%{_mandir}/man1/xen-bugtool.1 %{SOURCE0}
+chmod 644 ${RPM_BUILD_ROOT}/%{_mandir}/man1/xen-bugtool.1
+ln ${RPM_BUILD_ROOT}/%{_mandir}/man1/xen-bugtool.1 \
+	${RPM_BUILD_ROOT}/%{_mandir}/man1/xenserver-status-report.1
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
 %{_sbindir}/*
+%doc %{_mandir}/man1/xenserver-status-report.1.gz
+%doc %{_mandir}/man1/xen-bugtool.1.gz
 
 %changelog
 * Thu Jul 11 2013 Frediano Ziglio <frediano.ziglio@citrix.com>

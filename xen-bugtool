@@ -555,16 +555,25 @@ def collect_data(subdir, archive):
             v['md5'] = md5sum(v)
             del v['output']
 
+def usage():
+    return '''Usage: xenserver-status-report [OPTION]...
+Capture information to help diagnose bugs.
+
+ --capabilities      output capabilities informations
+ --output            specify output format (tar, tar.bz2 or zip)
+ -s, --silent        silent mode
+ --entries=<list>    specify which capabilities (separated by commas)
+ -y, --yestoall      confirm every file automatically
+ --outfd=<file>      specify output file
+ -a, --all           enable all capabilities
+ -u, --unlimited     do not limit file size
+ -d, --debug         enable debug output
+ --help              this help'''
 
 def main(argv = None):
     global ANSWER_YES_TO_ALL, SILENT_MODE
     global entries, data, dbg
     global unlimited_data, unlimited_time
-
-    # we need access to privileged files, exit if we are not running as root
-    if os.getuid() != 0:
-        print >>sys.stderr, "Error: xen-bugtool must be run as root"
-        return 1
 
     output_type = 'tar.bz2'
     output_fd = -1
@@ -575,10 +584,22 @@ def main(argv = None):
     try:
         (options, params) = getopt.gnu_getopt(
             argv, 'adsuy', ['capabilities', 'silent', 'yestoall', 'entries=',
-                            'output=', 'outfd=', 'all', 'unlimited', 'debug'])
+                            'output=', 'outfd=', 'all', 'unlimited', 'debug',
+                            'help'])
     except getopt.GetoptError, opterr:
         print >>sys.stderr, opterr
+        print >>sys.stderr, usage()
         return 2
+
+    for (k, v) in options:
+        if k == '--help':
+            print usage()
+            return 0
+
+    # we need access to privileged files, exit if we are not running as root
+    if os.getuid() != 0:
+        print >>sys.stderr, "Error: xen-bugtool must be run as root"
+        return 1
 
     try:
         load_plugins(True)
