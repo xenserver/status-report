@@ -75,6 +75,7 @@ def exceptionless_del(*argl, **kwargs):
 zipfile.ZipFile.__del__ = exceptionless_del
 
 import XenAPI
+from xen.lowlevel.xc import xc
 
 OS_RELEASE = platform.release()
 
@@ -352,6 +353,11 @@ MB = 1024 * 1024
 # max size of vswitch database
 CAP_NETWORK_CONFIG_OVERHEAD = 10 * MB
 
+# max size of xenserver databases
+CAP_XENSERVER_DATABASES_SIZE_OVERHEAD = 2 * MB
+# max capture time of xenserver databases
+CAP_XENSERVER_DATABASES_TIME_OVERHEAD = 40
+
 caps = {}
 cap_sizes = {}
 unlimited_data = False
@@ -411,8 +417,8 @@ cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=80*KB,
     max_time=10)
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=10)
-cap(CAP_XENSERVER_DATABASES, PII_YES,   min_size=500*KB,max_size=2*MB,
-    max_time=40)
+cap(CAP_XENSERVER_DATABASES, PII_YES,                   max_size=10*KB,
+    max_time=5)
 cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=600*KB)
 cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=70*MB)
 cap(CAP_XEN_INFO,            PII_MAYBE,                 max_size=20*KB,
@@ -1559,14 +1565,28 @@ def update_capabilities():
                     size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_EXCLUDES_RE, True))
     update_cap_size(CAP_XAPI_DEBUG, size_of_dir(XAPI_DEBUG_DIR))
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(XENSERVER_LOGS))
-    # compute max time & size based on number of PIFs
-    num_pifs = len(filter(lambda x: x.startswith('eth'), os.listdir('/sys/class/net')))
-    max_time = caps[CAP_NETWORK_STATUS][MAX_TIME] * num_pifs
+
+    # compute max time & size based on number of PIFs and VIFs
+    netdevs = os.listdir('/sys/class/net')
+    num_vifs = len(filter(lambda x: x.startswith('vif'), netdevs))
+    num_pifs = len(filter(lambda x: x.startswith('eth'), netdevs))
+    max_time = caps[CAP_NETWORK_STATUS][MAX_TIME] * (num_pifs + num_vifs)
     update_cap_time(CAP_NETWORK_STATUS, max_time)
-    max_size = caps[CAP_NETWORK_STATUS][MAX_SIZE] * num_pifs
+    max_size = caps[CAP_NETWORK_STATUS][MAX_SIZE] * (num_pifs + num_vifs)
     update_cap_size(CAP_NETWORK_STATUS, max_size)
     max_size = caps[CAP_NETWORK_CONFIG][MAX_SIZE] * num_pifs + CAP_NETWORK_CONFIG_OVERHEAD
     update_cap_size(CAP_NETWORK_CONFIG, max_size)
+
+    # compute max time & size based on number of domains, VBDs and VIFs
+    num_vbds = len(filter(lambda x: x.startswith('blktap'), os.listdir('/dev/blktap')))
+    num_doms = len(xc().domain_getinfo())
+    max_time = (caps[CAP_XENSERVER_DATABASES][MAX_TIME] * (num_doms + num_vbds + num_vifs) +
+                CAP_XENSERVER_DATABASES_TIME_OVERHEAD)
+    update_cap_time(CAP_XENSERVER_DATABASES, max_time)
+    max_size = (caps[CAP_XENSERVER_DATABASES][MAX_SIZE] * (num_doms + num_vbds + num_vifs) +
+                CAP_XENSERVER_DATABASES_SIZE_OVERHEAD)
+    update_cap_size(CAP_XENSERVER_DATABASES, max_size)
+
 
 def update_cap_size(cap, size):
     update_cap(cap, MIN_SIZE, size)
