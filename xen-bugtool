@@ -99,6 +99,7 @@ LVM_CONFIG = '/etc/lvm/lvm.conf'
 PROC_CPUINFO = '/proc/cpuinfo'
 PROC_MEMINFO = '/proc/meminfo'
 PROC_SLABINFO = '/proc/slabinfo'
+PROC_ZONEINFO = '/proc/zoneinfo'
 PROC_IOMEM = '/proc/iomem'
 PROC_IOPORTS = '/proc/ioports'
 PROC_INTERRUPTS = '/proc/interrupts'
@@ -738,6 +739,7 @@ exclude those logs from the archive.
 
     file_output(CAP_HARDWARE_INFO, [PROC_CPUINFO, PROC_MEMINFO, PROC_IOMEM, PROC_IOPORTS, PROC_INTERRUPTS])
     file_output(CAP_HARDWARE_INFO, [PROC_SLABINFO])
+    file_output(CAP_HARDWARE_INFO, [PROC_ZONEINFO])
     cmd_output(CAP_HARDWARE_INFO, [DMIDECODE])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-n'])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-tv'])
