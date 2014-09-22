@@ -184,7 +184,7 @@ XENSERVER_LOGS = \
                       'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz', \
                       'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz', \
                       'xcp-networkd.log.%d', 'xcp-networkd.log.%d.gz']]] \
-      + glob.glob('/tmp/qemu.[0-9]*')
+      + glob.glob('/tmp/qemu.[0-9]*') + glob.glob('/var/log/sa/sa[0-9][0-9]')
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
 XHA_LOG = '/var/log/xha.log'
 XHAD_CONF = '/etc/xensource/xhad.conf'
