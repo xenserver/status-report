@@ -867,7 +867,7 @@ exclude those logs from the archive.
          [ VAR_LOG_DIR + x for x in
            [ 'crit.log', 'kern.log', 'daemon.log', 'user.log', 'syslog', 'messages',
              'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg', 'blktap.log',
-             'xen-dmesg', 'wtmp', 'xen/hypervisor.log'] +
+             'xen-dmesg', 'wtmp', 'xen/hypervisor.log', 'mcelog'] +
            [ f % n for n in range(1, 20) \
                  for f in ['crit.log.%d', 'crit.log.%d.gz',
                            'kern.log.%d', 'kern.log.%d.gz',
