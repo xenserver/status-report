@@ -106,6 +106,7 @@ PROC_INTERRUPTS = '/proc/interrupts'
 PROC_SCSI = '/proc/scsi/scsi'
 FIRSTBOOT_DIR = '/etc/firstboot.d'
 PROC_VERSION = '/proc/version'
+PROC_MDSTAT  = '/proc/mdstat'
 PROC_MODULES = '/proc/modules'
 PROC_DEVICES = '/proc/devices'
 PROC_FILESYSTEMS = '/proc/filesystems'
@@ -117,6 +118,8 @@ PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
 PROC_NET_SOFTNET_STAT = '/proc/net/softnet_stat'
 PROC_DRIVER_CCISS_DIR = '/proc/driver/cciss'
+ETC_MDADM_CONF = '/etc/mdadm.conf'
+ETC_MDADM_MDADM_CONF = '/etc/mdadm/mdadm.conf'
 MODPROBE_CONF = '/etc/modprobe.conf'
 MODPROBE_DIR = '/etc/modprobe.d'
 BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
@@ -245,6 +248,7 @@ LSPCI = '/sbin/lspci'
 LVDISPLAY = find_lvm('lvdisplay')
 LVS = find_lvm('lvs')
 MD5SUM = '/usr/bin/md5sum'
+MDADM = '/usr/sbin/mdadm'
 MODINFO = '/sbin/modinfo'
 MULTIPATHD = '/sbin/multipathd'
 NETSTAT = '/bin/netstat'
@@ -734,6 +738,13 @@ exclude those logs from the archive.
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
     tree_output(CAP_DISK_INFO, PROC_DRIVER_CCISS_DIR)
     cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
+
+    # mdadm information
+    cmd_output(CAP_DISK_INFO, [MDADM, '--detail-platform'])
+    cmd_output(CAP_DISK_INFO, [MDADM, '--detail', '--scan'])
+    file_output(CAP_DISK_INFO, [PROC_MDSTAT, ETC_MDADM_CONF, ETC_MDADM_MDADM_CONF])
+    for a in mdadm_arrays():
+        cmd_output(CAP_DISK_INFO, [MDADM, '--query', '--detail', a])
 
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
@@ -1662,6 +1673,23 @@ def yes(prompt):
 
     return len(yn) == 0 or yn.lower()[0] == 'y'
 
+
+def mdadm_arrays():
+    output = StringIO.StringIO()
+    run_procs([[ProcOutput([MDADM, '--detail', '--scan'],
+                           caps[CAP_DISK_INFO][MAX_TIME], output)]])
+    # Format along the lines of:
+    # ARRAY /dev/mdN metadata=xxx [name=yyy] UUID=zzz
+    try:
+        for line in output.getvalue().split("\n"):
+            parts = line.split(" ")
+
+            if len(parts) < 2 or parts[0] != "ARRAY":
+                continue
+
+            yield parts[1]
+    except:
+        pass
 
 partition_re = re.compile(r'(.*[0-9]+$)|(^xvd)')
 
