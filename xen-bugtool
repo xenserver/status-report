@@ -214,69 +214,65 @@ SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
 # External programs
 #
 
-def find_lvm(name):
-    return (os.path.isfile('/sbin/' + name) and '/sbin/' or '/usr/sbin/') + name
-
-
-ACPIDUMP = '/usr/sbin/acpidump'
-ARP = '/sbin/arp'
-ARPTABLES = '/sbin/arptables'
-BIN_STATIC_VDIS = '/opt/xensource/bin/static-vdis'
-BIOSDEVNAME = '/sbin/biosdevname'
-BRCTL = '/usr/sbin/brctl'
-CAT = '/bin/cat'
-CHKCONFIG = '/sbin/chkconfig'
+ACPIDUMP = 'acpidump'
+ARP = 'arp'
+ARPTABLES = 'arptables'
+BIN_STATIC_VDIS = 'static-vdis'
+BIOSDEVNAME = 'biosdevname'
+BRCTL = 'brctl'
+CAT = 'cat'
+CHKCONFIG = 'chkconfig'
 CSL = '/opt/Citrix/StorageLink/bin/csl'
-DF = '/bin/df'
-DU = '/usr/bin/du'
-DMESG = '/bin/dmesg'
-DMIDECODE = '/usr/sbin/dmidecode'
-DMSETUP = '/sbin/dmsetup'
-EBTABLES = '/sbin/ebtables'
-ETHTOOL = '/sbin/ethtool'
-FDISK = '/sbin/fdisk'
-FIND = '/usr/bin/find'
+DF = 'df'
+DU = 'du'
+DMESG = 'dmesg'
+DMIDECODE = 'dmidecode'
+DMSETUP = 'dmsetup'
+EBTABLES = 'ebtables'
+ETHTOOL = 'ethtool'
+FDISK = 'fdisk'
+FIND = 'find'
 HA_QUERY_LIVESET = '/opt/xensource/debug/debug_ha_query_liveset'
-HDPARM = '/sbin/hdparm'
-IFCONFIG = '/sbin/ifconfig'
-IPTABLES = '/sbin/iptables'
-ISCSIADM = '/sbin/iscsiadm'
-LIST_DOMAINS = '/usr/bin/list_domains'
-LOSETUP = '/sbin/losetup'
-LS = '/bin/ls'
-LSPCI = '/sbin/lspci'
-LVDISPLAY = find_lvm('lvdisplay')
-LVS = find_lvm('lvs')
-MD5SUM = '/usr/bin/md5sum'
-MDADM = '/usr/sbin/mdadm'
-MODINFO = '/sbin/modinfo'
-MULTIPATHD = '/sbin/multipathd'
-NETSTAT = '/bin/netstat'
-NTPQ = '/usr/sbin/ntpq'
-OVS_APPCTL = '/usr/bin/ovs-appctl'
-OVS_DPCTL = '/usr/bin/ovs-dpctl'
-OVS_OFCTL = '/usr/bin/ovs-ofctl'
-OVS_VSCTL = '/usr/bin/ovs-vsctl'
-PS = '/bin/ps'
-PVS = find_lvm('pvs')
-QLOGIC_FW = '/usr/bin/strings /lib/firmware/ql2*.bin | /bin/grep -i ver'
-ROUTE = '/sbin/route'
-RPM = '/bin/rpm'
-SG_MAP = '/usr/bin/sg_map'
-SQLITE = '/usr/bin/sqlite3'
-SYSCTL = '/sbin/sysctl'
-TC = '/sbin/tc'
+HDPARM = 'hdparm'
+IFCONFIG = 'ifconfig'
+IPTABLES = 'iptables'
+ISCSIADM = 'iscsiadm'
+LIST_DOMAINS = 'list_domains'
+LOSETUP = 'losetup'
+LS = 'ls'
+LSPCI = 'lspci'
+LVDISPLAY = 'lvdisplay'
+LVS = 'lvs'
+MD5SUM = 'md5sum'
+MDADM = 'mdadm'
+MODINFO = 'modinfo'
+MULTIPATHD = 'multipathd'
+NETSTAT = 'netstat'
+NTPQ = 'ntpq'
+OVS_APPCTL = 'ovs-appctl'
+OVS_DPCTL = 'ovs-dpctl'
+OVS_OFCTL = 'ovs-ofctl'
+OVS_VSCTL = 'ovs-vsctl'
+PS = 'ps'
+PVS = 'pvs'
+QLOGIC_FW = 'strings /lib/firmware/ql2*.bin | grep -i ver'
+ROUTE = 'route'
+RPM = 'rpm'
+SG_MAP = 'sg_map'
+SQLITE = 'sqlite3'
+SYSCTL = 'sysctl'
+TC = 'tc'
 ULIMIT = 'ulimit -a'
-UPTIME = '/usr/bin/uptime'
-VGS = find_lvm('vgs')
-VGSCAN = find_lvm('vgscan')
-XAPI_DB_PROCESS = '/opt/xensource/bin/xapi-db-process'
-XE = '/opt/xensource/bin/xe'
-XENPM = '/usr/sbin/xenpm'
-XENSTORE_LS = '/usr/bin/xenstore-ls'
-XL = '/usr/sbin/xl'
+UPTIME = 'uptime'
+VGS = 'vgs'
+VGSCAN = 'vgscan'
+XAPI_DB_PROCESS = 'xapi-db-process'
+XE = 'xe'
+XENPM = 'xenpm'
+XENSTORE_LS = 'xenstore-ls'
+XL = 'xl'
 XS = '/opt/xensource/debug/xs'
-ZCAT = '/bin/zcat'
+ZCAT = 'zcat'
 
 #
 # PII -- Personally identifiable information.  Of particular concern are
@@ -588,6 +584,15 @@ def main(argv = None):
 
     output_type = 'tar.bz2'
     output_fd = -1
+
+    # Set a default PATH
+    path = ['/opt/xensource/bin', '/usr/local/sbin', '/usr/local/bin',
+            '/usr/sbin', '/usr/bin', '/root/bin']
+    if 'PATH' in os.environ:
+        for element in os.environ['PATH'].split(':'):
+            if element not in path:
+                path.append(element)
+    os.environ['PATH'] = ':'.join(path)
 
     if argv is None:
         argv = sys.argv
