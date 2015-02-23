@@ -87,6 +87,8 @@ BUG_DIR = "/var/opt/xen/bug-report"
 PLUGIN_DIR = "/etc/xensource/bugtool"
 XAPI_BLOBS = '/var/xapi/blobs'
 EXTLINUX_CONFIG = '/boot/extlinux.conf'
+GRUB_BIOS_CONFIG = '/boot/grub/grub.cfg'
+GRUB_EFI_CONFIG = '/boot/efi/EFI/xenserver/grub.cfg'
 BOOT_KERNEL = '/boot/vmlinuz-' + OS_RELEASE
 BOOT_INITRD = '/boot/initrd-' + OS_RELEASE + '.img'
 PROC_PARTITIONS = '/proc/partitions'
@@ -209,6 +211,7 @@ QEMU_DIR = '/var/lib/xen'
 QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
 INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
 SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
+SYS_EFIVARS = '/sys/firmware/efi/efivars'
 
 #
 # External programs
@@ -229,6 +232,7 @@ DMESG = 'dmesg'
 DMIDECODE = 'dmidecode'
 DMSETUP = 'dmsetup'
 EBTABLES = 'ebtables'
+EFIBOOTMGR = 'efibootmgr'
 ETHTOOL = 'ethtool'
 FDISK = 'fdisk'
 FIND = 'find'
@@ -713,8 +717,11 @@ exclude those logs from the archive.
     tree_output(CAP_BLOBS, XAPI_BLOBS)
 
     file_output(CAP_BOOT_LOADER, [EXTLINUX_CONFIG])
+    file_output(CAP_BOOT_LOADER, [GRUB_BIOS_CONFIG])
+    file_output(CAP_BOOT_LOADER, [GRUB_EFI_CONFIG])
     cmd_output(CAP_BOOT_LOADER, [LS, '-lR', '/boot'])
     cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD], label='vmlinuz-initrd.md5sum')
+    cmd_output(CAP_BOOT_LOADER, [EFIBOOTMGR, '-v'])
 
     func_output(CAP_CVSM, 'csl_logs', csl_logs)
 
@@ -770,6 +777,7 @@ exclude those logs from the archive.
     cmd_output(CAP_HARDWARE_INFO, [XENPM, 'get-cpu-topology'])
     cmd_output(CAP_HARDWARE_INFO, [XENPM, 'get-cpufreq-states'])
     cmd_output(CAP_HARDWARE_INFO, [XENPM, 'get-cpuidle-states'])
+    tree_output(CAP_HARDWARE_INFO, SYS_EFIVARS)
     # FIXME IDE?
 
     for d in disk_list():
