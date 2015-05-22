@@ -306,6 +306,7 @@ MAX_TIME = 5
 MIME     = 6
 CHECKED  = 7
 HIDDEN   = 8
+VERBOSITY = 9
 
 MIME_DATA = 'application/data'
 MIME_TEXT = 'text/plain'
@@ -370,11 +371,11 @@ unlimited_time = False
 dbg = False
 
 def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
-        max_time=-1, mime=MIME_TEXT, checked=True, hidden=False):
+        max_time=-1, mime=MIME_TEXT, checked=True, hidden=False, verbosity=9):
     if  os.getenv('XEN_RT') and max_time > 0:
         max_time *= 5
     caps[key] = (key, pii, min_size, max_size, min_time, max_time, mime,
-                 checked, hidden)
+                 checked, hidden, verbosity)
     cap_sizes[key] = 0
 
 
@@ -663,7 +664,14 @@ def main(argv = None):
             SILENT_MODE = True
 
         if k == '--entries' and v != '':
-            entries = v.split(',')
+            # parse verbosity option in entries string
+            entries = []
+            items = v.split(',')
+            for item in items:
+                item = item.split(':')
+                entries.append(item[0])
+                if item[0] in caps and len(item) > 1:
+                    update_cap(item[0], VERBOSITY, min(9, max(1, int(item[1]))))
 
         # If the user runs the script with "-y" or "--yestoall" we don't ask
         # all the really annoying questions.
