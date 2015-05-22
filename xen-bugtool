@@ -176,20 +176,6 @@ XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 PATCH_APPLIED_DIR = '/var/patch/applied'
-XENSERVER_LOGS = \
-    [ VAR_LOG_DIR + x for x in
-      ['xensource.log', 'audit.log', 'xenstored-access.log', 'SMlog', 'isl_trace.log',  'xen/xenstored-trace.log',
-       'xen/xen-hotplug.log', 'xen/domain-builder-ng.log', 'squeezed.log',
-       'openvswitch/ovs-brcompatd.log', 'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log', 'xcp-networkd.log' ] +
-      [ f % n for n in range(1, 20) \
-            for f in ['xensource.log.%d', 'xensource.log.%d.gz','SMlog.%d', 'SMlog.%d.gz', 'isl_trace.log.%d', 'isl_trace.log.%d.gz',
-                      'audit.log.%d', 'audit.log.%d.gz', 'xenstored-access.log.%d', 'xenstored-access.log.%d.gz', \
-                      'xen/xenstored-access.log.%d', 'xen/xenstored-access.log.%d.gz', 'squeezed.log.%d', \
-                      'openvswitch/ovs-brcompatd.log.%d', 'openvswitch/ovs-brcompatd.log.%d.gz', \
-                      'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz', \
-                      'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz', \
-                      'xcp-networkd.log.%d', 'xcp-networkd.log.%d.gz']]] \
-      + glob.glob('/tmp/qemu.[0-9]*') + glob.glob('/var/log/sa/sa[0-9][0-9]')
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
 XHA_LOG = '/var/log/xha.log'
 XHAD_CONF = '/etc/xensource/xhad.conf'
@@ -197,11 +183,6 @@ YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 PAM_DIR = '/etc/pam.d'
 FIST_RE = re.compile(r'.*/fist_')
-LICENSE_LOGS = \
-             [ VAR_LOG_DIR + x for x in
-               ['v6d.log'] +
-               [ f % n for n in range(1, 20) \
-                 for f in ['v6d.log.%d', 'v6d.log.%d.gz' ]]]
 LWIDENTITY_JOIN_LOG = '/tmp/lwidentity.join.log'
 HOSTS_LWIDENTITY_ORIG = '/etc/hosts.lwidentity.orig'
 KRB5_CONF = '/etc/krb5.conf'
@@ -895,12 +876,15 @@ exclude those logs from the archive.
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,nwchan,wchan:25,args'], label='process-tree')
     func_output(CAP_PROCESS_LIST, 'fd_usage', fd_usage)
 
+    def get_log_range(verbosity):
+        return range(1, verbosity) if verbosity < 9 else range(1, 20)
+
     file_output(CAP_SYSTEM_LOGS,
          [ VAR_LOG_DIR + x for x in
            [ 'crit.log', 'kern.log', 'daemon.log', 'user.log', 'syslog', 'messages',
              'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg', 'blktap.log',
              'xen-dmesg', 'wtmp', 'xen/hypervisor.log', 'mcelog'] +
-           [ f % n for n in range(1, 20) \
+           [ f % n for n in get_log_range(caps[CAP_SYSTEM_LOGS][VERBOSITY]) \
                  for f in ['crit.log.%d', 'crit.log.%d.gz',
                            'kern.log.%d', 'kern.log.%d.gz',
                            'daemon.log.%d', 'daemon.log.%d.gz',
@@ -966,9 +950,38 @@ exclude those logs from the archive.
     tree_output(CAP_XENSERVER_INSTALL, INSTALLED_REPOS_DIR)
     tree_output(CAP_XENSERVER_INSTALL, PATCH_APPLIED_DIR)
 
+    def get_recent_logs(logs, verbosity):
+        logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
+        return map(lambda x: x[1], logs[-verbosity:] if verbosity < 9 else logs)
+
+    xenserver_logs = \
+                [ VAR_LOG_DIR + x for x in
+                  ['xensource.log', 'audit.log', 'xenstored-access.log',
+                   'SMlog', 'isl_trace.log',  'xen/xenstored-trace.log',
+                   'xen/xen-hotplug.log', 'xen/domain-builder-ng.log',
+                   'squeezed.log', 'openvswitch/ovs-brcompatd.log',
+                   'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log',
+                   'xcp-networkd.log' 'v6d.log'] +
+                  [ f % n for n in get_log_range(caps[CAP_XENSERVER_LOGS][VERBOSITY]) \
+                        for f in ['xensource.log.%d', 'xensource.log.%d.gz',
+                                  'SMlog.%d', 'SMlog.%d.gz',
+                                  'isl_trace.log.%d', 'isl_trace.log.%d.gz',
+                                  'audit.log.%d', 'audit.log.%d.gz',
+                                  'xenstored-access.log.%d', 'xenstored-access.log.%d.gz',
+                                  'xen/xenstored-access.log.%d', 'xen/xenstored-access.log.%d.gz',
+                                  'squeezed.log.%d', 'squeezed.log.%d.gz',
+                                  'openvswitch/ovs-brcompatd.log.%d', 'openvswitch/ovs-brcompatd.log.%d.gz',
+                                  'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz',
+                                  'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz',
+                                  'xcp-networkd.log.%d', 'xcp-networkd.log.%d.gz',
+                                  'v6d.log.%d', 'v6d.log.%d.gz']]]
+    sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
+    qemu_logs = get_recent_logs(glob.glob('/tmp/qemu.[0-9]*'), caps[CAP_XENSERVER_LOGS][VERBOSITY])
+    update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + sa_logs + qemu_logs))
     file_output(CAP_XENSERVER_LOGS, [LOG_CONF, XENGUEST_LOG])
-    file_output(CAP_XENSERVER_LOGS, XENSERVER_LOGS)
-    file_output(CAP_XENSERVER_LOGS, LICENSE_LOGS)
+    file_output(CAP_XENSERVER_LOGS, xenserver_logs)
+    file_output(CAP_XENSERVER_LOGS, sa_logs)
+    file_output(CAP_XENSERVER_LOGS, qemu_logs)
     tree_output(CAP_XENSERVER_LOGS, OEM_CONFIG_DIR, OEM_XENSERVER_LOGS_RE)
 
     cmd_output(CAP_XEN_INFO, [XL, 'dmesg'])
@@ -1598,7 +1611,6 @@ def update_capabilities():
     update_cap_size(CAP_HOST_CRASHDUMP_LOGS,
                     size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_EXCLUDES_RE, True))
     update_cap_size(CAP_XAPI_DEBUG, size_of_dir(XAPI_DEBUG_DIR))
-    update_cap_size(CAP_XENSERVER_LOGS, size_of_all(XENSERVER_LOGS))
 
     # compute max time & size based on number of PIFs and VIFs
     netdevs = os.listdir('/sys/class/net')
