@@ -169,6 +169,7 @@ DB_CONF = '/etc/xensource/db.conf'
 DB_CONF_RIO = '/etc/xensource/db.conf.rio'
 DB_DEFAULT_FIELDS = '/etc/xensource/db-default-fields'
 DB_SCHEMA_SQL = '/etc/xensource/db_schema.sql'
+XAPI_LOCAL_DB = '/var/xapi/local.db'
 XENSTORED_DB = '/var/lib/xenstored/tdb'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile('.*/\.sacrificial-space-for-logs$')
@@ -939,6 +940,7 @@ exclude those logs from the archive.
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'], filter=filter_xenstore_secrets)
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
+    file_output(CAP_XENSERVER_DATABASES, [XAPI_LOCAL_DB])
     file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
     cmd_output(CAP_XENSERVER_DATABASES, [XE, 'pool-dump-database', 'file-name='],
                label="xapi-db-dumped.xml", filter=filter_db_pii)
