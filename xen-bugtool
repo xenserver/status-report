@@ -75,7 +75,7 @@ def exceptionless_del(*argl, **kwargs):
 zipfile.ZipFile.__del__ = exceptionless_del
 
 import XenAPI
-from xen.lowlevel.xc import xc
+from xen.lowlevel.xc import xc, Error as xcError
 
 OS_RELEASE = platform.release()
 
@@ -194,6 +194,7 @@ QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
 INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
 SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
 SYS_EFIVARS = '/sys/firmware/efi/efivars'
+BLKTAP_DEVICE_PATH = '/dev/blktap'
 
 #
 # External programs
@@ -1626,8 +1627,13 @@ def update_capabilities():
     update_cap_size(CAP_NETWORK_CONFIG, max_size)
 
     # compute max time & size based on number of domains, VBDs and VIFs
-    num_vbds = len(filter(lambda x: x.startswith('blktap'), os.listdir('/dev/blktap')))
-    num_doms = len(xc().domain_getinfo())
+    num_vbds = 0
+    if os.path.exists(BLKTAP_DEVICE_PATH):
+        num_vbds = len(filter(lambda x: x.startswith('blktap'), os.listdir(BLKTAP_DEVICE_PATH)))
+    try:
+        num_doms = len(xc().domain_getinfo())
+    except xcError:
+        num_doms = 0
     max_time = (caps[CAP_XENSERVER_DATABASES][MAX_TIME] * (num_doms + num_vbds + num_vifs) +
                 CAP_XENSERVER_DATABASES_TIME_OVERHEAD)
     update_cap_time(CAP_XENSERVER_DATABASES, max_time)
