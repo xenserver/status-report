@@ -169,6 +169,8 @@ DB_CONF = '/etc/xensource/db.conf'
 DB_CONF_RIO = '/etc/xensource/db.conf.rio'
 DB_DEFAULT_FIELDS = '/etc/xensource/db-default-fields'
 DB_SCHEMA_SQL = '/etc/xensource/db_schema.sql'
+SYSTEMD_CONF_DIR = '/etc/systemd'
+CGRULES_CONF = '/etc/cgrules.conf'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
 XENSTORED_DB = '/var/lib/xenstored/tdb'
 HOST_CRASHDUMPS_DIR = '/var/crash'
@@ -928,6 +930,8 @@ exclude those logs from the archive.
     tree_output(CAP_XENSERVER_CONFIG, STATIC_VDIS)
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', STATIC_VDIS])
     file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_CLOCK])
+    tree_output(CAP_XENSERVER_CONFIG, SYSTEMD_CONF_DIR)
+    file_output(CAP_XENSERVER_CONFIG, [CGRULES_CONF])
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'], filter=filter_xenstore_secrets)
