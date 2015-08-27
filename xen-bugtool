@@ -795,6 +795,7 @@ exclude those logs from the archive.
 
     file_output(CAP_MULTIPATH, [MULTIPATH_CONF, MPP_CONF])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'table'])
+    cmd_output(CAP_MULTIPATH, [DMSETUP, 'info'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
 
     file_output(CAP_NETWORK_CONFIG, [NET_UDEV_RULES])
