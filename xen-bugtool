@@ -255,6 +255,7 @@ RPM = 'rpm'
 SG_MAP = 'sg_map'
 SQLITE = 'sqlite3'
 SYSCTL = 'sysctl'
+SYSTEMCTL = 'systemctl'
 TC = 'tc'
 ULIMIT = 'ulimit -a'
 UPTIME = 'uptime'
@@ -402,7 +403,7 @@ cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
     max_time=60)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
     max_time=10)
-cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=5*KB,
+cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=128*KB,
     max_time=20)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=10*MB)
 cap(CAP_VNCTERM,             PII_MAYBE, checked = False)
@@ -938,6 +939,7 @@ exclude those logs from the archive.
     file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
 
     cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
+    cmd_output(CAP_SYSTEM_SERVICES, [SYSTEMCTL, 'status'])
 
     #file_output(CAP_TAPDISK_LOGS,
     #            glob.glob("/sys/class/blktap2/blktap*/debug"))
