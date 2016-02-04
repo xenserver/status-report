@@ -1,0 +1,37 @@
+Summary:        Plugins for the XenServer bugtool to collect connectivity information
+Name:           bugtool-conn-tests
+Version:        @XS_VERSION@
+Release:        @XS_RELEASE@
+License:        GPLv2+
+Group:          System Environment/Base
+Source:         %{name}-%{version}.tar.gz
+BuildArch:      noarch
+
+%define bugtool_dir %{_sysconfdir}/xensource/bugtool
+
+%description
+The %{name} package includes extensions for XenServer's bugtool to gather info 
+on the connectivity status.
+
+%prep
+%setup -n %{name}
+
+%install
+install -m 755 -d %{buildroot}/%{bugtool_dir}/conntest
+install -m 755 -d %{buildroot}/%{_bindir}
+install -m 666 %{_builddir}/%{name}/config/conntest.xml %{buildroot}%{bugtool_dir}
+install -m 666 %{_builddir}/%{name}/config/conntest/* %{buildroot}%{bugtool_dir}/conntest
+install -m 755 %{_builddir}/%{name}/tools/* %{buildroot}%{_bindir}
+
+%clean
+rm -rf %{buildroot}
+rm -rf %{_builddir}/%{name}
+
+%files
+%defattr(-,root,root,-)
+%{_sysconfdir}/*
+%{_bindir}/*
+
+%changelog
+* Thu Feb 04 2016 Rob Dobson <rob.dobson@citrix.com>
+- First packaged version
