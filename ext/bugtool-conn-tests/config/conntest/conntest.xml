@@ -1,5 +1,4 @@
 <collect>
-    <command label="resolve-dns-test">if [ ! -f /etc/xensource/bugtool/disable_conntests ]; then resolve www.xenserver.org; fi</command>
-    <command label="ping-ip-test">if [ ! -f /etc/xensource/bugtool/disable_conntests ]; then ping 199.116.78.7 -c 5; fi</command>
-    <command label="fetch-header-test">if [ ! -f /etc/xensource/bugtool/disable_conntests ]; then curl -I www.xenserver.org; fi</command>
+    <command label="resolve-dns-test">if [ ! -f /etc/xensource/bugtool/disable_conntests ]; then nslookup cis.citrix.com; fi</command>
+    <command label="fetch-header-test">if [ ! -f /etc/xensource/bugtool/disable_conntests ]; then curl -I https://cis.citrix.com; fi</command>
 </collect>
