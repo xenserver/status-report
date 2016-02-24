@@ -265,6 +265,7 @@ XAPI_DB_PROCESS = 'xapi-db-process'
 XE = 'xe'
 XENPM = 'xenpm'
 XEN_CPUID = 'xen-cpuid'
+XEN_XSPLICE = 'xen-xsplice'
 XENSTORE_LS = 'xenstore-ls'
 XL = 'xl'
 XS = '/opt/xensource/debug/xs'
@@ -1032,6 +1033,7 @@ exclude those logs from the archive.
     cmd_output(CAP_XEN_INFO, [XL, 'dmesg'])
     cmd_output(CAP_XEN_INFO, [XL, 'info'])
     cmd_output(CAP_XEN_INFO, [XEN_CPUID, '-v'])
+    cmd_output(CAP_XEN_INFO, [XEN_XSPLICE, 'list'])
     file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
 
     cmd_output(CAP_XHA_LIVESET, [HA_QUERY_LIVESET])
