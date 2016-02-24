@@ -230,6 +230,7 @@ HDPARM = 'hdparm'
 IFCONFIG = 'ifconfig'
 IPTABLES = 'iptables'
 ISCSIADM = 'iscsiadm'
+KPATCH = 'kpatch'
 LIST_DOMAINS = 'list_domains'
 LLDPTOOL = 'lldptool'
 LOSETUP = 'losetup'
@@ -800,6 +801,7 @@ exclude those logs from the archive.
     func_output(CAP_KERNEL_INFO, 'modinfo', module_info)
     cmd_output(CAP_KERNEL_INFO, QLOGIC_FW, label='qlogic_fw')
     cmd_output(CAP_KERNEL_INFO, ULIMIT, label='ulimit-a')
+    cmd_output(CAP_KERNEL_INFO, [KPATCH, 'list'])
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
