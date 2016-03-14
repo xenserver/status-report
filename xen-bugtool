@@ -957,9 +957,8 @@ exclude those logs from the archive.
     func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
 
     tree_output(CAP_XENRT, '/tmp', FIST_RE)
-    # CA-45540: capture QEMU core files
-    tree_output(CAP_XENRT, '/var/xen/qemu')
-    file_output(CAP_XENRT, ['/core.*'])
+
+    file_output(CAP_XENRT, ['/var/lib/systemd/coredump/*'])
     tree_output(CAP_XENRT, '/tmp', re.compile(r'^.*xen\.qemu-dm\.'))
 
     file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
