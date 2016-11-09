@@ -180,7 +180,7 @@ HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile('.*/\.sacrificial-space-for-logs$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 LOG_CONF = '/etc/xensource/log.conf'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
-PATCH_APPLIED_DIR = '/var/patch/applied'
+UPDATE_APPLIED_DIR = '/var/update/applied'
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
 XHA_LOG = '/var/log/xha.log'
 XHAD_CONF = '/etc/xensource/xhad.conf'
@@ -997,7 +997,7 @@ exclude those logs from the archive.
                     'pci-log', 'processes-log', 'tty-log', 'uname-log',
                     'vgscan-log']])
     tree_output(CAP_XENSERVER_INSTALL, INSTALLED_REPOS_DIR)
-    tree_output(CAP_XENSERVER_INSTALL, PATCH_APPLIED_DIR)
+    tree_output(CAP_XENSERVER_INSTALL, UPDATE_APPLIED_DIR)
 
     def get_recent_logs(logs, verbosity):
         logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
