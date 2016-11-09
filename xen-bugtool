@@ -199,6 +199,7 @@ INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
 SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
 SYS_EFIVARS = '/sys/firmware/efi/efivars'
 BLKTAP_DEVICE_PATH = '/dev/blktap'
+SYS_KERNEL_NOTES = '/sys/kernel/notes'
 
 #
 # External programs
@@ -802,6 +803,7 @@ exclude those logs from the archive.
     cmd_output(CAP_KERNEL_INFO, QLOGIC_FW, label='qlogic_fw')
     cmd_output(CAP_KERNEL_INFO, ULIMIT, label='ulimit-a')
     cmd_output(CAP_KERNEL_INFO, [KPATCH, 'list'])
+    file_output(CAP_KERNEL_INFO, [SYS_KERNEL_NOTES])
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
