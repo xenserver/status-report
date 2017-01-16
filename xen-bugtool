@@ -200,6 +200,7 @@ SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
 SYS_EFIVARS = '/sys/firmware/efi/efivars'
 BLKTAP_DEVICE_PATH = '/dev/blktap'
 SYS_KERNEL_NOTES = '/sys/kernel/notes'
+SIGNING_KEY_INFO_DIR = '/etc/pki/rpm-gpg'
 
 #
 # External programs
@@ -1044,6 +1045,7 @@ exclude those logs from the archive.
     file_output(CAP_YUM, [YUM_LOG])
     tree_output(CAP_YUM, YUM_REPOS_DIR)
     cmd_output(CAP_YUM, [RPM, '-qa'])
+    tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
 
     try:
         load_plugins()
