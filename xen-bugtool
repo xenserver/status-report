@@ -100,6 +100,7 @@ ISCSI_CONF = '/etc/iscsi/iscsid.conf'
 ISCSI_INITIATOR = '/etc/iscsi/initiatorname.iscsi'
 LVM_CACHE = '/etc/lvm/cache/.cache'
 LVM_CONFIG = '/etc/lvm/lvm.conf'
+PROC_BUDDYINFO = '/proc/buddyinfo'
 PROC_CPUINFO = '/proc/cpuinfo'
 PROC_MEMINFO = '/proc/meminfo'
 PROC_SLABINFO = '/proc/slabinfo'
@@ -767,6 +768,7 @@ exclude those logs from the archive.
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
     file_output(CAP_HARDWARE_INFO, [PROC_CPUINFO, PROC_MEMINFO, PROC_IOMEM, PROC_IOPORTS, PROC_INTERRUPTS])
+    file_output(CAP_HARDWARE_INFO, [PROC_BUDDYINFO])
     file_output(CAP_HARDWARE_INFO, [PROC_SLABINFO])
     file_output(CAP_HARDWARE_INFO, [PROC_ZONEINFO])
     cmd_output(CAP_HARDWARE_INFO, [DMIDECODE])
