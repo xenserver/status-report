@@ -854,6 +854,7 @@ exclude those logs from the archive.
                     cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-i', p])
                     cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-c', p])
                     cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-g', p])
+                    cmd_output(CAP_NETWORK_STATUS, [ETHTOOL, '-l', p])
             except:
                 pass
     tree_output(CAP_NETWORK_STATUS, PROC_NET_BONDING_DIR)
