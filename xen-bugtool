@@ -103,11 +103,14 @@ LVM_CONFIG = '/etc/lvm/lvm.conf'
 PROC_BUDDYINFO = '/proc/buddyinfo'
 PROC_CPUINFO = '/proc/cpuinfo'
 PROC_MEMINFO = '/proc/meminfo'
+PROC_PAGETYINFO = '/proc/pagetypeinfo'
 PROC_SLABINFO = '/proc/slabinfo'
+PROC_VMSTAT = '/proc/vmstat'
 PROC_ZONEINFO = '/proc/zoneinfo'
 PROC_IOMEM = '/proc/iomem'
 PROC_IOPORTS = '/proc/ioports'
 PROC_INTERRUPTS = '/proc/interrupts'
+PROC_SOFTIRQS = '/proc/softirqs'
 PROC_SCSI = '/proc/scsi/scsi'
 FIRSTBOOT_DIR = '/etc/firstboot.d'
 PROC_VERSION = '/proc/version'
@@ -246,6 +249,8 @@ MDADM = 'mdadm'
 MODINFO = 'modinfo'
 MULTIPATHD = 'multipathd'
 NETSTAT = 'netstat'
+NSTAT = 'nstat'
+SS = 'ss'
 NTPQ = 'ntpq'
 OVS_APPCTL = 'ovs-appctl'
 OVS_DPCTL = 'ovs-dpctl'
@@ -768,8 +773,11 @@ exclude those logs from the archive.
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
 
     file_output(CAP_HARDWARE_INFO, [PROC_CPUINFO, PROC_MEMINFO, PROC_IOMEM, PROC_IOPORTS, PROC_INTERRUPTS])
+    file_output(CAP_HARDWARE_INFO, [PROC_SOFTIRQS])
     file_output(CAP_HARDWARE_INFO, [PROC_BUDDYINFO])
+    file_output(CAP_HARDWARE_INFO, [PROC_PAGETYINFO])
     file_output(CAP_HARDWARE_INFO, [PROC_SLABINFO])
+    file_output(CAP_HARDWARE_INFO, [PROC_VMSTAT])
     file_output(CAP_HARDWARE_INFO, [PROC_ZONEINFO])
     cmd_output(CAP_HARDWARE_INFO, [DMIDECODE])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-n'])
@@ -832,6 +840,10 @@ exclude those logs from the archive.
     cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
     cmd_output(CAP_NETWORK_STATUS, [ARP, '-n'])
     cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-anop'])
+    cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-s'])
+    cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-gn'])
+    cmd_output(CAP_NETWORK_STATUS, [NSTAT, '-a'])
+    cmd_output(CAP_NETWORK_STATUS, [SS, '-nampi'])
     tree_output(CAP_NETWORK_STATUS, DHCP_LEASE_DIR)
     cmd_output(CAP_NETWORK_STATUS, [ARPTABLES, '-nvL'])
     cmd_output(CAP_NETWORK_STATUS, [EBTABLES, '-L'])
