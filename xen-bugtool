@@ -885,7 +885,7 @@ exclude those logs from the archive.
         cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'memory/show'])
         cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'coverage/show'])
         cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'dpif/show'])
-	cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list', 'controller'])
+        cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list', 'controller'])
         for b in br_list():
             cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list-ports', b])
             cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list-ifaces', b])
@@ -1131,8 +1131,8 @@ def generate_tapdisk_logs():
         except:
             pass
     for pid in pidof('tapdisk2'):
-	try:
-	    os.kill(pid, SIGUSR1)
+        try:
+            os.kill(pid, SIGUSR1)
             output_ts("Including logs for tapdisk process %d" % pid)
         except :
             pass
@@ -1153,7 +1153,7 @@ def dump_xapi_subprocess_info(cap):
     pids = filter(lambda x: x.isdigit(), os.listdir("/proc"))
     def readlines(filename):
         lines = ''
-	try:
+        try:
             f = open(filename, "r")
             lines = f.readlines()
             f.close()
@@ -1161,36 +1161,36 @@ def dump_xapi_subprocess_info(cap):
             pass
         return lines
     def cmdline(pid):
-    	all = readlines("/proc/" + pid + "/cmdline")
-	if all == []:
-	   return ""
-	else:
-	   return all[0].replace('\x00', ' ')
+        all = readlines("/proc/" + pid + "/cmdline")
+        if all == []:
+           return ""
+        else:
+           return all[0].replace('\x00', ' ')
     def parent(pid):
-    	for i in readlines("/proc/" + pid + "/status"):
-	    if i.startswith("PPid:"):
-	       return i.split()[-1]
-	return None
+        for i in readlines("/proc/" + pid + "/status"):
+            if i.startswith("PPid:"):
+               return i.split()[-1]
+        return None
     def pstree(pid):
-    	result = { "cmdline": cmdline(pid) }
-	child_pids = filter(lambda x:parent(x) == pid, pids)
-	children = { }
-	for child in child_pids:
-	    children[child] = pstree(child)
-	result['children'] = children
-	fds = { }
-	for fd in os.listdir("/proc/" + pid + "/fd"):
+        result = { "cmdline": cmdline(pid) }
+        child_pids = filter(lambda x:parent(x) == pid, pids)
+        children = { }
+        for child in child_pids:
+            children[child] = pstree(child)
+        result['children'] = children
+        fds = { }
+        for fd in os.listdir("/proc/" + pid + "/fd"):
             try:
                 fds[fd] = os.readlink("/proc/" + pid + "/fd/" + fd)
             except:
                 pass
-	result['fds'] = fds
-	return result
+        result['fds'] = fds
+        return result
     xapis = filter(lambda x: cmdline(x).startswith("/opt/xensource/bin/xapi"), pids)
     xapis = filter(lambda x: parent(x) == "1", xapis)
     result = {}
     for xapi in xapis:
-    	result[xapi] = pstree(xapi)
+        result[xapi] = pstree(xapi)
     pp = pprint.PrettyPrinter(indent=4)
     return pp.pformat(result)
 
