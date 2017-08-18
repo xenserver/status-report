@@ -890,6 +890,7 @@ exclude those logs from the archive.
             cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list-ports', b])
             cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list-ifaces', b])
             cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'fdb/show', b])
+            cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'mdb/show', b])
             # Assumed br has one-to-one mapping to dp
             cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'dpif/dump-flows', b])
             cmd_output(CAP_NETWORK_STATUS, [OVS_OFCTL, 'show', b])
