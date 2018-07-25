@@ -1239,7 +1239,7 @@ class DBFilter:
     def __init__(self):
         self.result = ''
         self.rest = ''
-        self.state = {'in_vm_table': False}
+        self.state = {}
 
     def filter_secrets(self, s):
         if 'in_secret_table' not in self.state:
@@ -1250,21 +1250,9 @@ class DBFilter:
             self.state['in_secret_table'] = True
         elif s.startswith('</table>'):
             self.state['in_secret_table'] = False
-            self.state['in_vm_table'] = False
 
         if self.state['in_secret_table'] and s.startswith("<row"): # match only on DB rows
             s = re.sub(r'(value=")[^"]+(")', r'\1REMOVED\2', s)
-
-        # remove private efi variables
-        if not self.state['in_vm_table']:
-            if re.search(r'\s*\<\s*table\s*name=\"VM\"\s*\>', s):
-                # found table where private efi varaibles are kept
-                self.state['in_vm_table'] = True
-
-        if self.state['in_vm_table']:
-            if re.search(r'HVM__boot_params=\"\((\(\'[^\']+\'\%\.\'[^\']+\'\)\%\.)*\(\'NVRAM\'', s):
-                s = re.sub(r"(?P<start>HVM__boot_params=\"\((\(\'[^\']+\'\%\.\'[^\']+\'\)\%\.)*\(\'NVRAM\'%\.\')[^\']+(?P<end>\')", r"\g<start>REMOVED\g<end>", s)
-
         return s
 
     def feed(self, s):
