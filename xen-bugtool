@@ -269,6 +269,7 @@ XE = 'xe'
 XENPM = 'xenpm'
 XEN_CPUID = 'xen-cpuid'
 XEN_LIVEPATCH = 'xen-livepatch'
+XEN_MICROCODE = 'xen-microcode'
 XENSTORE_LS = 'xenstore-ls'
 XL = 'xl'
 XS = '/opt/xensource/debug/xs'
@@ -1038,6 +1039,7 @@ exclude those logs from the archive.
     cmd_output(CAP_XEN_INFO, [XL, 'info'])
     cmd_output(CAP_XEN_INFO, [XEN_CPUID, '-v'])
     cmd_output(CAP_XEN_INFO, [XEN_LIVEPATCH, 'list'])
+    cmd_output(CAP_XEN_INFO, [XEN_MICROCODE, 'show-cpu-info'])
     file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
 
     cmd_output(CAP_XHA_LIVESET, [HA_QUERY_LIVESET])
