@@ -168,7 +168,6 @@ VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
 STATIC_VDIS = '/etc/xensource/static-vdis'
 POOL_CONF = '/etc/xensource/pool.conf'
 NETWORK_CONF = '/etc/xensource/network.conf'
-PTOKEN = '/etc/xensource/ptoken'
 XAPI_CONF = '/etc/xensource/xapi.conf'
 XAPI_SSL_CONF = '/etc/xensource/xapi-ssl.conf'
 XAPI_GLOBS_CONF = '/etc/xensource/xapi_globs.conf'
@@ -982,7 +981,7 @@ exclude those logs from the archive.
     tree_output(CAP_XENRT, '/tmp', re.compile(r'^.*xen\.qemu-dm\.'))
 
     file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
-    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, PTOKEN, XAPI_CONF, XAPI_SSL_CONF, XAPI_GLOBS_CONF,
+    file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XAPI_GLOBS_CONF,
                                        XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
     cmd_output(CAP_XENSERVER_CONFIG, [BIN_STATIC_VDIS, 'list'])
