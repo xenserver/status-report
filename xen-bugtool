@@ -1012,6 +1012,11 @@ exclude those logs from the archive.
     tree_output(CAP_XENSERVER_INSTALL, INSTALLED_REPOS_DIR)
     tree_output(CAP_XENSERVER_INSTALL, UPDATE_APPLIED_DIR)
 
+    try:
+        load_plugins()
+    except:
+        pass
+
     def get_recent_logs(logs, verbosity):
         logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
         return map(lambda x: x[1], logs[-verbosity:] if verbosity < 9 else logs)
@@ -1056,11 +1061,6 @@ exclude those logs from the archive.
     tree_output(CAP_YUM, YUM_REPOS_DIR)
     cmd_output(CAP_YUM, [RPM, '-qa'])
     tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
-
-    try:
-        load_plugins()
-    except:
-        pass
 
     # permit the user to filter out data
     for k in sorted(data.keys()):
