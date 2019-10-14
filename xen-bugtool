@@ -998,6 +998,7 @@ exclude those logs from the archive.
                label="xapi-db-dumped.xml", filter=filter_db_pii)
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
+    cmd_output(CAP_XENSERVER_DOMAINS, [XL, "vcpu-list"])
 
     tree_output(CAP_XENSERVER_INSTALL, VAR_LOG_DIR + 'installer')
     file_output(CAP_XENSERVER_INSTALL,
@@ -1050,6 +1051,7 @@ exclude those logs from the archive.
 
     cmd_output(CAP_XEN_INFO, [XL, 'dmesg'])
     cmd_output(CAP_XEN_INFO, [XL, 'info'])
+    cmd_output(CAP_XEN_INFO, [XL, 'info', '-n'])
     cmd_output(CAP_XEN_INFO, [XEN_CPUID, '-v'])
     cmd_output(CAP_XEN_INFO, [XEN_LIVEPATCH, 'list'])
     cmd_output(CAP_XEN_INFO, [XEN_MICROCODE, 'show-cpu-info'])
