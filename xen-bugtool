@@ -1237,6 +1237,11 @@ class DBFilter:
         self.state = {'in_vm_table': False}
 
     def filter_secrets(self, s):
+        # remove values for any keys containing the word 'password'
+        # example input snippet to filter:
+        #   '%.(\'incoming_chappassword\'%.\'TC12818outgoingpasswd\'))" host="Opaq'
+        s = re.sub(r"\('(\w*(?:password)\w*)'%\.'\w*'\)", r"('\1'%.'REMOVED')", s)
+
         if 'in_secret_table' not in self.state:
             self.state['in_secret_table'] = False
 
