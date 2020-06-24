@@ -1924,19 +1924,18 @@ def run_proc_group(pp):
         pipes = []
         active_procs = []
 
-        for pp in procs:
-            for p in pp:
+        for p in pp:
+            if p.running:
+                active_procs.append(p)
+                pipes.append(p.proc.stdout)
+                break
+            elif p.status == None and not p.failed and not p.timed_out:
+                p.run()
                 if p.running:
                     p.start_time = int(time.time())
                     active_procs.append(p)
                     pipes.append(p.proc.stdout)
                     break
-                elif p.status == None and not p.failed and not p.timed_out:
-                    p.run()
-                    if p.running:
-                        active_procs.append(p)
-                        pipes.append(p.proc.stdout)
-                        break
 
         if len(pipes) == 0:
             # all finished
@@ -1958,6 +1957,9 @@ def run_proc_group(pp):
                 p.timed_out = True
                 p.terminate()
 
+def run_procs(procs):
+    for pp in procs:
+        run_proc_group(pp)
 
 def pidof(name):
     pids = []
