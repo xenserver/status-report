@@ -1811,6 +1811,7 @@ class ProcOutput:
     def __init__(self, command, max_time, inst=None, filter=None):
         self.command = command
         self.max_time = max_time
+        self.start_time = None
         self.inst = inst
         self.running = False
         self.status = None
@@ -1890,9 +1891,7 @@ class ProcOutputAndArchive(ProcOutput):
             if not self.running:
                 self.collectData()
 
-def run_procs(procs):
-    start = int(time.time())
-
+def run_proc_group(pp):
     while True:
         pipes = []
         active_procs = []
@@ -1900,6 +1899,7 @@ def run_procs(procs):
         for pp in procs:
             for p in pp:
                 if p.running:
+                    p.start_time = int(time.time())
                     active_procs.append(p)
                     pipes.append(p.proc.stdout)
                     break
@@ -1923,7 +1923,7 @@ def run_procs(procs):
                 p.read_line()
 
             # handle timeout
-            if not unlimited_time and p.running and now > (start + p.max_time):
+            if not unlimited_time and p.running and now > (p.start_time + p.max_time):
                 output_ts("'%s' timed out" % p.cmdAsStr())
                 if p.inst:
                     p.inst.write("\n** timeout **\n")
