@@ -580,7 +580,7 @@ Capture information to help diagnose bugs.
  -y, --yestoall      confirm every file automatically
  --outfd=<file>      specify output file
  -a, --all           enable all capabilities
- -u, --unlimited     do not limit file size
+ -u, --unlimited     do not limit file size and execution time
  -d, --debug         enable debug output
  --help              this help'''
 
