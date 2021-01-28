@@ -1,4 +1,0 @@
-<collect>
-    <command label="resolve-dns-test">if [ ! -f /etc/xensource/bugtool/disable_conntests ]; then nslookup cis.citrix.com; fi</command>
-    <command label="fetch-header-test">if [ ! -f /etc/xensource/bugtool/disable_conntests ]; then curl -I https://cis.citrix.com; fi</command>
-</collect>
