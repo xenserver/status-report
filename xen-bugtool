@@ -88,7 +88,6 @@ OS_RELEASE = platform.release()
 BUG_DIR = "/var/opt/xen/bug-report"
 PLUGIN_DIR = "/etc/xensource/bugtool"
 XAPI_BLOBS = '/var/xapi/blobs'
-EXTLINUX_CONFIG = '/boot/extlinux.conf'
 GRUB_BIOS_CONFIG = '/boot/grub/grub.cfg'
 GRUB_EFI_CONFIG = '/boot/efi/EFI/xenserver/grub.cfg'
 BOOT_KERNEL = '/boot/vmlinuz-' + OS_RELEASE
@@ -127,7 +126,6 @@ PROC_XEN_BALLOON = '/proc/xen/balloon'
 PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
 PROC_NET_SOFTNET_STAT = '/proc/net/softnet_stat'
-PROC_DRIVER_CCISS_DIR = '/proc/driver/cciss'
 ETC_MDADM_CONF = '/etc/mdadm.conf'
 ETC_MDADM_MDADM_CONF = '/etc/mdadm/mdadm.conf'
 MODPROBE_CONF = '/etc/modprobe.conf'
@@ -178,7 +176,6 @@ DB_SCHEMA_SQL = '/etc/xensource/db_schema.sql'
 SYSTEMD_CONF_DIR = '/etc/systemd'
 CGRULES_CONF = '/etc/cgrules.conf'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
-XENSTORED_DB = '/var/lib/xenstored/tdb'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile('.*/(\.sacrificial-space-for-logs|coredump\.bin)$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
@@ -196,7 +193,6 @@ LWIDENTITY_JOIN_LOG = '/tmp/lwidentity.join.log'
 HOSTS_LWIDENTITY_ORIG = '/etc/hosts.lwidentity.orig'
 KRB5_CONF = '/etc/krb5.conf'
 LIKEWISE_DIR = '/var/lib/likewise'
-XENGUEST_LOG = '/tmp/xenguest.log'
 QEMU_DIR = '/var/lib/xen'
 QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
 INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
@@ -727,7 +723,6 @@ exclude those logs from the archive.
     # assemble potential data
     tree_output(CAP_BLOBS, XAPI_BLOBS)
 
-    file_output(CAP_BOOT_LOADER, [EXTLINUX_CONFIG])
     file_output(CAP_BOOT_LOADER, [GRUB_BIOS_CONFIG])
     file_output(CAP_BOOT_LOADER, [GRUB_EFI_CONFIG])
     cmd_output(CAP_BOOT_LOADER, [LS, '-lR', '/boot'])
@@ -759,7 +754,6 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/fc_transport'])
     cmd_output(CAP_DISK_INFO, [SG_MAP, '-x'])
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
-    tree_output(CAP_DISK_INFO, PROC_DRIVER_CCISS_DIR)
     cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
 
     # mdadm information
@@ -1002,7 +996,6 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
     file_output(CAP_XENSERVER_DATABASES, [XAPI_LOCAL_DB])
-    file_output(CAP_XENSERVER_DATABASES, [XENSTORED_DB, XENSTORED_DB + '.bak'])
     cmd_output(CAP_XENSERVER_DATABASES, [XE, 'pool-dump-database', 'file-name='],
                label="xapi-db-dumped.xml", filter=filter_db_pii)
 
@@ -1052,7 +1045,7 @@ exclude those logs from the archive.
     sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     qemu_logs = get_recent_logs(glob.glob('/tmp/qemu.[0-9]*'), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + sa_logs + qemu_logs))
-    file_output(CAP_XENSERVER_LOGS, [LOG_CONF, XENGUEST_LOG])
+    file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
     file_output(CAP_XENSERVER_LOGS, xenserver_logs)
     file_output(CAP_XENSERVER_LOGS, sa_logs)
     file_output(CAP_XENSERVER_LOGS, qemu_logs)
