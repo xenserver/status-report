@@ -439,7 +439,6 @@ def no_unicode(x):
     return x
 
 def output(x):
-    global SILENT_MODE
     if not SILENT_MODE:
         print x
 
@@ -577,7 +576,7 @@ Capture information to help diagnose bugs.
 
 def main(argv = None):
     global ANSWER_YES_TO_ALL, SILENT_MODE
-    global entries, data, dbg
+    global entries, dbg
     global unlimited_data, unlimited_time
 
     output_type = 'tar.bz2'
@@ -1733,7 +1732,6 @@ def update_cap_time(cap, time):
 
 
 def update_cap(cap, k, v):
-    global caps
     l = list(caps[cap])
     l[k] = v
     caps[cap] = tuple(l)
