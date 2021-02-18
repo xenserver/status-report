@@ -1156,13 +1156,13 @@ def dump_xapi_subprocess_info(cap):
     def cmdline(pid):
         all = readlines("/proc/" + pid + "/cmdline")
         if all == []:
-           return ""
+            return ""
         else:
-           return all[0].replace('\x00', ' ')
+            return all[0].replace('\x00', ' ')
     def parent(pid):
         for i in readlines("/proc/" + pid + "/status"):
             if i.startswith("PPid:"):
-               return i.split()[-1]
+                return i.split()[-1]
         return None
     def pstree(pid):
         result = { "cmdline": cmdline(pid) }
@@ -1332,18 +1332,18 @@ def dump_scsi_hosts(cap):
     for h in l:
         procname = ''
         try:
-                f = open('/sys/class/scsi_host/%s/proc_name' % h)
-                procname = f.readline().strip("\n")
-                f.close()
+            f = open('/sys/class/scsi_host/%s/proc_name' % h)
+            procname = f.readline().strip("\n")
+            f.close()
         except:
-                pass
+            pass
         modelname = None
         try:
-                f = open('/sys/class/scsi_host/%s/model_name' % h)
-                modelname = f.readline().strip("\n")
-                f.close()
+            f = open('/sys/class/scsi_host/%s/model_name' % h)
+            modelname = f.readline().strip("\n")
+            f.close()
         except:
-                pass
+            pass
 
         output += "%s:\n" %h
         output += "    %s%s\n" % (procname, modelname and (" -> %s" % modelname) or '')
