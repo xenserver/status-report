@@ -52,7 +52,6 @@ import fcntl
 import glob
 import urllib
 import socket
-import base64
 import traceback
 
 try:
@@ -212,7 +211,6 @@ ARPTABLES = 'arptables'
 BIN_STATIC_VDIS = 'static-vdis'
 BIOSDEVNAME = 'biosdevname'
 BRCTL = 'brctl'
-CAT = 'cat'
 CHKCONFIG = 'chkconfig'
 CHRONYC = 'chronyc'
 CSL = '/opt/Citrix/StorageLink/bin/csl'
@@ -227,7 +225,6 @@ EFIBOOTMGR = 'efibootmgr'
 ETHTOOL = 'ethtool'
 FCOEADM = 'fcoeadm'
 FDISK = 'fdisk'
-FIND = 'find'
 HA_QUERY_LIVESET = '/opt/xensource/debug/debug_ha_query_liveset'
 HDPARM = 'hdparm'
 IFCONFIG = 'ifconfig'
@@ -258,7 +255,6 @@ QLOGIC_FW = 'strings /lib/firmware/ql2*.bin | grep -i ver'
 ROUTE = 'route'
 RPM = 'rpm'
 SG_MAP = 'sg_map'
-SQLITE = 'sqlite3'
 SYSCTL = 'sysctl'
 SYSTEMCTL = 'systemctl'
 TC = 'tc'
@@ -266,7 +262,6 @@ ULIMIT = 'ulimit -a'
 UPTIME = 'uptime'
 VGS = 'vgs'
 VGSCAN = 'vgscan'
-XAPI_DB_PROCESS = 'xapi-db-process'
 XE = 'xe'
 XENPM = 'xenpm'
 XEN_CPUID = 'xen-cpuid'
@@ -274,7 +269,6 @@ XEN_LIVEPATCH = 'xen-livepatch'
 XEN_MICROCODE = 'xen-ucode'
 XENSTORE_LS = 'xenstore-ls'
 XL = 'xl'
-XS = '/opt/xensource/debug/xs'
 ZCAT = 'zcat'
 
 #
