@@ -1590,7 +1590,7 @@ class TarOutput:
                     print self.filename
             return True
         except Exception, e:
-            if output_fd == -1:
+            if self.output_fd == -1:
                 output ("Error closing tar file '%s': '%s'" % (self.filename, e))
             else:
                 output ("Error closing tar file descriptor: '%s'" % e)
