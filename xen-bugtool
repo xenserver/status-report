@@ -496,7 +496,6 @@ def tree_output(cap, path, pattern = None, negate = False):
 
 def func_output(cap, label, func):
     if cap in entries:
-        t = str(func).split()
         data[label] = {'cap': cap, 'func': func}
 
 def collect_data(subdir, archive):
@@ -1201,7 +1200,7 @@ def dump_xapi_rrds(cap):
         if vm['resident_on'] == this_host or (i_am_master and vm['power_state'] in ['Suspended', 'Halted']):
             rrd = urllib.urlopen('http://localhost/vm_rrd?session_id=%s&uuid=%s' % (session._session, vm['uuid']))
             try:
-                (i, o, x) = select([rrd], [], [], 5.0)
+                i, _, _ = select([rrd], [], [], 5.0)
                 if len(i) == 1:
                     data['xapi_rrd-%s' % vm['uuid']] = {'cap': cap,
                                                         'output': StringIOmtime(rrd.read())}
@@ -1406,7 +1405,7 @@ def csl_logs(cap):
 def multipathd_topology(cap):
     pipe = Popen([MULTIPATHD, '-k'], bufsize=1, stdin=PIPE,
                      stdout=PIPE, stderr=dev_null)
-    stdout, stderr = pipe.communicate('show topology')
+    stdout, _ = pipe.communicate('show topology')
 
     return stdout
 
@@ -1820,7 +1819,7 @@ def disk_list():
         f.readline()
         f.readline()
         for line in f.readlines():
-            (major, minor, blocks, name) = line.split()
+            major, _, _, name = line.split()
             if int(major) < 254 and not partition_re.match(name):
                 disks.append(name)
         f.close()
@@ -1937,7 +1936,7 @@ def run_proc_group(pp):
             # all finished
             break
 
-        (i, o, x) = select(pipes, [], [], 1.0)
+        i, _, _ = select(pipes, [], [], 1.0)
         now = int(time.time())
 
         # handle process output
