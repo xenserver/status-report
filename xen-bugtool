@@ -75,8 +75,9 @@ def exceptionless_del(*argl, **kwargs):
         pass
 zipfile.ZipFile.__del__ = exceptionless_del
 
-import XenAPI
-from xen.lowlevel.xc import xc, Error as xcError
+def xapi_local_session():
+    import XenAPI # Import on first use.
+    return XenAPI.xapi_local()
 
 OS_RELEASE = platform.release()
 
@@ -1201,7 +1202,7 @@ def dump_xapi_subprocess_info(cap):
 
 def dump_xapi_rrds(cap):
     socket.setdefaulttimeout(5)
-    session = XenAPI.xapi_local()
+    session = xapi_local_session()
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
     this_host = session.xenapi.session.get_this_host(session._session)
     # better way to find pool master?
@@ -1378,7 +1379,7 @@ def module_info(cap):
 
 def csl_logs(cap):
     socket.setdefaulttimeout(5)
-    session = XenAPI.xapi_local()
+    session = xapi_local_session()
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
     this_host = session.xenapi.session.get_this_host(session._session)
     # better way to find pool master?
@@ -1698,6 +1699,8 @@ def construct_filename(subdir, k, v):
 
 
 def update_capabilities():
+    from xen.lowlevel.xc import xc, Error as xcError # Import on first use.
+
     update_cap_size(CAP_HOST_CRASHDUMP_LOGS,
                     size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_EXCLUDES_RE, True))
     update_cap_size(CAP_XAPI_DEBUG, size_of_dir(XAPI_DEBUG_DIR))
