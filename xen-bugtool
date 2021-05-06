@@ -736,6 +736,7 @@ exclude those logs from the archive.
     if len(pidof('iscsid')) != 0:
         cmd_output(CAP_DISK_INFO, [ISCSIADM, '-m', 'node'])
         cmd_output(CAP_DISK_INFO, [ISCSIADM, '-m', 'session', '-P', '3'])
+        cmd_output(CAP_DISK_INFO, [ISCSIADM, '-m', 'iface'])
     cmd_output(CAP_DISK_INFO, [VGSCAN])
     cmd_output(CAP_DISK_INFO, [PVS])
     cmd_output(CAP_DISK_INFO, [VGS])
