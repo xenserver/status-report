@@ -168,6 +168,7 @@ NETWORK_CONF = '/etc/xensource/network.conf'
 XAPI_CONF = '/etc/xensource/xapi.conf'
 XAPI_SSL_CONF = '/etc/xensource/xapi-ssl.conf'
 XAPI_GLOBS_CONF = '/etc/xensource/xapi_globs.conf'
+SSHD_CONFIG = '/etc/ssh/sshd_config'
 DB_CONF = '/etc/xensource/db.conf'
 DB_CONF_RIO = '/etc/xensource/db.conf.rio'
 DB_DEFAULT_FIELDS = '/etc/xensource/db-default-fields'
@@ -188,10 +189,9 @@ YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 PAM_DIR = '/etc/pam.d'
 FIST_RE = re.compile(r'.*/fist_')
-LWIDENTITY_JOIN_LOG = '/tmp/lwidentity.join.log'
-HOSTS_LWIDENTITY_ORIG = '/etc/hosts.lwidentity.orig'
 KRB5_CONF = '/etc/krb5.conf'
-LIKEWISE_DIR = '/var/lib/likewise'
+SAMBA_CONFIG_DIR = '/etc/samba'
+# SAMBA_DATA_DIR = '/var/lib/samba'
 QEMU_DIR = '/var/lib/xen'
 QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
 INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
@@ -397,7 +397,7 @@ cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=100*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=20*KB,
     max_time=30)
-cap(CAP_PAM,                 PII_NO,                    max_size=50*KB)
+cap(CAP_PAM,                 PII_NO,                    max_size=50*MB)
 cap(CAP_PERSISTENT_STATS,    PII_NO,                    max_size=50*MB,
     max_time=60, checked=False, hidden=True)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
@@ -925,8 +925,10 @@ exclude those logs from the archive.
             cmd_output(CAP_FCOE, [LLDPTOOL, '-t', '-i', p, '-V', 'ETS-REC', '-c'])
 
     tree_output(CAP_PAM, PAM_DIR)
-    file_output(CAP_PAM, [KRB5_CONF])
-    tree_output(CAP_PAM, LIKEWISE_DIR)
+    file_output(CAP_PAM, [KRB5_CONF, SSHD_CONFIG])
+    tree_output(CAP_PAM, SAMBA_CONFIG_DIR)
+    # tree_output(CAP_PAM, SAMBA_DATA_DIR) # Explictly skip samba data as it contains credentials
+    tree_output(CAP_PAM, VAR_LOG_DIR + "samba")
 
     func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', dump_xapi_rrds)
 
@@ -953,7 +955,6 @@ exclude those logs from the archive.
                            'blktap.log.%d', 'wtmp.%d.gz']]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
-    file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
 
     cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
     cmd_output(CAP_SYSTEM_SERVICES, [SYSTEMCTL, 'status'])
