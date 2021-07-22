@@ -195,7 +195,6 @@ SAMBA_CONFIG_DIR = '/etc/samba'
 QEMU_DIR = '/var/lib/xen'
 QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
 INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
-SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
 SYS_NETBACK_DEBUG = '/sys/kernel/debug/xen-netback'
 SYS_EFIVARS = '/sys/firmware/efi/efivars'
 BLKTAP_DEVICE_PATH = '/dev/blktap'
@@ -821,7 +820,6 @@ exclude those logs from the archive.
     file_output(CAP_NETWORK_CONFIG, [SYSCONFIG_NETWORK, RESOLV_CONF, NSSWITCH_CONF, HOSTS])
     file_output(CAP_NETWORK_CONFIG, [CHRONY_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
     file_output(CAP_NETWORK_CONFIG, [OPENVSWITCH_CONF, OPENVSWITCH_CONF_DB])
-    file_output(CAP_NETWORK_CONFIG, [SYS_VIF_GROUPS])
 
     cmd_output(CAP_NETWORK_STATUS, [IFCONFIG, '-a'])
     cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
