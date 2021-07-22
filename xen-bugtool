@@ -196,6 +196,7 @@ QEMU_DIR = '/var/lib/xen'
 QEMU_RESUME_RE = re.compile(r'.*/qemu-resume\..*')
 INTERFACE_RENAME_LOG = '/var/log/interface-rename.log'
 SYS_VIF_GROUPS = '/sys/devices/xen-backend/vif-*-*/group'
+SYS_NETBACK_DEBUG = '/sys/kernel/debug/xen-netback'
 SYS_EFIVARS = '/sys/firmware/efi/efivars'
 BLKTAP_DEVICE_PATH = '/dev/blktap'
 SYS_KERNEL_NOTES = '/sys/kernel/notes'
@@ -896,6 +897,7 @@ exclude those logs from the archive.
         cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'bond/list'])
         for b in bond_list():
             cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'bond/show', b])
+    tree_output(CAP_NETWORK_STATUS, SYS_NETBACK_DEBUG)
 
     cmd_output(CAP_FCOE, [FCOEADM, '-i'])
     cmd_output(CAP_FCOE, [FCOEADM, '-t'])
