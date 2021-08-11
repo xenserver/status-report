@@ -1269,7 +1269,7 @@ class DBFilter:
                 s = re.sub(r"(?P<start>NVRAM=\"\((\(\'[^\']+\'\%\.\'[^\']+\'\)\%\.)*\(\'EFI-variables\'%\.\')[^\']+(?P<end>\')", r"\g<start>REMOVED\g<end>", s)
 
         if self.state['in_cluster_table']:
-            s = re.sub(r'cluster_token=\"([-\w]*)\"', r'cluster_token="REMOVED"', s)
+            s = re.sub(r'cluster_token="[^"]*"', r'cluster_token="REMOVED"', s)
 
         return s
 
