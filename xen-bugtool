@@ -1309,12 +1309,13 @@ def filter_xenstore_secrets(s, state):
 
 def filter_xapi_clusterd_db(cap):
     clusterd_data = {}
-    output_str = ''
 
     with open(XAPI_CLUSTERD, 'r') as f:
         clusterd_data = json.load(f)
-    clusterd_data['cluster_config']['pems']['blobs'] = "REMOVED"
-    clusterd_data['cluster_config']['authkey'] = "REMOVED"
+
+    if 'cluster_config' in clusterd_data.keys():
+        clusterd_data['cluster_config']['pems']['blobs'] = "REMOVED"
+        clusterd_data['cluster_config']['authkey'] = "REMOVED"
 
     output_str = json.dumps(clusterd_data)
 
