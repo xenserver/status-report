@@ -509,9 +509,6 @@ def collect_data(subdir, archive):
         name = construct_filename(subdir, k, v)
         cap = v['cap']
         filename = v.get('filename')
-        if filename and filename.endswith('.pem'):
-            output("Omitting %s, because it is a .pem file" % filename)
-            continue
         if v.has_key('cmd_args'):
             v['output'] = StringIOmtime()
             if not process_lists.has_key(cap):
