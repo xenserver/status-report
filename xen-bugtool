@@ -53,6 +53,7 @@ import glob
 import urllib
 import socket
 import traceback
+import json
 
 try:
     import hashlib
@@ -200,6 +201,7 @@ SYS_EFIVARS = '/sys/firmware/efi/efivars'
 BLKTAP_DEVICE_PATH = '/dev/blktap'
 SYS_KERNEL_NOTES = '/sys/kernel/notes'
 SIGNING_KEY_INFO_DIR = '/etc/pki/rpm-gpg'
+XAPI_CLUSTERD = '/var/opt/xapi-clusterd/db'
 
 #
 # External programs
@@ -494,9 +496,11 @@ def tree_output(cap, path, pattern = None, negate = False):
                 elif os.path.isdir(fn):
                     tree_output(cap, fn, pattern, negate)
 
-def func_output(cap, label, func):
+def func_output(cap, label, func, filename=None):
     if cap in entries:
         data[label] = {'cap': cap, 'func': func}
+        if filename:
+            data[label]['filename'] = filename
 
 def collect_data(subdir, archive):
     process_lists = {}
@@ -986,6 +990,7 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_CONFIG, [CGRULES_CONF])
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
+    func_output(CAP_XENSERVER_DATABASES, 'xapi-clusterd-db', filter_xapi_clusterd_db, filename=XAPI_CLUSTERD)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'], filter=filter_xenstore_secrets)
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
@@ -1230,7 +1235,7 @@ class DBFilter:
     def __init__(self):
         self.result = ''
         self.rest = ''
-        self.state = {'in_vm_table': False}
+        self.state = {'in_vm_table': False, 'in_cluster_table': False}
 
     def filter_secrets(self, s):
         # remove values for any keys containing the word 'password'
@@ -1242,11 +1247,15 @@ class DBFilter:
             self.state['in_secret_table'] = False
 
         # this logic doesn't deal with <table name="secret" /> properly!!!
-        if s.startswith('<table ') and 'name="secret"' in s:
-            self.state['in_secret_table'] = True
+        if s.startswith('<table '):
+            if 'name="secret"' in s:
+                self.state['in_secret_table'] = True
+            elif 'name="Cluster"' in s:
+                self.state['in_cluster_table'] = True
         elif s.startswith('</table>'):
             self.state['in_secret_table'] = False
             self.state['in_vm_table'] = False
+            self.state['in_cluster_table'] = False
 
         if self.state['in_secret_table'] and s.startswith("<row"): # match only on DB rows
             s = re.sub(r'(value=")[^"]+(")', r'\1REMOVED\2', s)
@@ -1260,6 +1269,9 @@ class DBFilter:
         if self.state['in_vm_table']:
             if re.search(r'NVRAM=\"\((\(\'[^\']+\'\%\.\'[^\']+\'\)\%\.)*\(\'EFI-variables\'', s):
                 s = re.sub(r"(?P<start>NVRAM=\"\((\(\'[^\']+\'\%\.\'[^\']+\'\)\%\.)*\(\'EFI-variables\'%\.\')[^\']+(?P<end>\')", r"\g<start>REMOVED\g<end>", s)
+
+        if self.state['in_cluster_table']:
+            s = re.sub(r'cluster_token="[^"]*"', r'cluster_token="REMOVED"', s)
 
         return s
 
@@ -1291,6 +1303,22 @@ def filter_xenstore_secrets(s, state):
         return '/local/domain/%s/data/%s_clipboard = <filtered for security>\n' % (match.group(1), match.group(2))
     else:
         return s
+
+def filter_xapi_clusterd_db(cap):
+    clusterd_data = {}
+
+    with open(XAPI_CLUSTERD, 'r') as f:
+        clusterd_data = json.load(f)
+
+    config_keys = ['cluster_config', 'old_cluster_config']
+    for config_key in config_keys:
+        if config_key in clusterd_data.keys():
+            clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
+            clusterd_data[config_key]['authkey'] = "REMOVED"
+
+    output_str = json.dumps(clusterd_data)
+
+    return output_str
 
 def dump_filtered_xapi_db(cap):
     db_file = None
