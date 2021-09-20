@@ -496,11 +496,9 @@ def tree_output(cap, path, pattern = None, negate = False):
                 elif os.path.isdir(fn):
                     tree_output(cap, fn, pattern, negate)
 
-def func_output(cap, label, func, filename=None):
+def func_output(cap, label, func):
     if cap in entries:
         data[label] = {'cap': cap, 'func': func}
-        if filename:
-            data[label]['filename'] = filename
 
 def collect_data(subdir, archive):
     process_lists = {}
@@ -990,7 +988,7 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_CONFIG, [CGRULES_CONF])
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
-    func_output(CAP_XENSERVER_DATABASES, 'xapi-clusterd-db', filter_xapi_clusterd_db, filename=XAPI_CLUSTERD)
+    func_output(CAP_XENSERVER_DATABASES, 'xapi-clusterd-db', filter_xapi_clusterd_db)
     cmd_output(CAP_XENSERVER_DATABASES, [XENSTORE_LS, '-f'], filter=filter_xenstore_secrets)
     file_output(CAP_XENSERVER_DATABASES, [DB_CONF, DB_CONF_RIO, DB_DEFAULT_FIELDS, DB_SCHEMA_SQL])
     tree_output(CAP_XENSERVER_DATABASES, OEM_CONFIG_DIR, OEM_DB_FILES_RE)
