@@ -1305,16 +1305,19 @@ def filter_xenstore_secrets(s, state):
 def filter_xapi_clusterd_db(cap):
     clusterd_data = {}
 
-    with open(XAPI_CLUSTERD, 'r') as f:
-        clusterd_data = json.load(f)
+    try:
+        with open(XAPI_CLUSTERD, 'r') as f:
+            clusterd_data = json.load(f)
 
-    config_keys = ['cluster_config', 'old_cluster_config']
-    for config_key in config_keys:
-        if config_key in clusterd_data.keys():
-            clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
-            clusterd_data[config_key]['authkey'] = "REMOVED"
+        config_keys = ['cluster_config', 'old_cluster_config']
+        for config_key in config_keys:
+            if config_key in clusterd_data.keys():
+                clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
+                clusterd_data[config_key]['authkey'] = "REMOVED"
 
-    output_str = json.dumps(clusterd_data)
+        output_str = json.dumps(clusterd_data)
+    except Exception:
+        output_str = ''
 
     return output_str
 
