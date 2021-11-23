@@ -126,6 +126,7 @@ PROC_XEN_BALLOON = '/proc/xen/balloon'
 PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
 PROC_NET_SOFTNET_STAT = '/proc/net/softnet_stat'
+PROC_XSVERSION = '/proc/xsversion'
 ETC_MDADM_CONF = '/etc/mdadm.conf'
 ETC_MDADM_MDADM_CONF = '/etc/mdadm/mdadm.conf'
 MODPROBE_CONF = '/etc/modprobe.conf'
@@ -803,6 +804,7 @@ exclude those logs from the archive.
     cmd_output(CAP_KERNEL_INFO, ULIMIT, label='ulimit-a')
     cmd_output(CAP_KERNEL_INFO, [KPATCH, 'list'])
     file_output(CAP_KERNEL_INFO, [SYS_KERNEL_NOTES])
+    file_output(CAP_KERNEL_INFO, [PROC_XSVERSION])
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
