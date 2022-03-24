@@ -129,6 +129,8 @@ PROC_NET_SOFTNET_STAT = '/proc/net/softnet_stat'
 PROC_XSVERSION = '/proc/xsversion'
 ETC_MDADM_CONF = '/etc/mdadm.conf'
 ETC_MDADM_MDADM_CONF = '/etc/mdadm/mdadm.conf'
+AD_USERS = '/etc/security/hcp_ad_users.conf'
+AD_GROUPS = '/etc/security/hcp_ad_groups.conf'
 MODPROBE_CONF = '/etc/modprobe.conf'
 MODPROBE_DIR = '/etc/modprobe.d'
 BOOT_TIME_CPUS = '/etc/xensource/boot_time_cpus'
@@ -400,7 +402,7 @@ cap(CAP_NETWORK_CONFIG,      PII_IF_CUSTOMIZED,
                                         min_size=0,     max_size=100*KB)
 cap(CAP_NETWORK_STATUS,      PII_YES,                   max_size=20*KB,
     max_time=30)
-cap(CAP_PAM,                 PII_NO,                    max_size=50*MB)
+cap(CAP_PAM,                 PII_YES,                   max_size=50*MB)
 cap(CAP_PERSISTENT_STATS,    PII_NO,                    max_size=50*MB,
     max_time=60, checked=False, hidden=True)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
@@ -930,6 +932,7 @@ exclude those logs from the archive.
 
     tree_output(CAP_PAM, PAM_DIR)
     file_output(CAP_PAM, [KRB5_CONF, SSHD_CONFIG])
+    file_output(CAP_PAM, [AD_USERS, AD_GROUPS])
     tree_output(CAP_PAM, SAMBA_CONFIG_DIR)
     # tree_output(CAP_PAM, SAMBA_DATA_DIR) # Explictly skip samba data as it contains credentials
     tree_output(CAP_PAM, VAR_LOG_DIR + "samba")
