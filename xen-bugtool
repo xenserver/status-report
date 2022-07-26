@@ -205,6 +205,9 @@ BLKTAP_DEVICE_PATH = '/dev/blktap'
 SYS_KERNEL_NOTES = '/sys/kernel/notes'
 SIGNING_KEY_INFO_DIR = '/etc/pki/rpm-gpg'
 XAPI_CLUSTERD = '/var/opt/xapi-clusterd/db'
+SWTPM_IC = '/var/lib/swtpm-localca/issuercert.pem'
+SWTPM_RCA ='/var/lib/swtpm-localca/swtpm-localca-rootca-cert.pem'
+SWTPM_CS = '/var/lib/swtpm-localca/certserial'
 
 #
 # External programs
@@ -339,6 +342,7 @@ CAP_PERSISTENT_STATS     = 'persistent-stats'
 CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
+CAP_VTPM                 = 'vtpm'
 CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
 CAP_XENRT                = 'xenrt'
@@ -412,6 +416,7 @@ cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
 cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=128*KB,
     max_time=20)
 cap(CAP_TAPDISK_LOGS,        PII_NO,                    max_size=10*MB)
+cap(CAP_VTPM,                PII_NO,                    max_size=5*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
@@ -634,7 +639,7 @@ def main(argv = None):
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_MULTIPATH,
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
-                   CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS,
+                   CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, CAP_VTPM,
                    CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
@@ -971,6 +976,7 @@ exclude those logs from the archive.
     if CAP_TAPDISK_LOGS in entries:
         generate_tapdisk_logs()
 
+    file_output(CAP_VTPM, [SWTPM_IC, SWTPM_RCA, SWTPM_CS])
     tree_output(CAP_XAPI_DEBUG, XAPI_DEBUG_DIR)
 
     func_output(CAP_XAPI_SUBPROCESS, 'xapi_subprocesses', dump_xapi_subprocess_info)
