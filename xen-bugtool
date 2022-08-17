@@ -1242,9 +1242,9 @@ def dump_xapi_rrds(cap):
 '''
 class DBFilter:
     def __init__(self):
-        self.result = ''
         self.rest = ''
         self.state = {'in_vm_table': False, 'in_cluster_table': False}
+        self.filtered_results = []
 
     def filter_secrets(self, s):
         # remove values for any keys containing the word 'password'
@@ -1282,23 +1282,26 @@ class DBFilter:
         if self.state['in_cluster_table']:
             s = re.sub(r'cluster_token="[^"]*"', r'cluster_token="REMOVED"', s)
 
-        return s
+        self.filtered_results.append(s)
 
     def feed(self, s):
-        rem = self.rest + s
-        p = rem.find('>')
+        start = 0
+        chunk = self.rest + s
+        p = chunk.find('>')
         while p != -1:
-            s = rem[:p+1]
-            rem = rem[p+1:]
-            self.result  += self.filter_secrets(s)
-            p = rem.find('>')
-        self.rest = rem
+            s = chunk[start:p+1]
+            start = start + len(s)
+            self.filter_secrets(s)
+            p = chunk.find('>', start)
+        self.rest = chunk[start:]
 
     def output(self):
-        r = self.result + self.filter_secrets(self.rest)
-        self.result, self.rest = '', ''
+        self.filter_secrets(self.rest)
+        self.rest = ''
         self.state = {}
-        return r
+        result = "".join(self.filtered_results)
+        self.filtered_results = []
+        return result
 
 def filter_db_pii(s, state):
     dbfilter = DBFilter()
@@ -1337,6 +1340,7 @@ def dump_filtered_xapi_db(cap):
 
     ih = None
     output = ''
+    buf_size = 1024*1000
 
     # determine DB file name
     c = open(DB_CONF, 'r')
@@ -1355,10 +1359,10 @@ def dump_filtered_xapi_db(cap):
         return ''
 
     dbfilter = DBFilter()
-    rec = ih.read(2048)
+    rec = ih.read(buf_size)
     while rec != '':
         dbfilter.feed(rec)
-        rec = ih.read(2048)
+        rec = ih.read(buf_size)
     output = dbfilter.output()
 
     ih.close()
