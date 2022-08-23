@@ -54,6 +54,10 @@ import urllib
 import socket
 import traceback
 import json
+import defusedxml.sax
+import xml
+from xml.etree import ElementTree
+from xml.etree.ElementTree import Element
 
 try:
     import hashlib
@@ -1233,79 +1237,89 @@ def dump_xapi_rrds(cap):
     session.xenapi.session.logout()
     return output
 
-'''Filter a Xapi XML database.
 
-    There is one important assumption made in this class:
-    - the XML document does not contain any characters between the end of one
-      tag and the beginning of the next, ie every > is immediately followed by
-      a <
-'''
-class DBFilter:
+class XapiDBContentHandler(xml.sax.ContentHandler):
+    STRIP_STR = "REMOVED"
     def __init__(self):
-        self.rest = ''
-        self.state = {'in_vm_table': False, 'in_cluster_table': False}
-        self.filtered_results = []
+        xml.sax.ContentHandler.__init__(self)
+        self.table = None
+        self.root = None
+        self.elements_stack = []
 
-    def filter_secrets(self, s):
+    def _filter_secret_table(self, attrs):
+        attrs["value"] = self.STRIP_STR
+
+    def _filter_cluster_table(self, attrs):
+        attrs["cluster_token"] = self.STRIP_STR
+
+    def _filter_vm_table(self, attrs):
+        # Remove private efi variables
+        if "EFI-variables" in attrs["NVRAM"]:
+            attrs["NVRAM"] = "(('EFI-variables'%.'{}'))".format(self.STRIP_STR)
+        # Remove EFI-variables from snapshot
+        metadata = attrs["snapshot_metadata"]
+        s = re.sub(r"(?P<start>\'NVRAM\'\%\.\'\((\(\'[^\']+\%\.\'[^.]+\'\)\%\.)*\(\\\'EFI-variables\\\'\%\.\\\')[^\']+(?P<end>\\\')", r"\g<start>REMOVED\g<end>", metadata)
+        attrs["snapshot_metadata"] = s
+
+    def _filter(self, attrs):
+        table_filters = {
+            "secret": self._filter_secret_table,
+            "VM": self._filter_vm_table,
+            "Cluster": self._filter_cluster_table
+        }
+
+        if self.table not in table_filters:
+            return
+
+        table_filters[self.table](attrs)
+
+    def startElement(self, name, attrs):
+        if name == "table":
+            self.table = attrs["name"]
+
+        if name == "row":
+            self._filter(attrs._attrs)
+
+        element = Element(tag=name, attrib=attrs._attrs)
+        self.elements_stack.append(element)
+
+    def endElement(self, name):
+        element = self.elements_stack.pop()
+        if self.elements_stack:
+            # Last element in the stack is the parent of current one
+            self.elements_stack[-1].append(element)
+        else:
+            self.root = element
+
+        if name == "table":
+            self.table = None
+
+    def output(self):
+        if self.root is not None:
+            return ElementTree.tostring(self.root, encoding="UTF-8")
+        return ""
+
+
+class DBFilter:
+    """Filter a Xapi XML database."""
+    def __init__(self, raw_xml):
         # remove values for any keys containing the word 'password'
         # example input snippet to filter:
         #   '%.(\'incoming_chappassword\'%.\'TC12818outgoingpasswd\'))" host="Opaq'
-        s = re.sub(r"\('(\w*(?:password)\w*)'%\.'\w*'\)", r"('\1'%.'REMOVED')", s)
+        nopass_xml = re.sub(r"\('(\w*(?:password)\w*)'%\.'\w*'\)", r"('\1'%.'REMOVED')", raw_xml)
 
-        if 'in_secret_table' not in self.state:
-            self.state['in_secret_table'] = False
-
-        # this logic doesn't deal with <table name="secret" /> properly!!!
-        if s.startswith('<table '):
-            if 'name="secret"' in s:
-                self.state['in_secret_table'] = True
-            elif 'name="Cluster"' in s:
-                self.state['in_cluster_table'] = True
-        elif s.startswith('</table>'):
-            self.state['in_secret_table'] = False
-            self.state['in_vm_table'] = False
-            self.state['in_cluster_table'] = False
-
-        if self.state['in_secret_table'] and s.startswith("<row"): # match only on DB rows
-            s = re.sub(r'(value=")[^"]+(")', r'\1REMOVED\2', s)
-
-        # remove private efi variables
-        if not self.state['in_vm_table']:
-            if re.search(r'\s*\<\s*table\s*name=\"VM\"\s*\>', s):
-                # found table where private efi varaibles are kept
-                self.state['in_vm_table'] = True
-
-        if self.state['in_vm_table']:
-            if re.search(r'NVRAM=\"\((\(\'[^\']+\'\%\.\'[^\']+\'\)\%\.)*\(\'EFI-variables\'', s):
-                s = re.sub(r"(?P<start>NVRAM=\"\((\(\'[^\']+\'\%\.\'[^\']+\'\)\%\.)*\(\'EFI-variables\'%\.\')[^\']+(?P<end>\')", r"\g<start>REMOVED\g<end>", s)
-
-        if self.state['in_cluster_table']:
-            s = re.sub(r'cluster_token="[^"]*"', r'cluster_token="REMOVED"', s)
-
-        self.filtered_results.append(s)
-
-    def feed(self, s):
-        start = 0
-        chunk = self.rest + s
-        p = chunk.find('>')
-        while p != -1:
-            s = chunk[start:p+1]
-            start = start + len(s)
-            self.filter_secrets(s)
-            p = chunk.find('>', start)
-        self.rest = chunk[start:]
+        self.content_handler = XapiDBContentHandler()
+        try:
+            defusedxml.sax.parseString(nopass_xml, self.content_handler)
+        except xml.sax._exceptions.SAXParseException:
+            pass  # parse command output line by line, first line just headers
 
     def output(self):
-        self.filter_secrets(self.rest)
-        self.rest = ''
-        self.state = {}
-        result = "".join(self.filtered_results)
-        self.filtered_results = []
-        return result
+        return self.content_handler.output()
+
 
 def filter_db_pii(s, state):
-    dbfilter = DBFilter()
-    dbfilter.feed(s)
+    dbfilter = DBFilter(s)
     return dbfilter.output()
 
 clipboard_match = re.compile(r'^/local/domain/(\d+)/data/((set)|(report))_clipboard')
@@ -1338,10 +1352,6 @@ def filter_xapi_clusterd_db(cap):
 def dump_filtered_xapi_db(cap):
     db_file = None
 
-    ih = None
-    output = ''
-    buf_size = 1024*1000
-
     # determine DB file name
     c = open(DB_CONF, 'r')
     try:
@@ -1353,20 +1363,14 @@ def dump_filtered_xapi_db(cap):
     finally:
         c.close()
 
-
-    ih = open(db_file, 'r')
-    if not ih:
-        return ''
-
-    dbfilter = DBFilter()
-    rec = ih.read(buf_size)
-    while rec != '':
-        dbfilter.feed(rec)
-        rec = ih.read(buf_size)
-    output = dbfilter.output()
-
-    ih.close()
-    return output
+    try:
+        with open(db_file, 'r') as file_obj:
+            raw_xml = file_obj.read()
+            dbfilter = DBFilter(raw_xml)
+            return dbfilter.output()
+    except Exception as e:
+        output_ts("Failed to filter xapi database %s" % (str(e)))
+        return ""
 
 def dump_scsi_hosts(cap):
     output = ''
