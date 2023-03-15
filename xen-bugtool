@@ -1042,7 +1042,8 @@ exclude those logs from the archive.
                    'SMlog', 'isl_trace.log',  'xen/xenstored-trace.log',
                    'xen/xen-hotplug.log', 'xen/domain-builder-ng.log',
                    'squeezed.log', 'openvswitch/ovs-brcompatd.log',
-                   'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log'] +
+                   'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log',
+                   'telemetry/telemetry.log'] +
                   [ f % n for n in get_log_range(caps[CAP_XENSERVER_LOGS][VERBOSITY]) \
                         for f in ['xensource.log.%d', 'xensource.log.%d.gz',
                                   'SMlog.%d', 'SMlog.%d.gz',
@@ -1053,7 +1054,8 @@ exclude those logs from the archive.
                                   'squeezed.log.%d', 'squeezed.log.%d.gz',
                                   'openvswitch/ovs-brcompatd.log.%d', 'openvswitch/ovs-brcompatd.log.%d.gz',
                                   'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz',
-                                  'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz']]]
+                                  'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz',
+                                  'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz']]]
     sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     qemu_logs = get_recent_logs(glob.glob('/tmp/qemu.[0-9]*'), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + sa_logs + qemu_logs))
