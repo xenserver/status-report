@@ -173,7 +173,9 @@ VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
 STATIC_VDIS = '/etc/xensource/static-vdis'
 POOL_CONF = '/etc/xensource/pool.conf'
 NETWORK_CONF = '/etc/xensource/network.conf'
-XAPI_CONF = '/etc/xensource/xapi.conf'
+XAPI_CONF = '/etc/xapi.conf'
+XAPI_CONF_DIR = '/etc/xapi.conf.d'
+XENOPSD_CONF = '/etc/xenopsd.conf'
 XAPI_SSL_CONF = '/etc/xensource/xapi-ssl.conf'
 XAPI_GLOBS_CONF = '/etc/xensource/xapi_globs.conf'
 SSHD_CONFIG = '/etc/ssh/sshd_config'
@@ -187,7 +189,6 @@ XAPI_LOCAL_DB = '/var/xapi/local.db'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile('.*/(\.sacrificial-space-for-logs|coredump\.bin)$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
-LOG_CONF = '/etc/xensource/log.conf'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 UPDATE_APPLIED_DIR = '/var/update/applied'
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
@@ -992,7 +993,8 @@ exclude those logs from the archive.
 
     file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
     file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XAPI_GLOBS_CONF,
-                                       XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
+                                       XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY, XENOPSD_CONF])
+    tree_output(CAP_XENSERVER_CONFIG, XAPI_CONF_DIR)
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
     cmd_output(CAP_XENSERVER_CONFIG, [BIN_STATIC_VDIS, 'list'])
     tree_output(CAP_XENSERVER_CONFIG, OEM_CONFIG_DIR, OEM_CONFIG_FILES_RE)
@@ -1059,7 +1061,6 @@ exclude those logs from the archive.
     sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     qemu_logs = get_recent_logs(glob.glob('/tmp/qemu.[0-9]*'), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + sa_logs + qemu_logs))
-    file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
     file_output(CAP_XENSERVER_LOGS, xenserver_logs)
     file_output(CAP_XENSERVER_LOGS, sa_logs)
     file_output(CAP_XENSERVER_LOGS, qemu_logs)
