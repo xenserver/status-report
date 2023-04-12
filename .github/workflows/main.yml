@@ -1,0 +1,28 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-checks:
+    name: Python checks
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          #: Install Python 2.7 from Ubuntu 20.04 using apt-get install
+          sudo apt-get update && sudo apt-get install -y python2-dev
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install pylint==1.9.4
+
+      - name: Run pylint-1.9.4 for pylint --py3k linting (configured in .pylintrc)
+        if: ${{ matrix.python-version == 2.7 }}
+        run: |
+          pylint xen-bugtool
