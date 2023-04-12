@@ -1,0 +1,33 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-checks:
+    name: Python checks
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["2.7"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install pylint==1.9.5
+
+      - name: Run pylint-1.9.5 for pylint --py3k linting (configured in .pylintrc)
+        if: ${{ matrix.python-version == 2.7 }}
+        run: |
+          pylint xen-bugtool
