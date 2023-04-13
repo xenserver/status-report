@@ -1058,7 +1058,11 @@ exclude those logs from the archive.
                                   'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz',
                                   'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz',
                                   'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz']]]
-    sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
+
+    # Collect SAR data (binary and text, and add today's report with sar -A)
+    sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa*[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
+    cmd_output(CAP_XENSERVER_LOGS, ['sar', '-A'])
+
     qemu_logs = get_recent_logs(glob.glob('/tmp/qemu.[0-9]*'), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + sa_logs + qemu_logs))
     file_output(CAP_XENSERVER_LOGS, xenserver_logs)
