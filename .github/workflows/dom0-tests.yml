@@ -1,22 +1,32 @@
 #--------------------------------------------------------------------------------------
 # This GitHub Actions workflow tests xen-bugtool in a Dom0-based self-hosted runner.
 # Runs the checks when an authorized user comments the PR with: /run checks in dom0
+#
+# Pre-condition: A self-hosted github-runner, installed on a XenServer Dom0 needs to
+# be registered for this repository and running. Instructions are found here:
+# https://github.com/xenserver-next/status-report/settings/actions/runners/new
+# Required additional software in Dom0: git and maybe other tools
 #--------------------------------------------------------------------------------------
-name: Run automated tests in Dom0
+# Based on:
+# https://dev.to/zirkelc/trigger-github-workflow-for-comment-on-pull-request-45l2
+# https://github.com/zirkelc/github-actions-workflows/blob/main/.github/workflows/deploy-on-comment.yml
+#--------------------------------------------------------------------------------------
+
+name: Run checks on xen-bugtool in Dom0
 on:
   issue_comment:
     types: [created, edited]
 
+# Docs: https://github.com/marketplace/actions/commit-status-updater#workflow-permissions
+# and more info on https://github.com/actions/first-interaction/issues/10
 permissions:
-  # id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
-  statuses: write
-  # issues: write
-  pull-requests: write # For reporting the test results as a comment to the PR
+  pull-requests: write  # self-hosted runners need explicit write permission to create a comment
+  statuses: write  #  self-hosted runners need explicit write permission to update commit status
 
 jobs:
   pr_commented:
     name: Run checks when bernhardkaindl comments PR with "/run checks in dom0".
+    # Restricted to Bernhard and Ross because this step runs the branch on a self-hosted runner:
     if: |
       ${{ contains(fromJson('["bernhardkaindl", "rosslagerwall"]'), github.actor) &&
           contains(github.event.comment.body, '/run checks in dom0') &&
@@ -25,78 +35,330 @@ jobs:
     steps:
       # Comment-triggered actions run on the default branch. Get the PR comment branch:
       # https://dev.to/zirkelc/trigger-github-workflow-for-comment-on-pull-request-45l2
-      - name: Get PR branch
+      - name: Get the PR's branch and provide the head_sha and head_ref to other steps
         uses: xt0rted/pull-request-comment-branch@v1
-        id: comment-branch
+        if: github.event_name == 'issue_comment'
+        id: comment-branch  # This makes this step set steps.comment-branch.outputs.head_*
 
       # This updates the status display and shows that this workflow is running now:
       - name: Set latest commit status as pending
+        # Docs and example: https://github.com/myrotvorets/set-commit-status-action
         uses: myrotvorets/set-commit-status-action@master
         with:
-          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          sha: ${{ steps.comment-branch.outputs.head_sha }}  # Is set by the id: comment-branch step
           token: ${{ secrets.GITHUB_TOKEN }}
           status: pending
+          context: Run integration tests on self-hosted runner in Dom0
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
-          ref: ${{ steps.comment-branch.outputs.head_ref }}
+          ref: ${{ steps.comment-branch.outputs.head_ref }}  # Is set by the id: comment-branch step
 
-      - name: Run test for getting RRDs in Dom0
+      - name: "Run xen-bugtool: persistent-stats"
+        uses: "./.github/template/bugtool-run-entry"
+        id: persistent-stats
+        with:
+          entry: persistent-stats
+
+      - name: "Check xen-bugtool: persistent-stats"
         run: |
-          rm -rf   .tmp
-          mkdir -p .tmp
-          cd       .tmp
-          set -x
-          sudo python2 ~-/xen-bugtool -ys --entries=persistent-stats --output=tar --outfd=1 >bugtool.tar
-          tar xvf bugtool.tar --strip-components=1
-          find * -type f -print0 | xargs -0 ls -l
-
-          # Check the RRD files:
+          cd ${{ steps.persistent-stats.outputs.dir }}
           dom0label="Control domain on host: $HOSTNAME"
           uuid=`xe vm-list params=uuid name-label="$dom0label" --minimal`
           file xapi_rrd-$uuid.out | grep "XML 1.0 document"
           file xapi_rrd-host.out  | grep "XML 1.0 document"
           xmllint xapi_rrd-$uuid.out >/dev/null
           xmllint xapi_rrd-host.out  >/dev/null
-          popd
 
-      - name: Check if xen-bugtool -y --all succeeds in Dom0
+      - name: "Run xen-bugtool: yum"
+        uses: "./.github/template/bugtool-run-entry"
+        id: yum
+        with:
+          entry: yum
+
+      - name: "Run xen-bugtool: xspvscache"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xspvscache
+        with:
+          entry: xspvscache
+
+      - name: "Run xen-bugtool: xha-liveset"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xha-liveset
+        with:
+          entry: xha-liveset
+
+      - name: "Run xen-bugtool: xenserver-logs"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xenserver-logs
+        with:
+          entry: xenserver-logs
+
+      - name: "Run xen-bugtool: xenserver-install"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xenserver-install
+        with:
+          entry: xenserver-install
+
+      - name: "Run xen-bugtool: xenserver-domains"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xenserver-domains
+        with:
+          entry: xenserver-domains
+
+      - name: "Run xen-bugtool: xenserver-databases"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xenserver-databases
+        with:
+          entry: xenserver-databases
+
+      - name: "Run xen-bugtool: xenserver-config"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xenserver-config
+        with:
+          entry: xenserver-config
+
+      - name: "Run xen-bugtool: xenopsd"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xenopsd
+        with:
+          entry: xenopsd
+
+      - name: "Run xen-bugtool: xen-info"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xen-info
+        with:
+          entry: xen-info
+
+      - name: "Check xen-bugtool: xen-info"
         run: |
-          rm -rf   .tmp
-          mkdir -p .tmp
-          pushd    .tmp
-          set -x
-          python2      ~-/xen-bugtool --help
-          python2      ~-/xen-bugtool --capabilities
-          sudo python2 ~-/xen-bugtool --yestoall --silent --output=tar --outfd=1 >bugtool.tar
-          tar xvf bugtool.tar --strip-components=1
+          cd ${{ steps.xen-info.outputs.dir }}
+          test -s xen-cpuid-v.out
+          test -s xen-livepatch-list.out
+          test -s xen-ucode-show-cpu-info.out
+          test -s xl-dmesg.out
+          test -s xl-info-n.out
+          test -s xl-info.out
 
-          # Check the RRD files:
-          find * -type f -print0 | xargs -0 ls -l
-          dom0label="Control domain on host: $HOSTNAME"
-          uuid=`xe vm-list params=uuid name-label="$dom0label" --minimal`
-          file xapi_rrd-$uuid.out | grep "XML 1.0 document"
-          file xapi_rrd-host.out  | grep "XML 1.0 document"
-          xmllint xapi_rrd-$uuid.out >/dev/null
-          xmllint xapi_rrd-host.out  >/dev/null
-          # TODO: Run more checks of the generated output (for python2to3 conversion)
-          popd
+      - name: "Run xen-bugtool: xcp-rrdd-plugins"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xcp-rrdd-plugins
+        with:
+          entry: xcp-rrdd-plugins
+
+      - name: "Run xen-bugtool: xapi-subprocess"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xapi-subprocess
+        with:
+          entry: xapi-subprocess
+
+      - name: "Run xen-bugtool: xapi-debug"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xapi-debug
+        with:
+          entry: xapi-debug
+
+      - name: "Run xen-bugtool: xapi-clusterd"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xapi-clusterd
+        with:
+          entry: xapi-clusterd
+
+      - name: "Run xen-bugtool: xapi"
+        uses: "./.github/template/bugtool-run-entry"
+        id: xapi
+        with:
+          entry: xapi
+
+      - name: "Run xen-bugtool: vtpm"
+        uses: "./.github/template/bugtool-run-entry"
+        id: vtpm
+        with:
+          entry: vtpm
+
+      - name: "Run xen-bugtool: VM-snapshot-schedule"
+        uses: "./.github/template/bugtool-run-entry"
+        id: VM-snapshot-schedule
+        with:
+          entry: VM-snapshot-schedule
+
+      - name: "Run xen-bugtool: v6d"
+        uses: "./.github/template/bugtool-run-entry"
+        id: v6d
+        with:
+          entry: v6d
+
+      - name: "Run xen-bugtool: tapdisk-logs"
+        uses: "./.github/template/bugtool-run-entry"
+        id: tapdisk-logs
+        with:
+          entry: tapdisk-logs
+
+      - name: "Run xen-bugtool: system-services"
+        uses: "./.github/template/bugtool-run-entry"
+        id: system-services
+        with:
+          entry: system-services
+
+      - name: "Run xen-bugtool: system-logs"
+        uses: "./.github/template/bugtool-run-entry"
+        id: system-logs
+        with:
+          entry: system-logs
+
+      - name: "Run xen-bugtool: process-list"
+        uses: "./.github/template/bugtool-run-entry"
+        id: process-list
+        with:
+          entry: process-list
+
+      - name: "Run xen-bugtool: pam"
+        uses: "./.github/template/bugtool-run-entry"
+        id: pam
+        with:
+          entry: pam
+
+      - name: "Run xen-bugtool: network-status"
+        uses: "./.github/template/bugtool-run-entry"
+        id: network-status
+        with:
+          entry: network-status
+
+      - name: "Run xen-bugtool: network-config"
+        uses: "./.github/template/bugtool-run-entry"
+        id: network-config
+        with:
+          entry: network-config
+
+      - name: "Run xen-bugtool: multipath"
+        uses: "./.github/template/bugtool-run-entry"
+        id: multipath
+        with:
+          entry: multipath
+
+      - name: "Run xen-bugtool: message-switch"
+        uses: "./.github/template/bugtool-run-entry"
+        id: message-switch
+        with:
+          entry: message-switch
+
+      - name: "Run xen-bugtool: loopback-devices"
+        uses: "./.github/template/bugtool-run-entry"
+        id: loopback-devices
+        with:
+          entry: loopback-devices
+
+      - name: "Run xen-bugtool: kernel-info"
+        uses: "./.github/template/bugtool-run-entry"
+        id: kernel-info
+        with:
+          entry: kernel-info
+
+      - name: "Run xen-bugtool: host-crashdump-logs"
+        uses: "./.github/template/bugtool-run-entry"
+        id: host-crashdump-logs
+        with:
+          entry: host-crashdump-logs
+
+      - name: "Run xen-bugtool: high-availability"
+        uses: "./.github/template/bugtool-run-entry"
+        id: high-availability
+        with:
+          entry: high-availability
+
+      - name: "Run xen-bugtool: hardware-info"
+        uses: "./.github/template/bugtool-run-entry"
+        id: hardware-info
+        with:
+          entry: hardware-info
+
+      - name: "Run xen-bugtool: firstboot"
+        uses: "./.github/template/bugtool-run-entry"
+        id: firstboot
+        with:
+          entry: firstboot
+
+      - name: "Run xen-bugtool: fcoe"
+        uses: "./.github/template/bugtool-run-entry"
+        id: fcoe
+        with:
+          entry: fcoe
+
+      - name: "Run xen-bugtool: disk-info"
+        uses: "./.github/template/bugtool-run-entry"
+        id: disk-info
+        with:
+          entry: disk-info
+
+      - name: "Check xen-bugtool: disk-info"
+        run: |
+          cd ${{ steps.disk-info.outputs.dir }}
+          test -s df-alTi.out
+          test -s df-alT.out
+          test -s du-ax-%.out
+          test -s fdisk-l.out
+          test -s hdparm-I-%dev%sda.out
+          test -s ls-R-%sys%class%fc_transport.out
+          test -s ls-R-%sys%class%scsi_disk.out
+          test -s ls-R-%sys%class%scsi_host.out
+          test -s lvdisplay--map.out
+          test -s lvs.out
+          cat mdadm--detail-platform.out  # These can be empty
+          cat mdadm--detail--scan.out
+          test -s pvs.out
+          test -s scsi-hosts.out
+          test -s sg_map-x.out
+          test -s vgscan.out
+          grep VG_XenStorage vgs.out
+
+      - name: "Run xen-bugtool: device-model"
+        uses: "./.github/template/bugtool-run-entry"
+        id: device-model
+        with:
+          entry: device-model
+
+      - name: "Run xen-bugtool: CVSM"
+        uses: "./.github/template/bugtool-run-entry"
+        id: CVSM
+        with:
+          entry: CVSM
+
+      - name: "Run xen-bugtool: control-slice"
+        uses: "./.github/template/bugtool-run-entry"
+        id: control-slice
+        with:
+          entry: control-slice
+
+      - name: "Run xen-bugtool: boot-loader"
+        uses: "./.github/template/bugtool-run-entry"
+        id: boot-loader
+        with:
+          entry: boot-loader
+
+      - name: "Run xen-bugtool: blobs"
+        uses: "./.github/template/bugtool-run-entry"
+        id: blobs
+        with:
+          entry: blobs
 
       # This will mark this workflow as either passed or failed:
       - name: Set latest commit status as ${{ job.status }}
+        # Docs and example: https://github.com/myrotvorets/set-commit-status-action
         uses: myrotvorets/set-commit-status-action@master
+        # Run this step always, even if other steps before it fail, to update the job status
         if: always()
         with:
-          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          sha: ${{ steps.comment-branch.outputs.head_sha }}  # Is set by the id: comment-branch step
           token: ${{ secrets.GITHUB_TOKEN }}
           status: ${{ job.status }}
+          context: Run integration tests on self-hosted runner in Dom0
 
       # The comment could contain additional information from the test execution.
       # For now, it just gives feedback that the request /run dom0 tests is completed.
       - name: Add the confirmation about the test results to the commented pull request
         uses: actions/github-script@v6
-        if: always()
+        if: github.event_name == 'issue_comment' && 0 == 1
         with:
           script: |
             const name = '${{ github.workflow   }}';
