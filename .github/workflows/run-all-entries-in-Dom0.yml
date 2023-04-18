@@ -10,15 +10,16 @@
 # https://github.com/orgs/community/discussions/25778
 #--------------------------------------------------------------------------------------
 
-name: Composite action to run all xen-bugtool --entries=$
-description: Run xen-bugtool for all supported entries in Dom0
+name: Run xen-bugtool --entries= for all entries
 
-runs:
-  # Docs:
-  # https://docs.github.com/en/actions/creating-actions/creating-a-composite-action
-  using: "composite"
-  steps:
+on:
+  workflow_call:
 
+jobs:
+  run_bugtool_for_all_entries:
+    runs-on: Dom0
+
+    steps:
     - name: "Run xen-bugtool: persistent-stats"
       uses: "./.github/template/bugtool-run-entry"
       id: test-persistent-stats
