@@ -213,6 +213,8 @@ XAPI_CLUSTERD = '/var/opt/xapi-clusterd/db'
 SWTPM_IC = '/var/lib/swtpm-localca/issuercert.pem'
 SWTPM_RCA ='/var/lib/swtpm-localca/swtpm-localca-rootca-cert.pem'
 SWTPM_CS = '/var/lib/swtpm-localca/certserial'
+NRPE_CONF = '/etc/nagios/nrpe.cfg'
+NRPE_DIR = '/etc/nrpe.d'
 
 #
 # External programs
@@ -1003,6 +1005,9 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_CLOCK])
     tree_output(CAP_XENSERVER_CONFIG, SYSTEMD_CONF_DIR)
     file_output(CAP_XENSERVER_CONFIG, [CGRULES_CONF])
+    file_output(CAP_XENSERVER_CONFIG, [NRPE_CONF])
+    tree_output(CAP_XENSERVER_CONFIG, NRPE_DIR)
+
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     func_output(CAP_XENSERVER_DATABASES, 'xapi-clusterd-db', filter_xapi_clusterd_db)
