@@ -150,7 +150,6 @@ ROUTE_RE = re.compile(r'^.*/route-.*')
 NETWORK_DBCACHE = '/var/xapi/network.dbcache'
 NETWORKD_DB = '/var/xapi/networkd.db'
 RESOLV_CONF = '/etc/resolv.conf'
-MPP_CONF = '/etc/mpp.conf'
 MULTIPATH_CONF = '/etc/multipath.conf'
 NSSWITCH_CONF = '/etc/nsswitch.conf'
 CHRONY_CONF = '/etc/chrony.conf'
@@ -822,7 +821,7 @@ exclude those logs from the archive.
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
-    file_output(CAP_MULTIPATH, [MULTIPATH_CONF, MPP_CONF])
+    file_output(CAP_MULTIPATH, [MULTIPATH_CONF])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'table'])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'info'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
