@@ -3,8 +3,9 @@ Error = None
 
 class xc:
     def __init__(self):
-        print("Mock xen.lowlevel.xc.xc() instantiated.")
+        pass
+        # print("Mock xen.lowlevel.xc.xc() instantiated.")
 
     def domain_getinfo(self):
-        print("Mock xen.lowlevel.xc.xc().domain_getinfo() called.")
+        # print("Mock xen.lowlevel.xc.xc().domain_getinfo() called.")
         return []

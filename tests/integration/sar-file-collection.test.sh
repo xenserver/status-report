@@ -16,7 +16,7 @@ cp -a tests/integration/dom0-template/* /
 mkdir -p  /var/log/sa
 echo sa  >/var/log/sa/sa01
 echo sr  >/var/log/sa/sar31
-ln -sf    /bin/echo /bin/sar
+echo -e '#!/bin/sh\necho $*' >/bin/sar;chmod +x /bin/sar
 
 # Enter a clean test environment
 rm -rf   .tmp/tests/sar-file-collection
@@ -29,7 +29,7 @@ $PYTHON -c "from xen.lowlevel.xc import Error, xc;xc().domain_getinfo()"
 
 # Run xen-bugtool --entries=xenserver-logs to capture the dummy SAR files
 # and run the mocked sar command:
-$PYTHON ~-/xen-bugtool -y --entries=xenserver-logs --output=tar --outfd=1 |
+$PYTHON ~-/xen-bugtool -y --entries=xenserver-logs --output=tar --outfd=1 -s |
     tar xvf - --strip-components=1
 
 # Show a detailed file list in the outlog log for human analysis in case of errors
@@ -50,5 +50,4 @@ grep -q 'filename="bug-report-[0-9]*/var/log/sa/sar31"' inventory.xml
 grep -q 'filename="bug-report-[0-9]*/sar-A.out"'        inventory.xml
 
 # Validate the extracted inventory.xml using the XML Schema
-xmllint --schema ~-/tests/integration/inventory.xsd inventory.xml 2>stderr.out
-cat stderr.out
+xmllint --schema ~-/tests/integration/inventory.xsd inventory.xml
