@@ -1079,6 +1079,7 @@ exclude those logs from the archive.
     cmd_output(CAP_XEN_INFO, [XL, 'info'])
     cmd_output(CAP_XEN_INFO, [XL, 'info', '-n'])
     cmd_output(CAP_XEN_INFO, [XEN_CPUID, '-v'])
+    cmd_output(CAP_XEN_INFO, [XEN_CPUID, '-p'])
     cmd_output(CAP_XEN_INFO, [XEN_LIVEPATCH, 'list'])
     cmd_output(CAP_XEN_INFO, [XEN_MICROCODE, 'show-cpu-info'])
     file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
