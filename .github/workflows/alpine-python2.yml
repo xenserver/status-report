@@ -1,0 +1,44 @@
+#--------------------------------------------------------------------------------------
+# This GitHub Actions workflow can be run locally using https://github.com/nektos/act
+#
+# act normally uses docker, but it can also be run using podman on Fedora 37:
+# dnf install act-cli podman
+# podman system service -t 0 &
+# act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/main.yml
+#--------------------------------------------------------------------------------------
+name: Python 2.7 Tests workflow
+
+# Cancel a currently running workflow from the same PR, branch or tag
+# when a new workflow is triggered:
+# https://stackoverflow.com/questions/66335225/how-to-cancel-previous-runs-in-the-pr-when-you-push-new-commitsupdate-the-curre
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# The GitHub events that triggers the workflow:
+# Checks can be skipped by adding "skip-checks: true" to a commit message,
+# or requested by adding "request-checks: true" if disabled by default for pushes:
+# https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks#skipping-and-requesting-checks-for-individual-commits
+on: [push, pull_request]
+
+env:
+  PYTHONWARNINGS: "ignore:DEPRECATION"
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  python-checks:
+    name: Python 2.7 sanity checks and regression tests
+    runs-on: ubuntu-22.04
+    # https://github.com/Docker-Hub-frolvlad/docker-alpine-python2
+    container: frolvlad/alpine-python2
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["2.7"]  # Newer versions will be added during python2to3 work
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test sar file collection, extended by XSI-1385 with plain-text SARs
+        run: |
+          apk add --no-cache libxml2-utils bash
+          pip install -r requirements.txt
+          bash -x tests/integration/sar-file-collection.test.sh

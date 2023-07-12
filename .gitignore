@@ -1,0 +1,45 @@
+# Python bytecode files
+*.py[co]
+__pycache__/
+
+# Emacs backup files
+*~
+# Vim swap files
+*.swp
+
+# diff/patch files
+*.diff
+*.patch
+
+# python coverage data
+.coverage
+
+# Python static analysis tool cache directories
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Pytest cache
+.pytest_cache/
+
+# Temporary test directory trees
+.tmp/
+
+# Tox {workdir} directory
+.tox/
+
+# private vscode workspace settings:
+.vscode/settings.json
+
+# temporary file from tests/test_cpio.py (to be fixed later)
+/data
+# Output from mypy --txt-report
+/index.txt
+
+htmlcov/
+
+# Pip editable install directory
+python_libs.egg-info/
+
+# pytest logfile
+test.log
