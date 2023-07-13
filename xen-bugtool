@@ -215,6 +215,7 @@ SWTPM_RCA ='/var/lib/swtpm-localca/swtpm-localca-rootca-cert.pem'
 SWTPM_CS = '/var/lib/swtpm-localca/certserial'
 NRPE_CONF = '/etc/nagios/nrpe.cfg'
 NRPE_DIR = '/etc/nrpe.d'
+XEN_BUGTOOL_LOG = 'xen-bugtool.log'
 
 #
 # External programs
@@ -352,6 +353,7 @@ CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_VTPM                 = 'vtpm'
 CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
+CAP_XEN_BUGTOOL          = 'xen-bugtool'
 CAP_XENRT                = 'xenrt'
 CAP_XENSERVER_CONFIG     = 'xenserver-config'
 CAP_XENSERVER_DOMAINS    = 'xenserver-domains'
@@ -427,6 +429,7 @@ cap(CAP_VTPM,                PII_NO,                    max_size=5*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
+cap(CAP_XEN_BUGTOOL,         PII_NO,    min_size=0)
 cap(CAP_XENRT,               PII_NO,    min_size=0,     max_size=500*MB,
     checked=False, hidden=True)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=80*KB,
@@ -454,6 +457,13 @@ def no_unicode(x):
     if isinstance(x, unicode):
         return x.encode('utf-8')
     return x
+
+def log(x, print_output=True):
+    if print_output:
+        output(x)
+
+    with open(XEN_BUGTOOL_LOG, "a") as logFile:
+        print >>logFile, x
 
 def output(x):
     if not SILENT_MODE:
@@ -497,7 +507,7 @@ def file_output(cap, path_list):
                     data[p] = {'cap': cap, 'filename': p}
                     cap_sizes[cap] += s.st_size
                 else:
-                    output("Omitting %s, size constraint of %s exceeded" % (p, cap))
+                    log("Omitting %s, size constraint of %s exceeded" % (p, cap))
             except:
                 pass
 
@@ -542,7 +552,7 @@ def collect_data(subdir, archive):
                     del v['output']
                     cap_sizes[cap] += len(s)
                 else:
-                    output("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
+                    log("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
             except:
                 pass
         elif v.has_key('func'):
@@ -558,7 +568,7 @@ def collect_data(subdir, archive):
                 del v['output']
                 cap_sizes[cap] += len(s)
             else:
-                output("Omitting %s, size constraint of %s exceeded" % (k, cap))
+                log("Omitting %s, size constraint of %s exceeded" % (k, cap))
         elif filename:
             try:
                 archive.addRealFile(name, filename)
@@ -609,6 +619,15 @@ def main(argv = None):
 
     if argv is None:
         argv = sys.argv
+
+    # Ensure we have a clean bugtool log file
+    try:
+        os.remove(XEN_BUGTOOL_LOG)
+    except:
+        pass
+
+    log(" ".join(argv), print_output=False)
+    log("PATH=%s" % os.environ['PATH'], print_output=False)
 
     try:
         (options, params) = getopt.gnu_getopt(
@@ -1091,6 +1110,8 @@ exclude those logs from the archive.
     cmd_output(CAP_YUM, [RPM, '-qa'])
     tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
 
+    file_output(CAP_XEN_BUGTOOL, [XEN_BUGTOOL_LOG])
+
     # permit the user to filter out data
     for k in sorted(data.keys()):
         if not ANSWER_YES_TO_ALL and not yes("Include '%s'? [Y/n]: " % k):
@@ -1134,6 +1155,11 @@ exclude those logs from the archive.
         res = 1
 
     clean_tapdisk_logs()
+
+    try:
+        os.remove(XEN_BUGTOOL_LOG)
+    except:
+        pass
 
     if dbg:
         print >>sys.stderr, "Category sizes (max, actual):\n"
