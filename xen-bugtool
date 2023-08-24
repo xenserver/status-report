@@ -150,8 +150,8 @@ ROUTE_RE = re.compile(r'^.*/route-.*')
 NETWORK_DBCACHE = '/var/xapi/network.dbcache'
 NETWORKD_DB = '/var/xapi/networkd.db'
 RESOLV_CONF = '/etc/resolv.conf'
-MPP_CONF = '/etc/mpp.conf'
 MULTIPATH_CONF = '/etc/multipath.conf'
+MULTIPATH_CONFD = '/etc/multipath/conf.d/*'
 NSSWITCH_CONF = '/etc/nsswitch.conf'
 CHRONY_CONF = '/etc/chrony.conf'
 IPTABLES_CONFIG = '/etc/sysconfig/iptables-config'
@@ -173,7 +173,9 @@ VENDORKERNEL_INVENTORY = '/etc/vendorkernel-inventory'
 STATIC_VDIS = '/etc/xensource/static-vdis'
 POOL_CONF = '/etc/xensource/pool.conf'
 NETWORK_CONF = '/etc/xensource/network.conf'
-XAPI_CONF = '/etc/xensource/xapi.conf'
+XAPI_CONF = '/etc/xapi.conf'
+XAPI_CONF_DIR = '/etc/xapi.conf.d'
+XENOPSD_CONF = '/etc/xenopsd.conf'
 XAPI_SSL_CONF = '/etc/xensource/xapi-ssl.conf'
 XAPI_GLOBS_CONF = '/etc/xensource/xapi_globs.conf'
 SSHD_CONFIG = '/etc/ssh/sshd_config'
@@ -187,7 +189,6 @@ XAPI_LOCAL_DB = '/var/xapi/local.db'
 HOST_CRASHDUMPS_DIR = '/var/crash'
 HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile('.*/(\.sacrificial-space-for-logs|coredump\.bin)$')
 XAPI_DEBUG_DIR = '/var/xapi/debug'
-LOG_CONF = '/etc/xensource/log.conf'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 UPDATE_APPLIED_DIR = '/var/update/applied'
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
@@ -212,6 +213,11 @@ XAPI_CLUSTERD = '/var/opt/xapi-clusterd/db'
 SWTPM_IC = '/var/lib/swtpm-localca/issuercert.pem'
 SWTPM_RCA ='/var/lib/swtpm-localca/swtpm-localca-rootca-cert.pem'
 SWTPM_CS = '/var/lib/swtpm-localca/certserial'
+NRPE_CONF = '/etc/nagios/nrpe.cfg'
+NRPE_DIR = '/etc/nrpe.d'
+XEN_BUGTOOL_LOG = 'xen-bugtool.log'
+CRON_DIRS = '/etc/cron*'
+CRON_SPOOL = '/var/spool/cron'
 
 #
 # External programs
@@ -349,6 +355,7 @@ CAP_TAPDISK_LOGS         = 'tapdisk-logs'
 CAP_VTPM                 = 'vtpm'
 CAP_XAPI_DEBUG           = 'xapi-debug'
 CAP_XAPI_SUBPROCESS      = 'xapi-subprocess'
+CAP_XEN_BUGTOOL          = 'xen-bugtool'
 CAP_XENRT                = 'xenrt'
 CAP_XENSERVER_CONFIG     = 'xenserver-config'
 CAP_XENSERVER_DOMAINS    = 'xenserver-domains'
@@ -358,6 +365,7 @@ CAP_XENSERVER_LOGS       = 'xenserver-logs'
 CAP_XEN_INFO             = 'xen-info'
 CAP_XHA_LIVESET          = 'xha-liveset'
 CAP_YUM                  = 'yum'
+CAP_CRON                 = 'cron'
 
 KB = 1024
 MB = 1024 * 1024
@@ -424,6 +432,7 @@ cap(CAP_VTPM,                PII_NO,                    max_size=5*KB)
 cap(CAP_XAPI_DEBUG,          PII_MAYBE,                 max_size=10*MB)
 cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
     max_time=10)
+cap(CAP_XEN_BUGTOOL,         PII_NO,    min_size=0)
 cap(CAP_XENRT,               PII_NO,    min_size=0,     max_size=500*MB,
     checked=False, hidden=True)
 cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=80*KB,
@@ -440,6 +449,8 @@ cap(CAP_XHA_LIVESET,         PII_MAYBE,                 max_size=10*KB,
     max_time=10)
 cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=100*KB,
     max_time=30)
+cap(CAP_CRON,                PII_IF_CUSTOMIZED,         max_size=100*KB,
+    max_time=30)
 
 ANSWER_YES_TO_ALL = False
 SILENT_MODE = False
@@ -451,6 +462,13 @@ def no_unicode(x):
     if isinstance(x, unicode):
         return x.encode('utf-8')
     return x
+
+def log(x, print_output=True):
+    if print_output:
+        output(x)
+
+    with open(XEN_BUGTOOL_LOG, "a") as logFile:
+        print >>logFile, x
 
 def output(x):
     if not SILENT_MODE:
@@ -494,7 +512,7 @@ def file_output(cap, path_list):
                     data[p] = {'cap': cap, 'filename': p}
                     cap_sizes[cap] += s.st_size
                 else:
-                    output("Omitting %s, size constraint of %s exceeded" % (p, cap))
+                    log("Omitting %s, size constraint of %s exceeded" % (p, cap))
             except:
                 pass
 
@@ -539,7 +557,7 @@ def collect_data(subdir, archive):
                     del v['output']
                     cap_sizes[cap] += len(s)
                 else:
-                    output("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
+                    log("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
             except:
                 pass
         elif v.has_key('func'):
@@ -555,7 +573,7 @@ def collect_data(subdir, archive):
                 del v['output']
                 cap_sizes[cap] += len(s)
             else:
-                output("Omitting %s, size constraint of %s exceeded" % (k, cap))
+                log("Omitting %s, size constraint of %s exceeded" % (k, cap))
         elif filename:
             try:
                 archive.addRealFile(name, filename)
@@ -606,6 +624,15 @@ def main(argv = None):
 
     if argv is None:
         argv = sys.argv
+
+    # Ensure we have a clean bugtool log file
+    try:
+        os.remove(XEN_BUGTOOL_LOG)
+    except:
+        pass
+
+    log(" ".join(argv), print_output=False)
+    log("PATH=%s" % os.environ['PATH'], print_output=False)
 
     try:
         (options, params) = getopt.gnu_getopt(
@@ -735,6 +762,9 @@ exclude those logs from the archive.
     cmd_output(CAP_BOOT_LOADER, [MD5SUM, BOOT_KERNEL, BOOT_INITRD], label='vmlinuz-initrd.md5sum')
     cmd_output(CAP_BOOT_LOADER, [EFIBOOTMGR, '-v'])
 
+    file_output(CAP_CRON, [CRON_DIRS + "/*"])
+    file_output(CAP_CRON, [os.path.join(CRON_SPOOL, '*')])
+
     func_output(CAP_CVSM, 'csl_logs', csl_logs)
 
     tree_output(CAP_DEVICE_MODEL, QEMU_DIR, QEMU_RESUME_RE)
@@ -819,7 +849,7 @@ exclude those logs from the archive.
 
     cmd_output(CAP_LOSETUP_A, [LOSETUP, '-a'])
 
-    file_output(CAP_MULTIPATH, [MULTIPATH_CONF, MPP_CONF])
+    file_output(CAP_MULTIPATH, [MULTIPATH_CONF, MULTIPATH_CONFD])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'table'])
     cmd_output(CAP_MULTIPATH, [DMSETUP, 'info'])
     func_output(CAP_MULTIPATH, 'multipathd_topology', multipathd_topology)
@@ -992,7 +1022,8 @@ exclude those logs from the archive.
 
     file_output(CAP_XENSERVER_CONFIG, [INITIAL_INVENTORY])
     file_output(CAP_XENSERVER_CONFIG, [POOL_CONF, XAPI_CONF, XAPI_SSL_CONF, XAPI_GLOBS_CONF,
-                                       XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY])
+                                       XENSOURCE_INVENTORY, VENDORKERNEL_INVENTORY, XENOPSD_CONF])
+    tree_output(CAP_XENSERVER_CONFIG, XAPI_CONF_DIR)
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', '/opt/xensource'])
     cmd_output(CAP_XENSERVER_CONFIG, [BIN_STATIC_VDIS, 'list'])
     tree_output(CAP_XENSERVER_CONFIG, OEM_CONFIG_DIR, OEM_CONFIG_FILES_RE)
@@ -1001,6 +1032,9 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_CLOCK])
     tree_output(CAP_XENSERVER_CONFIG, SYSTEMD_CONF_DIR)
     file_output(CAP_XENSERVER_CONFIG, [CGRULES_CONF])
+    file_output(CAP_XENSERVER_CONFIG, [NRPE_CONF])
+    tree_output(CAP_XENSERVER_CONFIG, NRPE_DIR)
+
 
     func_output(CAP_XENSERVER_DATABASES, 'xapi-db.xml', dump_filtered_xapi_db)
     func_output(CAP_XENSERVER_DATABASES, 'xapi-clusterd-db', filter_xapi_clusterd_db)
@@ -1056,10 +1090,13 @@ exclude those logs from the archive.
                                   'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz',
                                   'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz',
                                   'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz']]]
-    sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
+
+    # Collect SAR data (binary and text, and add today's report with sar -A)
+    sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa*[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
+    cmd_output(CAP_XENSERVER_LOGS, ['sar', '-A'])
+
     qemu_logs = get_recent_logs(glob.glob('/tmp/qemu.[0-9]*'), caps[CAP_XENSERVER_LOGS][VERBOSITY])
     update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + sa_logs + qemu_logs))
-    file_output(CAP_XENSERVER_LOGS, [LOG_CONF])
     file_output(CAP_XENSERVER_LOGS, xenserver_logs)
     file_output(CAP_XENSERVER_LOGS, sa_logs)
     file_output(CAP_XENSERVER_LOGS, qemu_logs)
@@ -1069,6 +1106,7 @@ exclude those logs from the archive.
     cmd_output(CAP_XEN_INFO, [XL, 'info'])
     cmd_output(CAP_XEN_INFO, [XL, 'info', '-n'])
     cmd_output(CAP_XEN_INFO, [XEN_CPUID, '-v'])
+    cmd_output(CAP_XEN_INFO, [XEN_CPUID, '-p'])
     cmd_output(CAP_XEN_INFO, [XEN_LIVEPATCH, 'list'])
     cmd_output(CAP_XEN_INFO, [XEN_MICROCODE, 'show-cpu-info'])
     file_output(CAP_XEN_INFO, [PROC_XEN_BALLOON])
@@ -1079,6 +1117,8 @@ exclude those logs from the archive.
     tree_output(CAP_YUM, YUM_REPOS_DIR)
     cmd_output(CAP_YUM, [RPM, '-qa'])
     tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
+
+    file_output(CAP_XEN_BUGTOOL, [XEN_BUGTOOL_LOG])
 
     # permit the user to filter out data
     for k in sorted(data.keys()):
@@ -1123,6 +1163,11 @@ exclude those logs from the archive.
         res = 1
 
     clean_tapdisk_logs()
+
+    try:
+        os.remove(XEN_BUGTOOL_LOG)
+    except:
+        pass
 
     if dbg:
         print >>sys.stderr, "Category sizes (max, actual):\n"
