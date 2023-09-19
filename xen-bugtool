@@ -253,6 +253,7 @@ LIST_DOMAINS = 'list_domains'
 LLDPTOOL = 'lldptool'
 LOSETUP = 'losetup'
 LS = 'ls'
+LSBLK = 'lsblk'
 LSPCI = 'lspci'
 LVDISPLAY = 'lvdisplay'
 LVS = 'lvs'
@@ -349,6 +350,7 @@ CAP_OEM                  = 'oem'
 CAP_PAM                  = 'pam'
 CAP_PROCESS_LIST         = 'process-list'
 CAP_PERSISTENT_STATS     = 'persistent-stats'
+CAP_BLOCK_SCHEDULER      = 'block-scheduler'
 CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
@@ -450,6 +452,8 @@ cap(CAP_XHA_LIVESET,         PII_MAYBE,                 max_size=10*KB,
 cap(CAP_YUM,                 PII_IF_CUSTOMIZED,         max_size=100*KB,
     max_time=30)
 cap(CAP_CRON,                PII_IF_CUSTOMIZED,         max_size=100*KB,
+    max_time=30)
+cap(CAP_BLOCK_SCHEDULER,           PII_NO,                    max_size=100*KB,
     max_time=30)
 
 ANSWER_YES_TO_ALL = False
@@ -792,6 +796,7 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [SG_MAP, '-x'])
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
     cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
+    cmd_output(CAP_BLOCK_SCHEDULER, [LSBLK, '-io', 'type,name,sched,tran,rota,log-sec,rq-size,vendor,model'], label='lsblk')
 
     # mdadm information
     cmd_output(CAP_DISK_INFO, [MDADM, '--detail-platform'])
