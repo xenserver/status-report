@@ -34,6 +34,7 @@
 #
 
 import getopt
+import io
 import re
 import os
 import StringIO
@@ -556,7 +557,7 @@ def collect_data(subdir, archive):
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                         cap_sizes[cap] < caps[cap][MAX_SIZE] or len(s) == 0:
                     v['output'] = StringIOmtime(s)
-                    archive.addFile(name, v['output'])
+                    archive.add_path_with_data(name, v['output'])
                     v['md5'] = md5sum(v)
                     del v['output']
                     cap_sizes[cap] += len(s)
@@ -572,7 +573,7 @@ def collect_data(subdir, archive):
             if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                     cap_sizes[cap] < caps[cap][MAX_SIZE]:
                 v['output'] = StringIOmtime(s)
-                archive.addFile(name, v['output'])
+                archive.add_path_with_data(name, v['output'])
                 v['md5'] = md5sum(v)
                 del v['output']
                 cap_sizes[cap] += len(s)
@@ -589,8 +590,7 @@ def collect_data(subdir, archive):
     # collect all output (output from processes)
     for (k, v) in data.items():
         if 'output' in v:
-            name = construct_filename(subdir, k, v)
-            archive.addFile(name, v['output'])
+            archive.add_path_with_data(construct_filename(subdir, k, v), v['output'])
             v['md5'] = md5sum(v)
             del v['output']
 
@@ -1035,7 +1035,6 @@ exclude those logs from the archive.
     tree_output(CAP_XENSERVER_CONFIG, STATIC_VDIS)
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', STATIC_VDIS])
     file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_CLOCK])
-    tree_output(CAP_XENSERVER_CONFIG, SYSTEMD_CONF_DIR)
     file_output(CAP_XENSERVER_CONFIG, [CGRULES_CONF])
     file_output(CAP_XENSERVER_CONFIG, [NRPE_CONF])
     tree_output(CAP_XENSERVER_CONFIG, NRPE_DIR)
@@ -1152,6 +1151,8 @@ exclude those logs from the archive.
         archive = TarOutput(subdir, output_type, output_fd)
     else:
         archive = ZipOutput(subdir)
+    archive.declare_subarchive(SYSTEMD_CONF_DIR, subdir + SYSTEMD_CONF_DIR + ".tar")
+    tree_output(CAP_XENSERVER_CONFIG, SYSTEMD_CONF_DIR)
 
     # collect selected data now
     output_ts('Running commands to collect data')
@@ -1159,7 +1160,7 @@ exclude those logs from the archive.
 
     # include inventory
     inventory = {'cap': None, 'output': StringIOmtime(no_unicode(make_inventory(data, subdir)))}
-    archive.addFile(construct_filename(subdir, 'inventory.xml', inventory),
+    archive.add_path_with_data(construct_filename(subdir, 'inventory.xml', inventory),
                 StringIOmtime(no_unicode(make_inventory(data, subdir))))
 
     if archive.close():
@@ -1634,8 +1635,65 @@ def removeNoError(filename):
     except OSError:
         pass
 
-class TarOutput:
+class TarSubArchive(io.BytesIO):
+    """Utility class for adding tarfile subarchives to the output archive"""
+
+    def __init__(self, basepath, tar_filename):
+        """
+        Create the object, defining the base path of the files and the tar file name.
+        :param basepath: path below which all files shall be captured into the subarchive
+        :param tar_filename: Name of the tar file in the parent archive
+        """
+        self.basepath = basepath
+        self.mtime = time.time()
+        self.name = tar_filename
+        self.file = tarfile.open(fileobj=self, mode="w|", dereference=True)
+
+    def add_file_with_path(self, name, filename):
+        """
+        Add a file to the subarchive
+        :param name: Recorded path of the the file in the tar archive for extraction
+        :param filename: Real file name of the file to be added to the tar archive
+        """
+        self.file.addfile(self.file.gettarinfo(filename, name), open(filename, "rb"))
+
+class ArchiveWithTarSubarchives(object):
+    """Base class for TarOutput and ZipOutput with support to create sub-archives"""
+
+    def __init__(self):
+        """Initialize the defined sub-archives to be an empty list"""
+        self.subarchives = []
+
+    def declare_subarchive(self, basepath, tar_filename):
+        """
+        Declare a subarchive by defining the base path of the files and the tar file name.
+        :param basepath: path below which all files shall be captured into the subarchive
+        :param tar_filename: Name of the tar file in the parent archive
+        """
+        self.subarchives.append(TarSubArchive(basepath, tar_filename))
+
+    def add_path_to_subarchive(self, name, filename):
+        """If filename belongs to a subarchive, add the path to it as name and return True"""
+        for subarchive in self.subarchives:
+            if filename.startswith(subarchive.basepath):
+                subarchive.add_file_with_path(name, filename)
+                return True
+        return False
+
+    def add_subarchives(self):
+        """Close all subarchives and add them the final output archive(tar or ZIP file)"""
+        for subarchive in self.subarchives:
+            if subarchive.file.getmembers():
+                subarchive.file.close()
+                self.add_path_with_data(subarchive.name, subarchive)
+
+    def add_path_with_data(self, _name, _data):
+        """Implemented by the subclasses TarOutput/ZipOutput to add paths with data"""
+        pass
+
+class TarOutput(ArchiveWithTarSubarchives):
     def __init__(self, subdir, suffix, output_fd):
+        super(TarOutput, self).__init__()
         self.output_fd = output_fd
         self.subdir = subdir
         mode = 'w|'
@@ -1655,13 +1713,16 @@ class TarOutput:
         return ti
 
     def addRealFile(self, name, filename):
+        """Read file contents for adding to the output tar file or a subarchive of it"""
+        if self.add_path_to_subarchive(name, filename):
+            return
         ti = self._getTi(name)
         s = os.stat(filename)
         ti.mtime = s.st_mtime
         ti.size = s.st_size
         self.tf.addfile(ti, file(filename,'rb'))
 
-    def addFile(self, name, data):
+    def add_path_with_data(self, name, data):
         ti = self._getTi(name)
         ti.mtime = data.mtime
         ti.size = len(data.getvalue())
@@ -1669,6 +1730,8 @@ class TarOutput:
         self.tf.addfile(ti, data)
 
     def close(self):
+        """Add all subarchives to the output tar file and write it"""
+        self.add_subarchives()
         try:
             self.tf.close()
             if self.output_fd == -1:
@@ -1686,23 +1749,29 @@ class TarOutput:
             removeNoError(self.filename)
             return False
 
-class ZipOutput:
+class ZipOutput(ArchiveWithTarSubarchives):
     def __init__(self, subdir):
+        super(ZipOutput, self).__init__()
         self.subdir = subdir
         self.filename = "%s/%s.zip" % (BUG_DIR, subdir)
         self.zf = zipfile.ZipFile(self.filename, 'w', zipfile.ZIP_DEFLATED)
 
     def addRealFile(self, name, filename):
+        """Read file contents for adding to the output ZIP or a subarchive of it"""
+        if self.add_path_to_subarchive(name, filename):
+            return
         if os.stat(filename).st_size < 50:
             compress_type = zipfile.ZIP_STORED
         else:
             compress_type = zipfile.ZIP_DEFLATED
         self.zf.write(filename, name, compress_type)
 
-    def addFile(self, name, data):
+    def add_path_with_data(self, name, data):
         self.zf.writestr(name, data.getvalue())
 
     def close(self):
+        """Add all subarchives to the output ZIP file and write it"""
+        self.add_subarchives()
         try:
             self.zf.close()
             output ('Writing archive %s successful.' % self.filename)
@@ -1999,7 +2068,7 @@ class ProcOutputAndArchive(ProcOutput):
         ProcOutput.__init__(self, command, max_time, data['output'], data['filter'])
 
     def collectData(self):
-        self.archive.addFile(self.name, self.data['output'])
+        self.archive.add_path_with_data(self.name, self.data['output'])
         self.data['md5'] = md5sum(self.data)
         self.data['output'].close()
         del self.data['output']
