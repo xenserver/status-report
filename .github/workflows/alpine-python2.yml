@@ -6,7 +6,7 @@
 # podman system service -t 0 &
 # act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/main.yml
 #--------------------------------------------------------------------------------------
-name: Python 2.7 Tests workflow
+name: Python 2
 
 # Cancel a currently running workflow from the same PR, branch or tag
 # when a new workflow is triggered:
@@ -27,7 +27,7 @@ env:
 
 jobs:
   python-checks:
-    name: Python 2.7 sanity checks and regression tests
+    name: Integration tests
     runs-on: ubuntu-22.04
     # https://github.com/Docker-Hub-frolvlad/docker-alpine-python2
     container: frolvlad/alpine-python2
@@ -37,8 +37,11 @@ jobs:
         python-version: ["2.7"]  # Newer versions will be added during python2to3 work
     steps:
       - uses: actions/checkout@v3
+      - name: Install test tools
+        run: apk add --no-cache libxml2-utils bash
+      - name: Install python requirements
+        run: pip install -r requirements.txt
       - name: Test sar file collection, extended by XSI-1385 with plain-text SARs
-        run: |
-          apk add --no-cache libxml2-utils bash
-          pip install -r requirements.txt
-          bash -x tests/integration/sar-file-collection.test.sh
+        run: bash -x tests/integration/sar-file-collection.test.sh
+      - name: Test creating a tarball for /etc/systemd
+        run: bash -x tests/integration/xenserver-config-systemd.sh

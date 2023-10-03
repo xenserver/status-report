@@ -1,6 +1,6 @@
 #!/bin/bash
 # This test is expected to be run as root in a container(docker, podman, toolbox, apptainer, (s)chroot):
-# It is currently started from .github/workflows/tests.yml
+# It is currently started from .github/workflows/alpine-python2.yml
 # Precondition: python with all dependencies from requirements.txt is installed
 # WARNING: This is running as user root in the container it runs in!
 #
