@@ -39,6 +39,14 @@ $PYTHON ~-/xen-bugtool -y --entries=xenserver-config --output zip
 unzip -o -d. /var/opt/xen/bug-report/zip.zip
 
 # Validate the results of collecting the mocked data:
+
+# At this point, {tar,zip}/etc/systemd shall not exist! Else, CP-45506 is not implemented correctly:
+if test -e tar/etc/systemd -o -e zip/etc/systemd; then
+    ls -lR */etc/systemd
+    exit 5
+fi
+
+# tar/etc/systemd.tar and zip/etc/systemd.tar must be tarballs which we check further below:
 tar xvf tar/etc/systemd.tar
 tar xvf zip/etc/systemd.tar
 rm {tar,zip}/etc/systemd.tar
@@ -48,17 +56,14 @@ cd $XENRT_BUGTOOL_BASENAME
 # Show a detailed file list in the outlog log for human analysis in case of errors
 find * -type f -print0 | xargs -0 ls -l
 
-ls -l /etc/systemd/system/basic.target.wants/iptables.service
+# Check that the files retrieved from etc/system.tar are identical to our original test files:
 ls -l /etc/systemd/system/basic.target.wants/make-dummy-sr.service
-ls -lR etc/systemd
-ls -lR /etc/systemd
 diff -rNu ~/tests/integration/dom0-template/etc/ etc/
 
-# There is likely a xml tool to check the file names, in inventory.xml,
-# but after verfiying the the files were included it should be sufficent
-# check that they are also mentioned int the inventory.xml:
+# Check filename entries in inventory.xml (in case a tool expects them):
 SYSTEMD_SYSTEM_DIR=$XENRT_BUGTOOL_BASENAME/etc/systemd/system
 grep -q \
+    -e "filename=\"$SYSTEMD_SYSTEM_DIR.conf\"" \
     -e "filename=\"$SYSTEMD_SYSTEM_DIR/basic.target.wants/iptables.service\"" \
     -e "filename=\"$SYSTEMD_SYSTEM_DIR/basic.target.wants/make-dummy-sr.service\"" \
     inventory.xml
