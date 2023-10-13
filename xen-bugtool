@@ -352,6 +352,7 @@ CAP_PAM                  = 'pam'
 CAP_PROCESS_LIST         = 'process-list'
 CAP_PERSISTENT_STATS     = 'persistent-stats'
 CAP_BLOCK_SCHEDULER      = 'block-scheduler'
+CAP_SYSTEM_LOAD          = 'system-load'
 CAP_SYSTEM_LOGS          = 'system-logs'
 CAP_SYSTEM_SERVICES      = 'system-services'
 CAP_TAPDISK_LOGS         = 'tapdisk-logs'
@@ -426,6 +427,7 @@ cap(CAP_PERSISTENT_STATS,    PII_NO,                    max_size=50*MB,
     max_time=60, checked=False, hidden=True)
 cap(CAP_PROCESS_LIST,        PII_YES,                   max_size=30*KB,
     max_time=60)
+cap(CAP_SYSTEM_LOAD,         PII_MAYBE,                 max_size=70*MB, max_time=30)
 cap(CAP_SYSTEM_LOGS,         PII_MAYBE,                 max_size=50*MB,
     max_time=10)
 cap(CAP_SYSTEM_SERVICES,     PII_NO,                    max_size=128*KB,
@@ -1096,13 +1098,14 @@ exclude those logs from the archive.
                                   'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz']]]
 
     # Collect SAR data (binary and text, and add today's report with sar -A)
-    sa_logs = get_recent_logs(glob.glob("/var/log/sa/sa*[0-9][0-9]"), caps[CAP_XENSERVER_LOGS][VERBOSITY])
-    cmd_output(CAP_XENSERVER_LOGS, ['sar', '-A'])
+    cmd_output(CAP_SYSTEM_LOAD, ['sar', '-A'])
+    sar_data = get_recent_logs(glob.glob("/var/log/sa/sa*[0-9][0-9]"), caps[CAP_SYSTEM_LOAD][VERBOSITY])
+    update_cap_size(CAP_SYSTEM_LOAD, size_of_all(sar_data))
+    file_output(CAP_SYSTEM_LOAD, sar_data)
 
     qemu_logs = get_recent_logs(glob.glob('/tmp/qemu.[0-9]*'), caps[CAP_XENSERVER_LOGS][VERBOSITY])
-    update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + sa_logs + qemu_logs))
+    update_cap_size(CAP_XENSERVER_LOGS, size_of_all(xenserver_logs + qemu_logs))
     file_output(CAP_XENSERVER_LOGS, xenserver_logs)
-    file_output(CAP_XENSERVER_LOGS, sa_logs)
     file_output(CAP_XENSERVER_LOGS, qemu_logs)
     tree_output(CAP_XENSERVER_LOGS, OEM_CONFIG_DIR, OEM_XENSERVER_LOGS_RE)
 
