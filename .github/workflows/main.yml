@@ -4,12 +4,18 @@ on:
   push:
   pull_request:
 
+concurrency:  # Cancel pending and in-progress workflows for the same PR, branch or tag:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+env:
+  # No warnings for pip and pytest themselves; pytest enables warnings in conftest.py
+  PYTHONWARNINGS: ignore
+  # Development Mode for stronger checks: https://docs.python.org/3/library/devmode.html
+  PYTHONDEVMODE: yes
 jobs:
   python-checks:
     name: Python checks
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -17,12 +23,14 @@ jobs:
       - name: Install dependencies
         run: |
           #: Install Python 2.7 from Ubuntu 20.04 using apt-get install
-          sudo apt-get update && sudo apt-get install -y python2-dev
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          pip install pylint==1.9.4
+          sudo apt-get update && sudo apt-get install -y python2
+          curl -sSL https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
+          python2 get-pip.py
+          if [ -f requirements.txt ]; then pip2 install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip2 install -r requirements-dev.txt; fi
+          pip2 install pylint==1.9.4
 
       - name: Run pylint-1.9.4 for pylint --py3k linting (configured in .pylintrc)
-        if: ${{ matrix.python-version == 2.7 }}
-        run: |
-          pylint xen-bugtool
+        run: python2 -m pylint xen-bugtool
+      - name: Run python2 -m pytest to execute unit tests
+        run: python2 -m pytest
