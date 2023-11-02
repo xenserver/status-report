@@ -41,6 +41,7 @@ import getopt
 import glob
 import io
 import json
+import logging
 import os
 import platform
 import pprint
@@ -649,8 +650,8 @@ def main(argv = None):
                             'output=', 'outfd=', 'all', 'unlimited', 'debug',
                             'help'])
     except getopt.GetoptError as opterr:
-        print(opterr, file=sys.stderr)
-        print(usage(), file=sys.stderr)
+        logging.fatal("xen-bugtool: %s", opterr)
+        logging.fatal(usage())
         return 2
 
     for (k, v) in options:
@@ -660,7 +661,7 @@ def main(argv = None):
 
     # we need access to privileged files, exit if we are not running as root
     if os.getuid() != 0:
-        print("Error: xen-bugtool must be run as root", file=sys.stderr)
+        logging.fatal("Error: xen-bugtool must be run as root")
         return 1
 
     try:
@@ -696,7 +697,7 @@ def main(argv = None):
             if  v in ['tar', 'tar.bz2', 'zip']:
                 output_type = v
             else:
-                print("Invalid output format '%s'" % v, file=sys.stderr)
+                logging.fatal("Invalid output format '%s'", v)
                 return 2
 
         # "-s" or "--silent" means suppress output (except for the final
@@ -725,7 +726,7 @@ def main(argv = None):
                 old = fcntl.fcntl(output_fd, fcntl.F_GETFD)
                 fcntl.fcntl(output_fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             except:
-                print("Invalid output file descriptor", output_fd, file=sys.stderr)
+                logging.fatal("Invalid output file descriptor: %d", output_fd)
                 return 2
 
         elif k in ['-a', '--all']:
@@ -738,11 +739,11 @@ def main(argv = None):
             ProcOutput.debug = True
 
     if len(params) != 1:
-        print("Invalid additional arguments", str(params), file=sys.stderr)
+        logging.fatal("Invalid additional arguments: %s", str(params))
         return 2
 
     if output_fd != -1 and output_type != 'tar':
-        print("Option '--outfd' only valid with '--output=tar'", file=sys.stderr)
+        logging.fatal("Option '--outfd' only valid with '--output=tar'")
         return 2
 
     if ANSWER_YES_TO_ALL:
@@ -2182,6 +2183,7 @@ class StringIOmtime(StringIO.StringIO):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(format="%(message)s")
     try:
         sys.exit(main())
     except KeyboardInterrupt:
