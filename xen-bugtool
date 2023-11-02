@@ -33,32 +33,33 @@
 # or func_output().
 #
 
+import commands
+import fcntl
 import getopt
+import glob
 import io
-import re
+import json
 import os
+import platform
+import pprint
+import re
+import socket
 import StringIO
 import sys
 import tarfile
 import time
-import commands
-import pprint
-from xml.dom.minidom import parse, getDOMImplementation
-import zipfile
-from subprocess import Popen, PIPE
-from select import select
-from signal import SIGTERM, SIGUSR1, SIGHUP
-import platform
-import fcntl
-import glob
-import urllib
-import socket
 import traceback
-import json
-import defusedxml.sax
+import urllib
 import xml
+import zipfile
+from select import select
+from signal import SIGHUP, SIGTERM, SIGUSR1
+from subprocess import PIPE, Popen
+from xml.dom.minidom import getDOMImplementation, parse
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
+
+import defusedxml.sax
 
 try:
     import hashlib
@@ -81,7 +82,7 @@ def exceptionless_del(*argl, **kwargs):
 zipfile.ZipFile.__del__ = exceptionless_del
 
 def xapi_local_session():
-    import XenAPI # Import on first use.
+    import XenAPI  # Import on first use.
     return XenAPI.xapi_local()
 
 OS_RELEASE = platform.release()
@@ -1858,7 +1859,7 @@ def construct_filename(subdir, k, v):
 
 
 def update_capabilities():
-    from xen.lowlevel.xc import xc, Error as xcError # Import on first use.
+    from xen.lowlevel.xc import Error as xcError, xc  # Import on first use.
 
     update_cap_size(CAP_HOST_CRASHDUMP_LOGS,
                     size_of_dir(HOST_CRASHDUMPS_DIR, HOST_CRASHDUMP_LOGS_EXCLUDES_RE, True))
