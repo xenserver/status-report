@@ -33,6 +33,8 @@
 # or func_output().
 #
 
+from __future__ import print_function
+
 import commands
 import fcntl
 import getopt
@@ -647,8 +649,8 @@ def main(argv = None):
                             'output=', 'outfd=', 'all', 'unlimited', 'debug',
                             'help'])
     except getopt.GetoptError as opterr:
-        print >>sys.stderr, opterr
-        print >>sys.stderr, usage()
+        print(opterr, file=sys.stderr)
+        print(usage(), file=sys.stderr)
         return 2
 
     for (k, v) in options:
@@ -658,7 +660,7 @@ def main(argv = None):
 
     # we need access to privileged files, exit if we are not running as root
     if os.getuid() != 0:
-        print >>sys.stderr, "Error: xen-bugtool must be run as root"
+        print("Error: xen-bugtool must be run as root", file=sys.stderr)
         return 1
 
     try:
@@ -694,7 +696,7 @@ def main(argv = None):
             if  v in ['tar', 'tar.bz2', 'zip']:
                 output_type = v
             else:
-                print >>sys.stderr, "Invalid output format '%s'" % v
+                print("Invalid output format '%s'" % v, file=sys.stderr)
                 return 2
 
         # "-s" or "--silent" means suppress output (except for the final
@@ -723,7 +725,7 @@ def main(argv = None):
                 old = fcntl.fcntl(output_fd, fcntl.F_GETFD)
                 fcntl.fcntl(output_fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             except:
-                print >>sys.stderr, "Invalid output file descriptor", output_fd
+                print("Invalid output file descriptor", output_fd, file=sys.stderr)
                 return 2
 
         elif k in ['-a', '--all']:
@@ -736,11 +738,11 @@ def main(argv = None):
             ProcOutput.debug = True
 
     if len(params) != 1:
-        print >>sys.stderr, "Invalid additional arguments", str(params)
+        print("Invalid additional arguments", str(params), file=sys.stderr)
         return 2
 
     if output_fd != -1 and output_type != 'tar':
-        print >>sys.stderr, "Option '--outfd' only valid with '--output=tar'"
+        print("Option '--outfd' only valid with '--output=tar'", file=sys.stderr)
         return 2
 
     if ANSWER_YES_TO_ALL:
@@ -1180,10 +1182,9 @@ exclude those logs from the archive.
         pass
 
     if dbg:
-        print >>sys.stderr, "Category sizes (max, actual):\n"
+        print("Category sizes (max, actual):\n", file=sys.stderr)
         for c in caps.keys():
-            print >>sys.stderr, "    %s (%d, %d)" % (c, caps[c][MAX_SIZE],
-                                                     cap_sizes[c])
+            print("    %s (%d, %d)" % (c, caps[c][MAX_SIZE], cap_sizes[c]), file=sys.stderr)
     return res
 
 def find_tapdisk_logs():
