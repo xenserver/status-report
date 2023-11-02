@@ -646,7 +646,7 @@ def main(argv = None):
             argv, 'adsuy', ['capabilities', 'silent', 'yestoall', 'entries=',
                             'output=', 'outfd=', 'all', 'unlimited', 'debug',
                             'help'])
-    except getopt.GetoptError, opterr:
+    except getopt.GetoptError as opterr:
         print >>sys.stderr, opterr
         print >>sys.stderr, usage()
         return 2
@@ -1743,7 +1743,7 @@ class TarOutput(ArchiveWithTarSubarchives):
                 if SILENT_MODE:
                     print self.filename
             return True
-        except Exception, e:
+        except Exception as e:
             if self.output_fd == -1:
                 output ("Error closing tar file '%s': '%s'" % (self.filename, e))
             else:
@@ -1782,7 +1782,7 @@ class ZipOutput(ArchiveWithTarSubarchives):
             if SILENT_MODE:
                 print self.filename
             return True
-        except Exception, e:
+        except Exception as e:
             output ("Error closing zip file '%s': %s" % (self.filename, e))
             output ("Cleaning up incomplete file '%s'" % self.filename)
             removeNoError(self.filename)
