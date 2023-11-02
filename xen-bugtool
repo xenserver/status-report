@@ -737,6 +737,7 @@ def main(argv = None):
         elif k in ['-d', '--debug']:
             dbg = True
             ProcOutput.debug = True
+            logging.getLogger().setLevel(logging.DEBUG)  # Activates logging.debug("log messages")
 
     if len(params) != 1:
         logging.fatal("Invalid additional arguments: %s", str(params))
@@ -1182,10 +1183,9 @@ exclude those logs from the archive.
     except:
         pass
 
-    if dbg:
-        print("Category sizes (max, actual):\n", file=sys.stderr)
-        for c in caps.keys():
-            print("    %s (%d, %d)" % (c, caps[c][MAX_SIZE], cap_sizes[c]), file=sys.stderr)
+    logging.debug("Category sizes (max, actual):\n")
+    for c in caps.keys():
+        logging.debug("    %s (%d, %d)", c, caps[c][MAX_SIZE], cap_sizes[c])
     return res
 
 def find_tapdisk_logs():
