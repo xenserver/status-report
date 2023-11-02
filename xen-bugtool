@@ -476,11 +476,11 @@ def log(x, print_output=True):
         output(x)
 
     with open(XEN_BUGTOOL_LOG, "a") as logFile:
-        print >>logFile, x
+        print(x, file=logFile)
 
 def output(x):
     if not SILENT_MODE:
-        print x
+        print(x)
 
 def output_ts(x):
     output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
@@ -653,7 +653,7 @@ def main(argv = None):
 
     for (k, v) in options:
         if k == '--help':
-            print usage()
+            print(usage())
             return 0
 
     # we need access to privileged files, exit if we are not running as root
@@ -1741,7 +1741,7 @@ class TarOutput(ArchiveWithTarSubarchives):
             if self.output_fd == -1:
                 output ('Writing tarball %s successful.' % self.filename)
                 if SILENT_MODE:
-                    print self.filename
+                    print(self.filename)
             return True
         except Exception as e:
             if self.output_fd == -1:
@@ -1780,7 +1780,7 @@ class ZipOutput(ArchiveWithTarSubarchives):
             self.zf.close()
             output ('Writing archive %s successful.' % self.filename)
             if SILENT_MODE:
-                print self.filename
+                print(self.filename)
             return True
         except Exception as e:
             output ("Error closing zip file '%s': %s" % (self.filename, e))
@@ -1941,7 +1941,7 @@ def print_capabilities():
     document = getDOMImplementation().createDocument(
         "ns", CAP_XML_ROOT, None)
     map(lambda key: capability(document, key), [k for k in caps.keys() if not caps[k][HIDDEN]])
-    print document.toprettyxml()
+    print(document.toprettyxml())
 
 def capability(document, key):
     c = caps[key]
@@ -2184,5 +2184,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        print "\nInterrupted."
+        print("\nInterrupted.")
         sys.exit(3)
