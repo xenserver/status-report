@@ -1,0 +1,62 @@
+[project]
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+name = "xenserver-status-report"
+dynamic = ["version"]
+description = "Xenserver Status Report"
+requires-python = "2.7"
+license = "LGPL-2.1-only"
+keywords = ["xenserver", "xen-project"]
+authors = [
+    {name = "Ewan Mellor"},
+    {name = "Simon Rowe"},
+]
+maintainers = [
+    {name = "Ashwin H"},
+    {name = "Bernhard Kaindl"},
+    {name = "Pau Ruiz Safont"},
+    {name = "Ross Lagerwall"},
+]
+readme = "README.md"
+classifiers = [
+    "Environment :: Console",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
+    "Operating System :: POSIX :: Linux :: XenServer/XCP-ng Dom0",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: System :: Logging",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "defusedxml",
+    "six",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest<7",
+]
+
+[project.urls]
+homepage = "https://github.com/xenserver/status-report/"
+repository = "https://github.com/xenserver/status-report/"
+
+[build-system]
+requires = ["setuptools>=42", "setuptools_scm[toml]"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# This section is needed (can be empty) for setuptools_scm to be used by
+# "pip2 install ." in order to get the version number from the git repo.
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+line_length = 100
+py_version = 27
+profile = "black"
+combine_as_imports = true
+ensure_newline_before_comments = false
+# extra standard libraries of Py2:
+extra_standard_library = "commands"
