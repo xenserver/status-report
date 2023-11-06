@@ -548,9 +548,9 @@ def collect_data(subdir, archive):
         name = construct_filename(subdir, k, v)
         cap = v['cap']
         filename = v.get('filename')
-        if v.has_key('cmd_args'):
+        if "cmd_args" in v:
             v['output'] = StringIOmtime()
-            if not process_lists.has_key(cap):
+            if cap not in process_lists:
                 process_lists[cap] = []
             process_lists[cap].append(ProcOutputAndArchive(v['cmd_args'], caps[cap][MAX_TIME], name, archive, v))
         elif filename and (filename.startswith('/proc/') or
@@ -571,7 +571,7 @@ def collect_data(subdir, archive):
                     log("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
             except:
                 pass
-        elif v.has_key('func'):
+        elif "func" in v:
             try:
                 s = v['func'](cap)
             except Exception:
@@ -670,7 +670,7 @@ def main(argv = None):
         pass
 
     inventory = readKeyValueFile(XENSOURCE_INVENTORY)
-    if inventory.has_key('OEM_BUILD_NUMBER'):
+    if "OEM_BUILD_NUMBER" in inventory:
         cap(CAP_OEM,                 PII_MAYBE,                 max_size=5*MB,
             max_time=90)
 
@@ -1485,21 +1485,21 @@ def csl_logs(cap):
     csl_targets_fetched = []
 
     for pbd in session.xenapi.PBD.get_all_records().values():
-        if pbd.has_key('device_config') and pbd['device_config'].has_key('target'):
+        if "device_config" in pbd and "target" in pbd["device_config"]:
             if pbd['device_config']['target'] in csl_targets_fetched:
                 continue
             sr = session.xenapi.SR.get_record(pbd['SR'])
-            if sr.has_key('type') and sr['type'] == 'cslg':
+            if "type" in sr and sr["type"] == "cslg":
                 if sr['shared'] and pbd['host'] != this_host and not i_am_master:
                     continue
 
                 dev_cfg = pbd['device_config']
                 server = "server=%s" % socket.gethostbyname(dev_cfg['target'])
-                if dev_cfg.has_key('port'):
+                if "port" in dev_cfg:
                     server += ':' + dev_cfg['port']
-                if dev_cfg.has_key('username'):
+                if "username" in dev_cfg:
                     server += ',' + dev_cfg['username']
-                if dev_cfg.has_key('password_secret'):
+                if "password_secret" in dev_cfg:
                     sec_ref = session.xenapi.secret.get_by_uuid(dev_cfg['password_secret'])
                     server += ',' + session.xenapi.secret.get_value(sec_ref)
                 procs.append(ProcOutput([CSL, server, 'srv-log-get'], caps[cap][MAX_TIME], output))
@@ -1585,7 +1585,7 @@ def load_plugins(just_capabilities = False):
         return ret
 
     for dir in [d for d in os.listdir(PLUGIN_DIR) if os.path.isdir(os.path.join(PLUGIN_DIR, d))]:
-        if not caps.has_key(dir):
+        if dir not in caps:
             if not os.path.exists("%s/%s.xml" % (PLUGIN_DIR, dir)):
                 continue
             xmldoc = parse("%s/%s.xml" % (PLUGIN_DIR, dir))
@@ -1834,11 +1834,11 @@ def md5sum_file(filename):
 
 
 def md5sum(d):
-    if d.has_key('md5'):
+    if "md5" in d:
         return d['md5']
-    elif d.has_key('filename'):
+    elif "filename" in d:
         return md5sum_file(d['filename'])
-    elif d.has_key('output'):
+    elif "output" in d:
         m = md5_new()
         m.update(d['output'].getvalue())
         return m.hexdigest()
