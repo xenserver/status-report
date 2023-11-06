@@ -55,6 +55,7 @@ import traceback
 import urllib
 import xml
 import zipfile
+from hashlib import md5 as md5_new
 from select import select
 from signal import SIGHUP, SIGTERM, SIGUSR1
 from subprocess import PIPE, Popen
@@ -63,15 +64,6 @@ from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 import defusedxml.sax
-
-try:
-    import hashlib
-    def md5_new():
-        return hashlib.md5()
-except:
-    import md5
-    def md5_new():
-        return md5.new()
 
 # Monkey-patch zipfile's __del__ function to be less stupid
 #   Specifically, it calls close which further writes to the file, which
