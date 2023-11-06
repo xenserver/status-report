@@ -65,16 +65,18 @@ from xml.etree.ElementTree import Element
 
 import defusedxml.sax
 
+# Fixed in 3.7: https://github.com/python/cpython/pull/12628
 # Monkey-patch zipfile's __del__ function to be less stupid
 #   Specifically, it calls close which further writes to the file, which
 #   fails with ENOSPC if the root filesystem is full
-zipfile_del = zipfile.ZipFile.__del__
-def exceptionless_del(*argl, **kwargs):
-    try:
-        zipfile_del(*argl, **kwargs)
-    except:
-        pass
-zipfile.ZipFile.__del__ = exceptionless_del
+if sys.version < "3.7":
+    zipfile_del = zipfile.ZipFile.__del__  # type: ignore[attr-defined] # mypy,pyright
+    def exceptionless_del(*argl, **kwargs):
+        try:
+            zipfile_del(*argl, **kwargs)
+        except OSError:
+            pass
+    zipfile.ZipFile.__del__ = exceptionless_del  # type: ignore[attr-defined] # mypy,pyright
 
 def xapi_local_session():
     import XenAPI  # Import on first use.
