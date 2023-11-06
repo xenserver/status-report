@@ -1806,8 +1806,8 @@ def make_inventory(inventory, subdir):
     s.setAttribute('uptime', commands.getoutput(UPTIME))
     document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(s)
 
-    map(lambda (k, v): inventory_entry(document, subdir, k, v),
-        inventory.items())
+    for inventory_key, inventory_item in inventory.items():
+        inventory_entry(document, subdir, inventory_key, inventory_item)
     return document.toprettyxml()
 
 def inventory_entry(document, subdir, k, v):
