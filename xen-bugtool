@@ -33,12 +33,15 @@
 # or func_output().
 #
 
+from __future__ import print_function
+
 import commands
 import fcntl
 import getopt
 import glob
 import io
 import json
+import logging
 import os
 import platform
 import pprint
@@ -476,11 +479,11 @@ def log(x, print_output=True):
         output(x)
 
     with open(XEN_BUGTOOL_LOG, "a") as logFile:
-        print >>logFile, x
+        print(x, file=logFile)
 
 def output(x):
     if not SILENT_MODE:
-        print x
+        print(x)
 
 def output_ts(x):
     output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
@@ -646,19 +649,19 @@ def main(argv = None):
             argv, 'adsuy', ['capabilities', 'silent', 'yestoall', 'entries=',
                             'output=', 'outfd=', 'all', 'unlimited', 'debug',
                             'help'])
-    except getopt.GetoptError, opterr:
-        print >>sys.stderr, opterr
-        print >>sys.stderr, usage()
+    except getopt.GetoptError as opterr:
+        logging.fatal("xen-bugtool: %s", opterr)
+        logging.fatal(usage())
         return 2
 
     for (k, v) in options:
         if k == '--help':
-            print usage()
+            print(usage())
             return 0
 
     # we need access to privileged files, exit if we are not running as root
     if os.getuid() != 0:
-        print >>sys.stderr, "Error: xen-bugtool must be run as root"
+        logging.fatal("Error: xen-bugtool must be run as root")
         return 1
 
     try:
@@ -694,7 +697,7 @@ def main(argv = None):
             if  v in ['tar', 'tar.bz2', 'zip']:
                 output_type = v
             else:
-                print >>sys.stderr, "Invalid output format '%s'" % v
+                logging.fatal("Invalid output format '%s'", v)
                 return 2
 
         # "-s" or "--silent" means suppress output (except for the final
@@ -723,7 +726,7 @@ def main(argv = None):
                 old = fcntl.fcntl(output_fd, fcntl.F_GETFD)
                 fcntl.fcntl(output_fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             except:
-                print >>sys.stderr, "Invalid output file descriptor", output_fd
+                logging.fatal("Invalid output file descriptor: %d", output_fd)
                 return 2
 
         elif k in ['-a', '--all']:
@@ -734,13 +737,14 @@ def main(argv = None):
         elif k in ['-d', '--debug']:
             dbg = True
             ProcOutput.debug = True
+            logging.getLogger().setLevel(logging.DEBUG)  # Activates logging.debug("log messages")
 
     if len(params) != 1:
-        print >>sys.stderr, "Invalid additional arguments", str(params)
+        logging.fatal("Invalid additional arguments: %s", str(params))
         return 2
 
     if output_fd != -1 and output_type != 'tar':
-        print >>sys.stderr, "Option '--outfd' only valid with '--output=tar'"
+        logging.fatal("Option '--outfd' only valid with '--output=tar'")
         return 2
 
     if ANSWER_YES_TO_ALL:
@@ -1179,11 +1183,9 @@ exclude those logs from the archive.
     except:
         pass
 
-    if dbg:
-        print >>sys.stderr, "Category sizes (max, actual):\n"
-        for c in caps.keys():
-            print >>sys.stderr, "    %s (%d, %d)" % (c, caps[c][MAX_SIZE],
-                                                     cap_sizes[c])
+    logging.debug("Category sizes (max, actual):\n")
+    for c in caps.keys():
+        logging.debug("    %s (%d, %d)", c, caps[c][MAX_SIZE], cap_sizes[c])
     return res
 
 def find_tapdisk_logs():
@@ -1741,9 +1743,9 @@ class TarOutput(ArchiveWithTarSubarchives):
             if self.output_fd == -1:
                 output ('Writing tarball %s successful.' % self.filename)
                 if SILENT_MODE:
-                    print self.filename
+                    print(self.filename)
             return True
-        except Exception, e:
+        except Exception as e:
             if self.output_fd == -1:
                 output ("Error closing tar file '%s': '%s'" % (self.filename, e))
             else:
@@ -1780,9 +1782,9 @@ class ZipOutput(ArchiveWithTarSubarchives):
             self.zf.close()
             output ('Writing archive %s successful.' % self.filename)
             if SILENT_MODE:
-                print self.filename
+                print(self.filename)
             return True
-        except Exception, e:
+        except Exception as e:
             output ("Error closing zip file '%s': %s" % (self.filename, e))
             output ("Cleaning up incomplete file '%s'" % self.filename)
             removeNoError(self.filename)
@@ -1941,7 +1943,7 @@ def print_capabilities():
     document = getDOMImplementation().createDocument(
         "ns", CAP_XML_ROOT, None)
     map(lambda key: capability(document, key), [k for k in caps.keys() if not caps[k][HIDDEN]])
-    print document.toprettyxml()
+    print(document.toprettyxml())
 
 def capability(document, key):
     c = caps[key]
@@ -2181,8 +2183,9 @@ class StringIOmtime(StringIO.StringIO):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(format="%(message)s")
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        print "\nInterrupted."
+        print("\nInterrupted.")
         sys.exit(3)
