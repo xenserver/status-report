@@ -235,6 +235,10 @@ NRPE_DIR = '/etc/nrpe.d'
 XEN_BUGTOOL_LOG = 'xen-bugtool.log'
 CRON_DIRS = '/etc/cron*'
 CRON_SPOOL = '/var/spool/cron'
+SNMP_XS_CONF = '/etc/snmp/snmp.xs.conf'
+SNMPD_XS_CONF = '/etc/snmp/snmpd.xs.conf'
+SNMPD_CONF = '/var/lib/net-snmp/snmpd.conf'
+SYSCONFIG_SNMPD = '/etc/sysconfig/snmpd'
 
 #
 # External programs
@@ -1105,6 +1109,10 @@ exclude those logs from the archive.
                     'vgscan-log']])
     tree_output(CAP_XENSERVER_INSTALL, INSTALLED_REPOS_DIR)
     tree_output(CAP_XENSERVER_INSTALL, UPDATE_APPLIED_DIR)
+    func_output(CAP_XENSERVER_CONFIG, 'snmp_xs_conf', filter_snmp_xs_conf)
+    func_output(CAP_XENSERVER_CONFIG, 'snmpd_xs_conf', filter_snmpd_xs_conf)
+    func_output(CAP_XENSERVER_CONFIG, 'snmpd_conf', filter_snmpd_conf)
+    file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_SNMPD])
 
     try:
         load_plugins()
@@ -1551,6 +1559,26 @@ def multipathd_topology(cap):
     stdout, _ = pipe.communicate("show topology")
 
     return stdout
+
+def filter_snmp_xs_conf(_):
+    """Filter /etc/snmp/snmp.xs.conf with keys and community removed"""
+    return snmp_regex_filter(SNMP_XS_CONF, r"((community|\w_key)\s*=\s*)\S+", r"\1REMOVED")
+
+def filter_snmpd_xs_conf(_):
+    """Filter /etc/snmp/snmpd.xs.conf with the com2sec community removed"""
+    return snmp_regex_filter(SNMPD_XS_CONF, r"(com2sec(\s+\S+){2}\s+)\S+", r"\1REMOVED")
+
+def filter_snmpd_conf(_):
+    """Filter /var/lib/net-snmp/snmpd.conf with the usmUser fields authKey and privKey removed"""
+    return snmp_regex_filter(SNMPD_CONF, r"(usmUser(\s+\S+){7}\s+)\S+(\s+\S+\s+)\S+(\s+\S+)", r"\1REMOVED\3REMOVED\4")
+
+def snmp_regex_filter(replace_file, regex_str, replace_str):
+    try:
+        with open(replace_file, "r") as file:
+            return re.sub(regex_str, replace_str, file.read())
+    except Exception as e:
+        return "Failed to filter %s %s" % (replace_file, str(e))
+
 
 def dp_list():
     output = io.BytesIO()
