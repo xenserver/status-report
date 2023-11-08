@@ -50,10 +50,10 @@ build-backend = "setuptools.build_meta"
 # "pip2 install ." in order to get the version number from the git repo.
 
 [tool.black]
-line-length = 100
+line-length = 108
 
 [tool.isort]
-line_length = 100
+line_length = 108
 py_version = 27
 profile = "black"
 combine_as_imports = true
