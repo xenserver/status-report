@@ -1959,7 +1959,7 @@ def prettyDict(d):
 
 
 def yes(prompt):
-    yn = raw_input(prompt)
+    yn = input(prompt)
 
     return len(yn) == 0 or yn.lower()[0] == 'y'
 
