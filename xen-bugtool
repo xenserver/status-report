@@ -1591,9 +1591,9 @@ def load_plugins(just_capabilities = False):
             if xmldoc.documentElement.getAttribute("pii") in [PII_NO, PII_YES, PII_MAYBE, PII_IF_CUSTOMIZED]:
                 pii = xmldoc.documentElement.getAttribute("pii")
             if xmldoc.documentElement.getAttribute("min_size") != '':
-                min_size = long(xmldoc.documentElement.getAttribute("min_size"))
+                min_size = int(xmldoc.documentElement.getAttribute("min_size"))
             if xmldoc.documentElement.getAttribute("max_size") != '':
-                max_size = long(xmldoc.documentElement.getAttribute("max_size"))
+                max_size = int(xmldoc.documentElement.getAttribute("max_size"))
             if xmldoc.documentElement.getAttribute("min_time") != '':
                 min_time = int(xmldoc.documentElement.getAttribute("min_time"))
             if xmldoc.documentElement.getAttribute("max_time") != '':
@@ -1720,7 +1720,7 @@ class TarOutput(ArchiveWithTarSubarchives):
         s = os.stat(filename)
         ti.mtime = s.st_mtime
         ti.size = s.st_size
-        self.tf.addfile(ti, file(filename,'rb'))
+        self.tf.addfile(ti, open(filename, "rb"))
 
     def add_path_with_data(self, name, data):
         ti = self._getTi(name)
