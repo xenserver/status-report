@@ -26,8 +26,8 @@ run-name: 'Test xen-bugtool for ${{ github.event_name }} by ${{ github.actor }}'
 on:
   pull_request:
     paths:
-      - '.github/workflows/dom0-tests.yml'
-      - 'xen-bugtool'
+      - .github/workflows/dom0-tests.yml
+      - xen-bugtool
   issue_comment:
     types: [created, edited]
 
@@ -40,18 +40,15 @@ permissions:
 
 jobs:
   nested_template:
-    # name: "Job: run xen-bugtool --entries= for each capability key"
-    uses: "./.github/workflows/run-all-entries-in-Dom0.yml"
+    uses: ./.github/workflows/run-all-entries-in-Dom0.yml
     # Restricted to Bernhard and Ross because this step runs the branch on a self-hosted runner:
     # They can trigger this workflow but creating or editing a PR comment with '/runtest entries'
     # Doc on contexts: https://docs.github.com/en/actions/learn-github-actions/contexts
     # Only run this if this job is triggered on a pull request, and require
     # that this this triggered by a issue_comment, otherwise it the source must
     # not be another repository:
-    if: |
-      ${{ github.event.issue.pull_request &&
-          contains(fromJson('["bernhardkaindl", "rosslagerwall"]'), github.actor) &&
-          contains(github.event.comment.body, '/runtest entries') }}
-      ${{ github.event.issue.pull_request &&
-          github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: Dom0  # self-hosted runners with label: Dom0
+    if: ${{
+      github.event.pull_request.head.repo.full_name == github.repository ||
+      contains(fromJson('["bernhardkaindl", "rosslagerwall"]'), github.actor) ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '/runtest dom0'))
+      }}

@@ -31,7 +31,7 @@ outputs:
 runs:
   # Docs:
   # https://docs.github.com/en/actions/creating-actions/creating-a-composite-action
-  using: "composite"
+  using: composite
   steps:
   - name: Run xen-bugtool --entries=${{ inputs.entry }} in Dom0
     shell: bash
