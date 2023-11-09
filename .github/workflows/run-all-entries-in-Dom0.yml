@@ -9,18 +9,30 @@
 # so it would be possible to create local "libraries" as frontends for other templates:
 # https://github.com/orgs/community/discussions/25778
 #--------------------------------------------------------------------------------------
-#    workflow_dispatch:
-#     inputs:
-#       chosen-os:
-#         description: "Label for selecting the self-hosted runner"
-#         required: true
-#         type: choice
-#         default: apollo-lake
-#         options:
-#         - Xeon
-#         - apollo-lake
-# labels:
-#   - ${{ github.event.inputs.test-suite }}
+# Setup of a self-hosted runner on XenServer Dom0:
+# useradd -g no-internet -G disk github-actions (or usermod -a -G no-internet -G disk your-user)
+# iptables -I OUTPUT -m owner --gid-owner no-internet -d 127.0.0.0/8 -p tcp --dport 80 -j ACCEPT
+# iptables -I OUTPUT -m owner --gid-owner no-internet -d 127.0.0.0/8 -p tcp --dport 443 -j ACCEPT
+# iptables -I OUTPUT -m owner --gid-owner no-internet -d 127.0.0.0/8 -p tcp --dport 8888 -j ACCEPT
+# iptables -A OUTPUT -m owner --gid-owner no-internet -j REJECT
+# Documentation:
+# https://explainshell.com/explain?cmd=sudo+iptables+-A+OUTPUT+-m+owner+--gid-owner+no-internet+-j+REJECT
+# TODO: Block all originating IPv6 traffic.
+# rpm -Uhv https://www.rpmfind.net/linux/epel/7/x86_64/Packages/t/tinyproxy-1.8.4-2.el7.x86_64.rpm
+# configure tinyproxy to only allow GitHub CI servers:
+# https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners
+# systemctl enable --now tinyproxy.service
+# http_proxy=http://localhost:8888
+# wget http://github.com/actions/runner/releases/download/v2.311.0/actions-runner-linux-x64-2.311.0.tar.gz
+# ./config.sh --url https://github.com/xenserver-next/status-report --token your_token # Use command from GH-Settings:
+# https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners#adding-a-self-hosted-runner-to-a-repository
+# For xen-bugtool:
+# mkdir -p /var/opt/xen/bug-report
+# chown bkaindl -R /var/opt/xen/bug-report/ /var/xapi/{debug,blobs/messages} /var/lib/xcp/xapi /var/run/message-switch/sock /var/log/samba
+# and install python-defusedxml.rpm
+# http_proxy=http://localhost:8888 https_proxy=http://localhost:8888 sg no-internet ./run.sh
+# Todo: Add systemd service for runner
+# Examples using bubblewrap: https://wiki.alpinelinux.org/wiki/Bubblewrap/Examples
 
 name: Run xen-bugtool --entries= for all entries
 
