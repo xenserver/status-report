@@ -35,7 +35,6 @@
 
 from __future__ import print_function
 
-import commands
 import fcntl
 import getopt
 import glob
@@ -52,7 +51,6 @@ import sys
 import tarfile
 import time
 import traceback
-import urllib
 import xml
 import zipfile
 from hashlib import md5 as md5_new
@@ -64,6 +62,13 @@ from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 import defusedxml.sax
+
+if sys.version_info.major == 2:
+    from commands import getoutput  # pyright: ignore[reportMissingImports]
+    from urllib import urlopen
+else:
+    from subprocess import getoutput
+    from urllib.request import urlopen
 
 # Fixed in 3.7: https://github.com/python/cpython/pull/12628
 # Monkey-patch zipfile's __del__ function to be less stupid
@@ -1271,7 +1276,7 @@ def dump_xapi_rrds(cap):
         if vm['is_a_template']:
             continue
         if vm['resident_on'] == this_host or (i_am_master and vm['power_state'] in ['Suspended', 'Halted']):
-            rrd = urllib.urlopen('http://localhost/vm_rrd?session_id=%s&uuid=%s' % (session._session, vm['uuid']))
+            rrd = urlopen("http://localhost/vm_rrd?session_id=%s&uuid=%s" % (session._session, vm["uuid"]))
             try:
                 i, _, _ = select([rrd], [], [], 5.0)
                 if len(i) == 1:
@@ -1281,7 +1286,7 @@ def dump_xapi_rrds(cap):
                 rrd.close()
 
     output = ''
-    rrd = urllib.urlopen('http://localhost/host_rrd?session_id=%s' % session._session)
+    rrd = urlopen("http://localhost/host_rrd?session_id=%s" % session._session)
     try:
         output = rrd.read()
     finally:
@@ -1797,7 +1802,7 @@ def make_inventory(inventory, subdir):
     s.setAttribute('date', time.strftime('%c'))
     s.setAttribute('hostname', platform.node())
     s.setAttribute('uname', ' '.join(platform.uname()))
-    s.setAttribute('uptime', commands.getoutput(UPTIME))
+    s.setAttribute("uptime", getoutput(UPTIME))
     document.getElementsByTagName(INVENTORY_XML_ROOT)[0].appendChild(s)
 
     for inventory_key, inventory_item in inventory.items():
