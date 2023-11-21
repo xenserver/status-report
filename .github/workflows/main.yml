@@ -14,7 +14,7 @@ env:
   PYTHONDEVMODE: yes
 jobs:
   python-checks:
-    name: Python checks
+    name: Run the Xen-Bugtool Test Environment
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
@@ -32,5 +32,5 @@ jobs:
 
       - name: Run pylint-1.9.4 for pylint --py3k linting (configured in .pylintrc)
         run: python2 -m pylint xen-bugtool
-      - name: Run python2 -m pytest to execute unit tests
-        run: python2 -m pytest
+      - name: Run python2 -m pytest to execute all unit and integration tests
+        run: python2 -m pytest -v -rA

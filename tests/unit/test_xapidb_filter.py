@@ -1,11 +1,12 @@
 # This uses the deprecated imp module because it has to run with Python2.7 for now:
-import imp  # pylint: disable=deprecated-module
 import os
+import sys
 import xml.dom.minidom
+
+import pytest
 
 
 testdir = os.path.dirname(__file__)
-bugtool = imp.load_source("bugtool", testdir + "/../../xen-bugtool")
 original = r"""<?xml version="1.0" ?>
 <root>
     <table name="secret">
@@ -53,7 +54,11 @@ expected = r"""<?xml version="1.0" ?>
 """
 
 
+@pytest.mark.skipif(sys.version_info >= (3,0), reason="requires python2")
 def test_xapi_database_filter():
     """Assert that bugtool.DBFilter().output() filters the xAPI database as expected"""
+    import imp  # pylint: disable=deprecated-module  # pyright: ignore[reportMissingImports]
+
+    bugtool = imp.load_source("bugtool", testdir + "/../../xen-bugtool")
     filtered = bugtool.DBFilter(original).output()
     assert xml.dom.minidom.parseString(filtered).toprettyxml(indent="    ") == expected
