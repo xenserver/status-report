@@ -1,1 +1,5 @@
-defusedxml==0.5.0
+# Initially, xen-bugtool was deployed in xs8 using defusedxml==0.5.0.
+# The common python-defusedxml.srpm has since been updated to the current
+# defusedxml-0.7.1.
+# Tests are now free to use the current version of defusedxml:
+defusedxml

@@ -25,6 +25,7 @@ analyse-fallback-blocks=yes
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
 extension-pkg-allow-list=xen.lowlevel
+extension-pkg-whitelist=lxml.etree
 
 # Return non-zero exit code if any of these messages/categories are detected,
 # even if score is above --fail-under value. Syntax same as enable. Messages
