@@ -49,7 +49,7 @@ def check_file(path):
     return contents
 
 
-def verify_content_from_dom0_template(path, control_path=None):
+def assert_content_from_dom0_template(path, control_path=None):
     """Compare the contents of output directories or files with the test's Dom0 template directories"""
     assert path[0] != "/"
     control = BUGTOOL_DOM0_TEMPL + (control_path or path)
