@@ -17,7 +17,7 @@ else:
     from subprocess import getoutput
 
 BUGTOOL_OUTPUT_DIR = "/var/opt/xen/bug-report/"
-BUGTOOL_DOM0_TEMPL = "tests/integration/dom0-template"
+BUGTOOL_DOM0_TEMPL = "tests/integration/dom0-template/"
 
 
 def run(command):
@@ -49,11 +49,21 @@ def check_file(path):
     return contents
 
 
-def verify_content_from_dom0_template(path):
+def verify_content_from_dom0_template(path, control_path=None):
     """Compare the contents of output directories or files with the test's Dom0 template directories"""
     assert path[0] != "/"
-    assert filecmp.dircmp(path, BUGTOOL_DOM0_TEMPL + path)
-    # After successfuly verficiation of the files, remove the checked output files (missed files remain):
+    control = BUGTOOL_DOM0_TEMPL + (control_path or path)
+    print(control)
+    if os.path.isdir(path):
+        result = filecmp.dircmp(path, control)
+        if result.diff_files or result.right_only:
+            print(result.report)
+            raise RuntimeError("Missing or Differing files found in " + path)
+    else:
+        if not filecmp.cmp(path, control):
+            os.system("cat " + path)
+            raise RuntimeError(control)
+    # Remove verified output files/directories. Untested files will remain and cause the testcase to FAIL:
     try:
         os.unlink(path)
     except OSError:
@@ -99,3 +109,5 @@ def run_bugtool_entry(archive_type, test_entries):
         etree.XMLSchema(etree.parse(xmlschema)).assertValid(etree.parse("inventory.xml"))
         # After successfuly validation of the inventory.xml, remove it (not removed files make the test fail):
         os.unlink("inventory.xml")
+    # assert_content_from_dom0_template() does not know the srcdir: add a symlink so it can reach the tests
+    os.symlink(srcdir + "/tests", "tests")
