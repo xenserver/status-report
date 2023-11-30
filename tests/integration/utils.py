@@ -11,10 +11,11 @@ from subprocess import PIPE, Popen
 
 from lxml import etree
 
+# pyright: ignore[reportMissingImports]
 if sys.version_info.major == 2:
-    from commands import getoutput  # type:ignore[import-not-found] # pyright: ignore[reportMissingImports]
+    from commands import getstatusoutput  # type:ignore[import-not-found]
 else:
-    from subprocess import getoutput
+    from subprocess import getstatusoutput
 
 BUGTOOL_OUTPUT_DIR = "/var/opt/xen/bug-report/"
 BUGTOOL_DOM0_TEMPL = "tests/integration/dom0-template/"
@@ -97,7 +98,10 @@ def run_bugtool_entry(archive_type, test_entries):
     # For case the default python interpreter of the user is python3, we must use python2(for now):
     command = "python2 ./xen-bugtool -y --output=%s --entries=%s" % (archive_type, test_entries)
     print("# " + command)
-    print(getoutput(command))
+    error_code, output = getstatusoutput(command)
+    print(output)
+    if error_code:
+        raise RuntimeError(output)
     srcdir = os.getcwd()
     os.chdir(BUGTOOL_OUTPUT_DIR)
     output_file = test_entries + "." + archive_type
