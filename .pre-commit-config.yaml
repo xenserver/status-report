@@ -89,7 +89,9 @@ repos:
     -   id: darker
         name: Ensure that changes staged for updating xen-bugtool are black-formatted
         files: xen-bugtool
-        args: [--isort, -tpy36]
+        entry: make
+        pass_filenames: false
+        args: [darker-xen-bugtool]
         additional_dependencies:
           - isort
 -   repo: https://github.com/pre-commit/mirrors-mypy
