@@ -56,10 +56,8 @@ expected = r"""<?xml version="1.0" ?>
 
 
 @pytest.mark.skipif(sys.version_info >= (3, 0), reason="requires python2")
-def test_xapi_database_filter():
+def test_xapi_database_filter(bugtool):
     """Assert that bugtool.DBFilter().output() filters the xAPI database as expected"""
-    import imp  # pylint: disable=deprecated-module  # pyright: ignore[reportMissingImports]
 
-    bugtool = imp.load_source("bugtool", testdir + "/../../xen-bugtool")
     filtered = bugtool.DBFilter(original).output()
     assert xml.dom.minidom.parseString(filtered).toprettyxml(indent="    ") == expected
