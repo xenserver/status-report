@@ -37,4 +37,6 @@ def bugtool(testdir):
             spec.loader.exec_module(module)
             return module
 
-    return import_from_file("bugtool", testdir + "/../../xen-bugtool")
+    bugtool = import_from_file("bugtool", testdir + "/../../xen-bugtool")
+    bugtool.ProcOutput.debug = True
+    return bugtool
