@@ -5,8 +5,8 @@ import os
 
 import pytest
 
-from namespace_container import activate_private_test_namespace, mount, umount
-from utils import BUGTOOL_DOM0_TEMPL, BUGTOOL_OUTPUT_DIR, run
+from .namespace_container import activate_private_test_namespace, mount, umount
+from .utils import BUGTOOL_DOM0_TEMPL, BUGTOOL_OUTPUT_DIR, run
 
 
 @pytest.fixture(autouse=True, scope="session")
