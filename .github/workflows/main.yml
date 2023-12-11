@@ -1,24 +1,54 @@
-name: Build and test
+#--------------------------------------------------------------------------------------
+# This GitHub Actions workflow can be run locally using https://github.com/nektos/act
+#
+# act normally uses docker, but it can also be run using podman on Fedora 37:
+# dnf install act-cli podman
+# podman system service -t 0 &
+# act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/main.yml
+#--------------------------------------------------------------------------------------
+name: "GitHub CI"
 
-on:
-  push:
-  pull_request:
+# The GitHub events that trigger this workflow:
+# Checks can be skipped by adding "skip-checks: true" to a commit message,
+# or requested by adding "request-checks: true" if disabled by default for pushes:
+# https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks#skipping-and-requesting-checks-for-individual-commits
+on: [push, pull_request]
 
-concurrency:  # Cancel pending and in-progress workflows for the same PR, branch or tag:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+# Cancel a currently running workflow from the same PR, branch or tag
+# when a new workflow is triggered:
+# https://stackoverflow.com/questions/66335225/how-to-cancel-previous-runs-in-the-pr-when-you-push-new-commitsupdate-the-curre
+concurrency:
   cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
 env:
+  DEBIAN_FRONTEND: noninteractive
   # No warnings for pip and pytest themselves; pytest enables warnings in conftest.py
   PYTHONWARNINGS: ignore
   # Development Mode for stronger checks: https://docs.python.org/3/library/devmode.html
   PYTHONDEVMODE: yes
 jobs:
-  python-checks:
-    name: Run the Xen-Bugtool Test Environment
+  container-tests:
+    name: "Python2: Container tests"
+    runs-on: ubuntu-22.04
+    # https://github.com/Docker-Hub-frolvlad/docker-alpine-python2
+    container: frolvlad/alpine-python2
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install test tools
+        run: apk add --no-cache libxml2-utils bash
+      - name: Install python requirements
+        run: pip install -r requirements.txt
+      - name: Test sar file collection, extended by XSI-1385 with plain-text SARs
+        run: bash -x tests/integration/sar-file-collection.test.sh
+      - name: Test creating a tarball for /etc/systemd
+        run: bash -x tests/integration/xenserver-config-systemd.sh
+
+  python2-tests:
+    name: "Python2: PyLint and Pytest"
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
@@ -34,18 +64,28 @@ jobs:
         run: python2 -m pylint xen-bugtool
       - name: Run python2 -m pytest to execute all unit and integration tests
         run: python2 -m pytest -v -rA
+
+  pre-commit:
+    name: "Python3: Pre-Commit Suite"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
       # https://www.python4data.science/en/latest/productive/git/advanced/hooks/ci.html
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.10'
           cache: 'pip'
+
       - run: pip install -r requirements-dev.txt
         name: Install the pytest dependencies for running the pytest suite using Python3
+
       - uses: actions/cache@v3
         name: Setup cache for running pre-commit fast
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+
       - uses: pre-commit/action@v3.0.0
         name: Run pre-commit checks
         env:

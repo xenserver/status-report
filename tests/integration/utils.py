@@ -9,7 +9,7 @@ import tarfile
 import zipfile
 from subprocess import PIPE, Popen
 
-from lxml import etree
+from lxml.etree import XMLSchema, parse  # pytype: disable=import-error
 
 # pyright: ignore[reportMissingImports]
 if sys.version_info.major == 2:
@@ -102,16 +102,16 @@ def run_bugtool_entry(archive_type, test_entries):
     print(output)
     if error_code:
         raise RuntimeError(output)
-    srcdir = os.getcwd()
+    src_dir = os.getcwd()
     os.chdir(BUGTOOL_OUTPUT_DIR)
     output_file = test_entries + "." + archive_type
     print("# Unpacking " + BUGTOOL_OUTPUT_DIR + output_file + " and verifying inventory.xml")
     extract(output_file, archive_type)
     os.chdir(test_entries)
     # Validate the extracted inventory.xml using the XML schema from the test framework:
-    with open(srcdir + "/tests/integration/inventory.xsd") as xmlschema:
-        etree.XMLSchema(etree.parse(xmlschema)).assertValid(etree.parse("inventory.xml"))
-        # After successfuly validation of the inventory.xml, remove it (not removed files make the test fail):
+    with open(src_dir + "/tests/integration/inventory.xsd") as xml_schema:
+        XMLSchema(parse(xml_schema)).assertValid(parse("inventory.xml"))
+        # Remove valid inventory.xml (not removed files will make the tests fail):
         os.unlink("inventory.xml")
-    # assert_content_from_dom0_template() does not know the srcdir: add a symlink so it can reach the tests
-    os.symlink(srcdir + "/tests", "tests")
+    # Add a symlink, so assert_content_from_dom0_template() can find the tests:
+    os.symlink(src_dir + "/tests", "tests")
