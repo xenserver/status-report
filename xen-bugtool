@@ -37,7 +37,7 @@
 # pylint: disable=useless-suppression
 # pylint: disable=missing-docstring,line-too-long,multiple-statements,unnecessary-pass
 # pylint: disable=broad-exception-raised,missing-type-doc,useless-object-inheritance
-# pylint: disable=undefined-variable,unnecessary-comprehension,super-init-not-called
+# pylint: disable=undefined-variable,unnecessary-comprehension
 
 from __future__ import print_function
 
@@ -52,7 +52,6 @@ import platform
 import pprint
 import re
 import socket
-import StringIO
 import sys
 import tarfile
 import time
@@ -75,6 +74,10 @@ if sys.version_info.major == 2:
 else:
     from subprocess import getoutput
     from urllib.request import urlopen
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:  # Used for type checking only:
+        from _typeshed import ReadableBuffer  # pylint: disable=unused-import
 
 # Fixed in 3.7: https://github.com/python/cpython/pull/12628
 # Monkey-patch zipfile's __del__ function to be less stupid
@@ -578,9 +581,10 @@ def collect_data(subdir, archive):
                 pass
         elif "func" in v:
             try:
-                s = v['func'](cap)
+                s = no_unicode(v["func"](cap))
             except Exception:
                 s = traceback.format_exc()
+                log(s)
             if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                     cap_sizes[cap] < caps[cap][MAX_SIZE]:
                 v['output'] = StringIOmtime(s)
@@ -1463,7 +1467,7 @@ def dump_scsi_hosts(cap):
     return output
 
 def module_info(cap):
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     modules = open(PROC_MODULES, 'r')
     procs = []
 
@@ -1474,7 +1478,7 @@ def module_info(cap):
 
     run_procs([procs])
 
-    return output.getvalue()
+    return output.getvalue().decode()
 
 def csl_logs(cap):
     socket.setdefaulttimeout(5)
@@ -1485,7 +1489,7 @@ def csl_logs(cap):
     pool = session.xenapi.pool.get_all_records().values()[0]
     i_am_master = (this_host == pool['master'])
 
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = []
     csl_targets_fetched = []
 
@@ -1530,33 +1534,33 @@ def multipathd_topology(cap):
     return stdout
 
 def dp_list():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = [ProcOutput([OVS_DPCTL, 'dump-dps'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
 
     run_procs([procs])
 
     if not procs[0].timed_out:
-        return output.getvalue().splitlines()
+        return output.getvalue().decode().splitlines()
     return []
 
 def br_list():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = [ProcOutput([OVS_VSCTL, 'list-br'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
 
     run_procs([procs])
 
     if not procs[0].timed_out:
-        return output.getvalue().splitlines()
+        return output.getvalue().decode().splitlines()
     return []
 
 def bond_list():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = [ProcOutput([OVS_APPCTL, 'bond/list'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
 
     run_procs([procs])
 
     if not procs[0].timed_out:
-        bonds = output.getvalue().splitlines()[1:]
+        bonds = output.getvalue().decode().splitlines()[1:]
         return [x.split('\t')[0] for x in bonds]
     return []
 
@@ -1982,13 +1986,13 @@ def yes(prompt):
 
 
 def mdadm_arrays():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     run_procs([[ProcOutput([MDADM, '--detail', '--scan'],
                            caps[CAP_DISK_INFO][MAX_TIME], output)]])
     # Format along the lines of:
     # ARRAY /dev/mdN metadata=xxx [name=yyy] UUID=zzz
     try:
-        for line in output.getvalue().split("\n"):
+        for line in output.getvalue().decode().split("\n"):
             parts = line.split(" ")
 
             if len(parts) < 2 or parts[0] != "ARRAY":
@@ -2042,13 +2046,22 @@ class ProcOutput:
         try:
             if ProcOutput.debug:
                 output_ts("Starting '%s'" % self.cmdAsStr())
-            self.proc = Popen(self.command, bufsize=1, stdin=dev_null, stdout=PIPE, stderr=dev_null, shell=isinstance(self.command, str))
+            self.proc = Popen(
+                self.command,
+                # Python3 would issue the warning that line buffering
+                # is not available in binary mode, remove this later:
+                bufsize=1 if sys.version_info < (3, 0) else -1,
+                stdin=dev_null,
+                stdout=PIPE,
+                stderr=dev_null,
+                shell=isinstance(self.command, str),
+            )
             old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
             fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             self.running = True
             self.failed = False
-        except:
-            output_ts("'%s' failed" % self.cmdAsStr())
+        except Exception as e:
+            output_ts("'%s' failed: %s" % (self.cmdAsStr(), e))
             self.running = False
             self.failed = True
 
@@ -2066,7 +2079,7 @@ class ProcOutput:
     def read_line(self):
         assert self.running
         line = self.proc.stdout.readline()
-        if line == '':
+        if not line:
             # process exited
             self.status = self.proc.wait()
             self.proc = None
@@ -2183,14 +2196,18 @@ def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_
     return dict(defs)
 
 
-class StringIOmtime(StringIO.StringIO):
-    def __init__(self, buf = ''):
-        StringIO.StringIO.__init__(self, buf)
+class StringIOmtime(io.BytesIO):
+    """Collect file content with modification time attribute for TarOutput and ZipOutput"""
+
+    def __init__(self, buf=b""):  # type: (StringIOmtime, bytes) -> None
+        """Init the object and initialize the attribute self.mtime using the current time"""
+        io.BytesIO.__init__(self, buf)
         self.mtime = time.time()
 
-    def write(self, s):
-        StringIO.StringIO.write(self, s)
+    def write(self, s):  # type: (StringIOmtime, ReadableBuffer) -> int
+        """Add the given string or bytes buffer object with mtime for TarOutput/ZipOutput"""
         self.mtime = time.time()
+        return io.BytesIO.write(self, no_unicode(s))
 
 
 if __name__ == "__main__":
