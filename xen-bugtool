@@ -517,7 +517,8 @@ def dir_list(cap, path_list, recursive = False):
         flags = '-lR'
 
     pl = []
-    map(lambda x: pl.extend(glob.glob(x)), path_list)
+    for path in path_list:
+        pl.extend(glob.glob(path))
 
     for p in pl:
         cmd_output(cap, [LS, flags, p])
@@ -525,7 +526,8 @@ def dir_list(cap, path_list, recursive = False):
 def file_output(cap, path_list):
     if cap in entries:
         pl = []
-        map(lambda x: pl.extend(glob.glob(x)), path_list)
+        for path in path_list:
+            pl.extend(glob.glob(path))
 
         for p in pl:
             try:
@@ -1597,6 +1599,8 @@ def load_plugins(just_capabilities = False):
         for node in nodelist:
             if node.nodeType == node.TEXT_NODE:
                 rc += node.data
+        if sys.version_info > (3, 0):
+            return rc
         return rc.encode()
 
     def getBoolAttr(el, attr, default = False):

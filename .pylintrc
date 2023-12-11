@@ -105,8 +105,8 @@ max-returns=11
 
 # Maximum number of statements in function / method body.
 # defaults to: max-statements=50
-# xen-bugtool:main() is currently at 376, but it has a dedicated pylint disable comment now:
-# max-statements=376
+# For the Python3 fix for bugtool.load_plugins():
+max-statements=52
 
 [FORMAT]
 
