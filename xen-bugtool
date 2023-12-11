@@ -1517,9 +1517,15 @@ def csl_logs(cap):
     return output.getvalue()
 
 def multipathd_topology(cap):
-    pipe = Popen([MULTIPATHD, '-k'], bufsize=1, stdin=PIPE,
-                     stdout=PIPE, stderr=dev_null)
-    stdout, _ = pipe.communicate('show topology')
+    pipe = Popen(
+        [MULTIPATHD, "-k"],
+        universal_newlines=sys.version_info > (3, 0),
+        bufsize=1,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=dev_null,
+    )
+    stdout, _ = pipe.communicate("show topology")
 
     return stdout
 

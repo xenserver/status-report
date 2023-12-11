@@ -11,6 +11,14 @@ def testdir():
 
 
 @pytest.fixture(scope="session")
+def dom0_template(testdir):
+    """Test fixture to get the directory of the dom0 template and adding it's /usr/sbin to the PATH"""
+    dom0_root_dir = testdir + "/../integration/dom0-template"
+    os.environ["PATH"] = dom0_root_dir + "/usr/sbin"  # for modinfo, mdadm, etc
+    return dom0_root_dir
+
+
+@pytest.fixture(scope="session")
 def bugtool(testdir):
     """Test fixture to import the xen-bugtool script as a module for executing unit tests on functions"""
 
