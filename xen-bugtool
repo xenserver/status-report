@@ -561,6 +561,13 @@ def get_recent_logs(logs, verbosity):
     return [x[1] for x in (logs[-verbosity:] if verbosity < 9 else logs)]
 
 
+def include_inventory(archive, dir):
+    """Add the inventory.xml to the archive, filled from the current data"""
+
+    info = StringIOmtime(make_inventory(data, dir))
+    archive.add_path_with_data(construct_filename(dir, "inventory.xml", {}), info)
+
+
 def collect_data(subdir, archive):
     process_lists = {}
 
@@ -577,7 +584,7 @@ def collect_data(subdir, archive):
                            filename.startswith('/sys/')):
             # proc files must be read into memory
             try:
-                f = open(v['filename'], 'r')
+                f = open(v["filename"], "rb")
                 s = f.read(unlimited_data and -1 or caps[cap][MAX_SIZE])
                 f.close()
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
@@ -589,8 +596,9 @@ def collect_data(subdir, archive):
                     cap_sizes[cap] += len(s)
                 else:
                     log("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
-            except:
-                pass
+            except IOError as e:
+                if e.errno != 2:
+                    log("IOError reading %s: %s" % (filename, e))
         elif "func" in v:
             try:
                 s = no_unicode(v["func"](cap))
@@ -1184,9 +1192,7 @@ exclude those logs from the archive.
     collect_data(subdir, archive)
 
     # include inventory
-    inventory = {'cap': None, 'output': StringIOmtime(no_unicode(make_inventory(data, subdir)))}
-    archive.add_path_with_data(construct_filename(subdir, 'inventory.xml', inventory),
-                StringIOmtime(no_unicode(make_inventory(data, subdir))))
+    include_inventory(archive, subdir)
 
     if archive.close():
         res = 0
@@ -1834,7 +1840,7 @@ def make_inventory(inventory, subdir):
 
     for inventory_key, inventory_item in inventory.items():
         inventory_entry(document, subdir, inventory_key, inventory_item)
-    return document.toprettyxml()
+    return document.toprettyxml(encoding="utf-8")
 
 def inventory_entry(document, subdir, k, v):
     try:
@@ -1883,7 +1889,7 @@ def construct_filename(subdir, k, v):
         if s.find('.') == -1:
             s += '.out'
 
-    return no_unicode(os.path.join(subdir, s))
+    return os.path.join(subdir, s)
 
 
 def update_capabilities():
