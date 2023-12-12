@@ -204,7 +204,7 @@ SYSTEMD_CONF_DIR = '/etc/systemd'
 CGRULES_CONF = '/etc/cgrules.conf'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
 HOST_CRASHDUMPS_DIR = '/var/crash'
-HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile('.*/(\.sacrificial-space-for-logs|coredump\.bin)$')
+HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile(r".*/(\.sacrificial-space-for-logs|coredump\.bin)$")
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 UPDATE_APPLIED_DIR = '/var/update/applied'
@@ -713,7 +713,7 @@ def main(argv = None):  # pylint: disable=too-many-statements
                    CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
-        entries = [e for e in caps.keys() if caps[e][CHECKED]]
+        entries = [cap_key for cap_key in caps if caps[cap_key][CHECKED]]
 
     update_capabilities()
 
@@ -759,7 +759,7 @@ def main(argv = None):  # pylint: disable=too-many-statements
                 return 2
 
         elif k in ['-a', '--all']:
-            entries = caps.keys()
+            entries = list(caps.keys())
         elif k in ['-u', '--unlimited']:
             unlimited_data = True
             unlimited_time = True
@@ -1207,8 +1207,8 @@ exclude those logs from the archive.
         pass
 
     logging.debug("Category sizes (max, actual):\n")
-    for c in caps.keys():
-        logging.debug("    %s (%d, %d)", c, caps[c][MAX_SIZE], cap_sizes[c])
+    for key in entries:
+        logging.debug("    %s (%d, %d)", key, caps[key][MAX_SIZE], cap_sizes[key])
     return res
 
 def find_tapdisk_logs():
@@ -1243,7 +1243,7 @@ def clean_tapdisk_logs():
 def dump_xapi_subprocess_info(cap):
     """Check which fds are open by xapi and its subprocesses to diagnose faults like CA-10543.
        Returns a string containing a pretty-printed pstree-like structure. """
-    pids = filter(lambda x: x.isdigit(), os.listdir("/proc"))
+    all_pids = [proc_entry for proc_entry in os.listdir("/proc") if proc_entry.isdigit()]
     def readlines(filename):
         lines = ''
         try:
@@ -1266,7 +1266,7 @@ def dump_xapi_subprocess_info(cap):
         return None
     def pstree(pid):
         result = { "cmdline": cmdline(pid) }
-        child_pids = filter(lambda x:parent(x) == pid, pids)
+        child_pids = [child_pid for child_pid in all_pids if parent(child_pid) == pid]
         children = { }
         for child in child_pids:
             children[child] = pstree(child)
@@ -1279,8 +1279,8 @@ def dump_xapi_subprocess_info(cap):
                 pass
         result['fds'] = fds
         return result
-    xapis = filter(lambda x: cmdline(x).startswith("/opt/xensource/bin/xapi"), pids)
-    xapis = filter(lambda x: parent(x) == "1", xapis)
+    xapis = [pid for pid in all_pids if cmdline(pid).startswith("/opt/xensource/bin/xapi")]
+    xapis = [pid for pid in xapis if parent(pid) == "1"]
     result = {}
     for xapi in xapis:
         result[xapi] = pstree(xapi)
@@ -1293,7 +1293,7 @@ def dump_xapi_rrds(cap):
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
     this_host = session.xenapi.session.get_this_host(session._session)
     # better way to find pool master?
-    pool = session.xenapi.pool.get_all_records().values()[0]
+    pool = list(session.xenapi.pool.get_all_records().values())[0]
     i_am_master = (this_host == pool['master'])
 
     for vm in session.xenapi.VM.get_all_records().values():
@@ -1422,7 +1422,7 @@ def filter_xapi_clusterd_db(cap):
 
         config_keys = ['cluster_config', 'old_cluster_config']
         for config_key in config_keys:
-            if config_key in clusterd_data.keys():
+            if config_key in clusterd_data:
                 clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
                 clusterd_data[config_key]['authkey'] = "REMOVED"
 
@@ -1501,7 +1501,7 @@ def csl_logs(cap):
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
     this_host = session.xenapi.session.get_this_host(session._session)
     # better way to find pool master?
-    pool = session.xenapi.pool.get_all_records().values()[0]
+    pool = list(session.xenapi.pool.get_all_records().values())[0]
     i_am_master = (this_host == pool['master'])
 
     output = io.BytesIO()
@@ -1593,8 +1593,8 @@ def fd_usage(cap):
                     fd_dict[num_fds].append(name.replace('\0', ' ').strip())
         except:
             output += 'Error: Pid %d disappeared\n' % (d,)
-    keys = fd_dict.keys()
-    keys.sort(lambda a, b: int(b) - int(a))
+    keys = list(fd_dict.keys())
+    keys.sort(key=int, reverse=True)
     for k in keys:
         output += "%s: %s\n" % (k, str(fd_dict[k]))
     return output
@@ -1901,8 +1901,8 @@ def update_capabilities():
 
     # compute max time & size based on number of PIFs and VIFs
     netdevs = os.listdir('/sys/class/net')
-    num_vifs = len(filter(lambda x: x.startswith('vif'), netdevs))
-    num_pifs = len(filter(lambda x: x.startswith('eth'), netdevs))
+    num_vifs = len([vif for vif in netdevs if vif.startswith('vif')])
+    num_pifs = len([eth for eth in netdevs if eth.startswith('eth')])
     max_time = caps[CAP_NETWORK_STATUS][MAX_TIME] * (num_pifs + num_vifs)
     update_cap_time(CAP_NETWORK_STATUS, max_time)
     max_size = caps[CAP_NETWORK_STATUS][MAX_SIZE] * (num_pifs + num_vifs)
@@ -1917,7 +1917,7 @@ def update_capabilities():
     # compute max time & size based on number of domains, VBDs and VIFs
     num_vbds = 0
     if os.path.exists(BLKTAP_DEVICE_PATH):
-        num_vbds = len(filter(lambda x: x.startswith('blktap'), os.listdir(BLKTAP_DEVICE_PATH)))
+        num_vbds = len([vbd for vbd in os.listdir(BLKTAP_DEVICE_PATH) if vbd.startswith('blktap')])
     try:
         num_doms = len(xc().domain_getinfo())
     except xcError:
@@ -1974,7 +1974,9 @@ def size_of(f, pattern, negate):
 def print_capabilities():
     document = getDOMImplementation().createDocument(
         "ns", CAP_XML_ROOT, None)
-    map(lambda key: capability(document, key), [k for k in caps.keys() if not caps[k][HIDDEN]])
+    for key in caps:
+        if not caps[key][HIDDEN]:
+            capability(document, key)
     print(document.toprettyxml())
 
 def capability(document, key):
@@ -2198,8 +2200,7 @@ def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_
 
     # remove lines contain
     if allowed_keys:
-        lines = filter(lambda x: True in [x.startswith(y) for y in allowed_keys],
-                       lines)
+        lines = [l for l in lines if True in [l.startswith(y) for y in allowed_keys]]
 
     defs = [ (l[:l.find("=")], l[(l.find("=") + 1):]) for l in lines ]
 
