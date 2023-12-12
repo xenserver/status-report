@@ -553,6 +553,12 @@ def func_output(cap, label, func):
     if cap in entries:
         data[label] = {'cap': cap, 'func': func}
 
+
+def get_recent_logs(logs, verbosity):
+    logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
+    return [x[1] for x in (logs[-verbosity:] if verbosity < 9 else logs)]
+
+
 def collect_data(subdir, archive):
     process_lists = {}
 
@@ -1089,10 +1095,6 @@ exclude those logs from the archive.
         load_plugins()
     except:
         pass
-
-    def get_recent_logs(logs, verbosity):
-        logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
-        return map(lambda x: x[1], logs[-verbosity:] if verbosity < 9 else logs)
 
     xenserver_logs = \
                 [ VAR_LOG_DIR + x for x in
