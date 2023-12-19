@@ -80,7 +80,7 @@ def test_xapi_database_filter(bugtool):
     filtered = bugtool.DBFilter(original).output()
 
     # Works for Python2 equally, so we can use it to check against Python2/3 regressions:
-    assert assert_xml_element_trees_equiv(ET.fromstring(filtered), ET.fromstring(expected))
+    assert_xml_element_trees_equiv(ET.fromstring(filtered), ET.fromstring(expected))
 
     # Double-check with parseString(): Its output will differ between Py2/Py3
     # though, so we will use it for one language version at a time:
