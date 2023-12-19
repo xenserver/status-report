@@ -70,7 +70,6 @@ def assert_xml_element_trees_equiv(a, b):
     # Recursively repeat for all child nodes (expect same order of child nodes):
     for achild, bchild in zip(list(a), list(b)):
         assert assert_xml_element_trees_equiv(achild, bchild)
-    return True
 
 
 @pytest.mark.skipif(sys.version_info >= (3, 0), reason="requires python2")
