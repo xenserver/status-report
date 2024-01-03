@@ -1,9 +1,6 @@
 """tests/unit/test_dir_list.py: Unit-Test bugtool.dir_list(cap, path_list)"""
-import sys
-import pytest
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 0), reason="dir_list() is not yet py3")
 def test_dir_list(bugtool):
     """Test the bugtool function dir_list(cap, path_list) to perform as expected"""
 
@@ -22,11 +19,6 @@ def test_dir_list(bugtool):
 
     # Assert matching cap and path_list produces expected_data
     bugtool.dir_list(cap=cap, path_list=path_list)
-
-    # This assert shows that dir_list() needs an update for Python3:
-    if sys.version_info.major > 2:
-        assert bugtool.data == {}
-        return
 
     expected_data = {
         "ls -l "
