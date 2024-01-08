@@ -120,3 +120,13 @@ repos:
         name: Run pytype to check the unit tests for any typing warnings (does not work on bugtool yet)
         exclude: xen-bugtool
         additional_dependencies: [pytest]
+
+
+-   repo: local
+    hooks:
+    -   id: git-diff # Ref: https://github.com/pre-commit/pre-commit/issues/1712
+        name: Show not staged changes (fixups may make them too)
+        entry: git diff --exit-code
+        language: system
+        pass_filenames: false
+        always_run: true
