@@ -1,7 +1,7 @@
 """tests/integration/test_system_load.py: Test xen-bugtool --entries=system-load"""
 import os
 
-from utils import check_file, run_bugtool_entry, assert_content_from_dom0_template
+from .utils import check_file, run_bugtool_entry, assert_content_from_dom0_template
 
 
 # In this test case we need to sleep for 1 sec, and it is sufficient

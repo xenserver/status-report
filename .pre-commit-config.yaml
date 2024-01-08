@@ -63,10 +63,11 @@ repos:
     hooks:
     -   id: pytest
         name: check that the Xen-Bugtool Test Environment passes
-        entry: env PYTHONDEVMODE=yes python3 -m pytest
+        entry: env PYTHONDEVMODE=yes python3 -m pytest tests/unit
         pass_filenames: false
-        language: system
+        language: python
         types: [python]
+        additional_dependencies: [defusedxml, pytest, lxml, XenAPI]
 -   repo: https://github.com/PyCQA/autoflake
     rev: v2.2.1
     hooks:
@@ -88,11 +89,13 @@ repos:
     -   id: darker
         name: Ensure that changes staged for updating xen-bugtool are black-formatted
         files: xen-bugtool
-        args: [--isort, -tpy36]
+        entry: make
+        pass_filenames: false
+        args: [darker-xen-bugtool]
         additional_dependencies:
           - isort
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.0
+    rev: v1.7.1
     hooks:
     -   id: mypy
         name: Run mypy to check e.g. that all expected arguments are passed to functions etc
@@ -103,3 +106,17 @@ repos:
     -   id: pylint
         name: Run pylint to check that docstrings are added (and all other enabled checks)
         log_file: ".git/pre-commit-pylint.log"
+-   repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.339
+    hooks:
+    -   id: pyright
+        name: Run pyright to check the unit tests for any typing warnings (use for bugtool later)
+        exclude: xen-bugtool
+        additional_dependencies: [defusedxml, pytest, lxml, XenAPI]
+-   repo: https://github.com/mattseymour/pre-commit-pytype
+    rev: '2023.5.8'
+    hooks:
+    -   id: pytype
+        name: Run pytype to check the unit tests for any typing warnings (does not work on bugtool yet)
+        exclude: xen-bugtool
+        additional_dependencies: [pytest]

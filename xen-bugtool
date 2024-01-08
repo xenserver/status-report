@@ -37,7 +37,7 @@
 # pylint: disable=useless-suppression
 # pylint: disable=missing-docstring,line-too-long,multiple-statements,unnecessary-pass
 # pylint: disable=broad-exception-raised,missing-type-doc,useless-object-inheritance
-# pylint: disable=undefined-variable,unnecessary-comprehension,super-init-not-called
+# pylint: disable=undefined-variable,unnecessary-comprehension
 
 from __future__ import print_function
 
@@ -52,7 +52,6 @@ import platform
 import pprint
 import re
 import socket
-import StringIO
 import sys
 import tarfile
 import time
@@ -72,9 +71,17 @@ import defusedxml.sax
 if sys.version_info.major == 2:
     from commands import getoutput  # pyright: ignore[reportMissingImports]
     from urllib import urlopen  # type:ignore[attr-defined]
+
+    unicode_type = unicode  # pyright:ignore[reportUndefinedVariable] # pylint: disable=unicode-builtin
 else:
     from subprocess import getoutput
     from urllib.request import urlopen
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:  # Used for type checking only:
+        from _typeshed import ReadableBuffer  # pylint: disable=unused-import
+
+    unicode_type = str
 
 # Fixed in 3.7: https://github.com/python/cpython/pull/12628
 # Monkey-patch zipfile's __del__ function to be less stupid
@@ -197,7 +204,7 @@ SYSTEMD_CONF_DIR = '/etc/systemd'
 CGRULES_CONF = '/etc/cgrules.conf'
 XAPI_LOCAL_DB = '/var/xapi/local.db'
 HOST_CRASHDUMPS_DIR = '/var/crash'
-HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile('.*/(\.sacrificial-space-for-logs|coredump\.bin)$')
+HOST_CRASHDUMP_LOGS_EXCLUDES_RE = re.compile(r".*/(\.sacrificial-space-for-logs|coredump\.bin)$")
 XAPI_DEBUG_DIR = '/var/xapi/debug'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 UPDATE_APPLIED_DIR = '/var/update/applied'
@@ -475,7 +482,7 @@ data = {}
 dev_null = open('/dev/null', 'r+')
 
 def no_unicode(x):
-    if isinstance(x, unicode):
+    if isinstance(x, unicode_type):
         return x.encode('utf-8')
     return x
 
@@ -510,7 +517,8 @@ def dir_list(cap, path_list, recursive = False):
         flags = '-lR'
 
     pl = []
-    map(lambda x: pl.extend(glob.glob(x)), path_list)
+    for path in path_list:
+        pl.extend(glob.glob(path))
 
     for p in pl:
         cmd_output(cap, [LS, flags, p])
@@ -518,7 +526,8 @@ def dir_list(cap, path_list, recursive = False):
 def file_output(cap, path_list):
     if cap in entries:
         pl = []
-        map(lambda x: pl.extend(glob.glob(x)), path_list)
+        for path in path_list:
+            pl.extend(glob.glob(path))
 
         for p in pl:
             try:
@@ -546,6 +555,19 @@ def func_output(cap, label, func):
     if cap in entries:
         data[label] = {'cap': cap, 'func': func}
 
+
+def get_recent_logs(logs, verbosity):
+    logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
+    return [x[1] for x in (logs[-verbosity:] if verbosity < 9 else logs)]
+
+
+def include_inventory(archive, dir):
+    """Add the inventory.xml to the archive, filled from the current data"""
+
+    info = StringIOmtime(make_inventory(data, dir))
+    archive.add_path_with_data(construct_filename(dir, "inventory.xml", {}), info)
+
+
 def collect_data(subdir, archive):
     process_lists = {}
 
@@ -562,7 +584,7 @@ def collect_data(subdir, archive):
                            filename.startswith('/sys/')):
             # proc files must be read into memory
             try:
-                f = open(v['filename'], 'r')
+                f = open(v["filename"], "rb")
                 s = f.read(unlimited_data and -1 or caps[cap][MAX_SIZE])
                 f.close()
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
@@ -574,13 +596,15 @@ def collect_data(subdir, archive):
                     cap_sizes[cap] += len(s)
                 else:
                     log("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
-            except:
-                pass
+            except IOError as e:
+                if e.errno != 2:
+                    log("IOError reading %s: %s" % (filename, e))
         elif "func" in v:
             try:
-                s = v['func'](cap)
+                s = no_unicode(v["func"](cap))
             except Exception:
                 s = traceback.format_exc()
+                log(s)
             if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                     cap_sizes[cap] < caps[cap][MAX_SIZE]:
                 v['output'] = StringIOmtime(s)
@@ -689,7 +713,7 @@ def main(argv = None):  # pylint: disable=too-many-statements
                    CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
                    CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
     else:
-        entries = [e for e in caps.keys() if caps[e][CHECKED]]
+        entries = [cap_key for cap_key in caps if caps[cap_key][CHECKED]]
 
     update_capabilities()
 
@@ -735,7 +759,7 @@ def main(argv = None):  # pylint: disable=too-many-statements
                 return 2
 
         elif k in ['-a', '--all']:
-            entries = caps.keys()
+            entries = list(caps.keys())
         elif k in ['-u', '--unlimited']:
             unlimited_data = True
             unlimited_time = True
@@ -1082,10 +1106,6 @@ exclude those logs from the archive.
     except:
         pass
 
-    def get_recent_logs(logs, verbosity):
-        logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
-        return map(lambda x: x[1], logs[-verbosity:] if verbosity < 9 else logs)
-
     xenserver_logs = \
                 [ VAR_LOG_DIR + x for x in
                   ['xensource.log', 'audit.log', 'xenstored-access.log',
@@ -1172,9 +1192,7 @@ exclude those logs from the archive.
     collect_data(subdir, archive)
 
     # include inventory
-    inventory = {'cap': None, 'output': StringIOmtime(no_unicode(make_inventory(data, subdir)))}
-    archive.add_path_with_data(construct_filename(subdir, 'inventory.xml', inventory),
-                StringIOmtime(no_unicode(make_inventory(data, subdir))))
+    include_inventory(archive, subdir)
 
     if archive.close():
         res = 0
@@ -1189,8 +1207,8 @@ exclude those logs from the archive.
         pass
 
     logging.debug("Category sizes (max, actual):\n")
-    for c in caps.keys():
-        logging.debug("    %s (%d, %d)", c, caps[c][MAX_SIZE], cap_sizes[c])
+    for key in entries:
+        logging.debug("    %s (%d, %d)", key, caps[key][MAX_SIZE], cap_sizes[key])
     return res
 
 def find_tapdisk_logs():
@@ -1225,7 +1243,7 @@ def clean_tapdisk_logs():
 def dump_xapi_subprocess_info(cap):
     """Check which fds are open by xapi and its subprocesses to diagnose faults like CA-10543.
        Returns a string containing a pretty-printed pstree-like structure. """
-    pids = filter(lambda x: x.isdigit(), os.listdir("/proc"))
+    all_pids = [proc_entry for proc_entry in os.listdir("/proc") if proc_entry.isdigit()]
     def readlines(filename):
         lines = ''
         try:
@@ -1248,7 +1266,7 @@ def dump_xapi_subprocess_info(cap):
         return None
     def pstree(pid):
         result = { "cmdline": cmdline(pid) }
-        child_pids = filter(lambda x:parent(x) == pid, pids)
+        child_pids = [child_pid for child_pid in all_pids if parent(child_pid) == pid]
         children = { }
         for child in child_pids:
             children[child] = pstree(child)
@@ -1261,8 +1279,8 @@ def dump_xapi_subprocess_info(cap):
                 pass
         result['fds'] = fds
         return result
-    xapis = filter(lambda x: cmdline(x).startswith("/opt/xensource/bin/xapi"), pids)
-    xapis = filter(lambda x: parent(x) == "1", xapis)
+    xapis = [pid for pid in all_pids if cmdline(pid).startswith("/opt/xensource/bin/xapi")]
+    xapis = [pid for pid in xapis if parent(pid) == "1"]
     result = {}
     for xapi in xapis:
         result[xapi] = pstree(xapi)
@@ -1275,7 +1293,7 @@ def dump_xapi_rrds(cap):
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
     this_host = session.xenapi.session.get_this_host(session._session)
     # better way to find pool master?
-    pool = session.xenapi.pool.get_all_records().values()[0]
+    pool = list(session.xenapi.pool.get_all_records().values())[0]
     i_am_master = (this_host == pool['master'])
 
     for vm in session.xenapi.VM.get_all_records().values():
@@ -1344,7 +1362,7 @@ class XapiDBContentHandler(xml.sax.ContentHandler):
         if name == "row":
             self._filter(attrs._attrs)
 
-        element = Element(tag=name, attrib=attrs._attrs)
+        element = Element(name, attrib=attrs._attrs)
         self.elements_stack.append(element)
 
     def endElement(self, name):
@@ -1370,11 +1388,12 @@ class DBFilter:
         # remove values for any keys containing the word 'password'
         # example input snippet to filter:
         #   '%.(\'incoming_chappassword\'%.\'TC12818outgoingpasswd\'))" host="Opaq'
+        raw_xml = raw_xml if isinstance(raw_xml, str) else raw_xml.decode()
         nopass_xml = re.sub(r"\('(\w*(?:password)\w*)'%\.'\w*'\)", r"('\1'%.'REMOVED')", raw_xml)
 
         self.content_handler = XapiDBContentHandler()
         try:
-            defusedxml.sax.parseString(nopass_xml, self.content_handler)
+            defusedxml.sax.parseString(no_unicode(nopass_xml), self.content_handler)
         except xml.sax._exceptions.SAXParseException:
             pass  # parse command output line by line, first line just headers
 
@@ -1388,7 +1407,7 @@ def filter_db_pii(s, state):
 
 clipboard_match = re.compile(r'^/local/domain/(\d+)/data/((set)|(report))_clipboard')
 def filter_xenstore_secrets(s, state):
-    match = clipboard_match.search(s)
+    match = clipboard_match.search(s.decode())
     if match:
         return '/local/domain/%s/data/%s_clipboard = <filtered for security>\n' % (match.group(1), match.group(2))
     else:
@@ -1403,7 +1422,7 @@ def filter_xapi_clusterd_db(cap):
 
         config_keys = ['cluster_config', 'old_cluster_config']
         for config_key in config_keys:
-            if config_key in clusterd_data.keys():
+            if config_key in clusterd_data:
                 clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
                 clusterd_data[config_key]['authkey'] = "REMOVED"
 
@@ -1463,7 +1482,7 @@ def dump_scsi_hosts(cap):
     return output
 
 def module_info(cap):
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     modules = open(PROC_MODULES, 'r')
     procs = []
 
@@ -1474,7 +1493,7 @@ def module_info(cap):
 
     run_procs([procs])
 
-    return output.getvalue()
+    return output.getvalue().decode()
 
 def csl_logs(cap):
     socket.setdefaulttimeout(5)
@@ -1482,10 +1501,10 @@ def csl_logs(cap):
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
     this_host = session.xenapi.session.get_this_host(session._session)
     # better way to find pool master?
-    pool = session.xenapi.pool.get_all_records().values()[0]
+    pool = list(session.xenapi.pool.get_all_records().values())[0]
     i_am_master = (this_host == pool['master'])
 
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = []
     csl_targets_fetched = []
 
@@ -1517,40 +1536,46 @@ def csl_logs(cap):
     return output.getvalue()
 
 def multipathd_topology(cap):
-    pipe = Popen([MULTIPATHD, '-k'], bufsize=1, stdin=PIPE,
-                     stdout=PIPE, stderr=dev_null)
-    stdout, _ = pipe.communicate('show topology')
+    pipe = Popen(
+        [MULTIPATHD, "-k"],
+        universal_newlines=sys.version_info > (3, 0),
+        bufsize=1,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=dev_null,
+    )
+    stdout, _ = pipe.communicate("show topology")
 
     return stdout
 
 def dp_list():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = [ProcOutput([OVS_DPCTL, 'dump-dps'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
 
     run_procs([procs])
 
     if not procs[0].timed_out:
-        return output.getvalue().splitlines()
+        return output.getvalue().decode().splitlines()
     return []
 
 def br_list():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = [ProcOutput([OVS_VSCTL, 'list-br'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
 
     run_procs([procs])
 
     if not procs[0].timed_out:
-        return output.getvalue().splitlines()
+        return output.getvalue().decode().splitlines()
     return []
 
 def bond_list():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     procs = [ProcOutput([OVS_APPCTL, 'bond/list'], caps[CAP_NETWORK_STATUS][MAX_TIME], output)]
 
     run_procs([procs])
 
     if not procs[0].timed_out:
-        bonds = output.getvalue().splitlines()[1:]
+        bonds = output.getvalue().decode().splitlines()[1:]
         return [x.split('\t')[0] for x in bonds]
     return []
 
@@ -1568,8 +1593,8 @@ def fd_usage(cap):
                     fd_dict[num_fds].append(name.replace('\0', ' ').strip())
         except:
             output += 'Error: Pid %d disappeared\n' % (d,)
-    keys = fd_dict.keys()
-    keys.sort(lambda a, b: int(b) - int(a))
+    keys = list(fd_dict.keys())
+    keys.sort(key=int, reverse=True)
     for k in keys:
         output += "%s: %s\n" % (k, str(fd_dict[k]))
     return output
@@ -1580,6 +1605,8 @@ def load_plugins(just_capabilities = False):
         for node in nodelist:
             if node.nodeType == node.TEXT_NODE:
                 rc += node.data
+        if sys.version_info > (3, 0):
+            return rc
         return rc.encode()
 
     def getBoolAttr(el, attr, default = False):
@@ -1813,7 +1840,7 @@ def make_inventory(inventory, subdir):
 
     for inventory_key, inventory_item in inventory.items():
         inventory_entry(document, subdir, inventory_key, inventory_item)
-    return document.toprettyxml()
+    return document.toprettyxml(encoding="utf-8")
 
 def inventory_entry(document, subdir, k, v):
     try:
@@ -1862,7 +1889,7 @@ def construct_filename(subdir, k, v):
         if s.find('.') == -1:
             s += '.out'
 
-    return no_unicode(os.path.join(subdir, s))
+    return os.path.join(subdir, s)
 
 
 def update_capabilities():
@@ -1874,8 +1901,8 @@ def update_capabilities():
 
     # compute max time & size based on number of PIFs and VIFs
     netdevs = os.listdir('/sys/class/net')
-    num_vifs = len(filter(lambda x: x.startswith('vif'), netdevs))
-    num_pifs = len(filter(lambda x: x.startswith('eth'), netdevs))
+    num_vifs = len([vif for vif in netdevs if vif.startswith('vif')])
+    num_pifs = len([eth for eth in netdevs if eth.startswith('eth')])
     max_time = caps[CAP_NETWORK_STATUS][MAX_TIME] * (num_pifs + num_vifs)
     update_cap_time(CAP_NETWORK_STATUS, max_time)
     max_size = caps[CAP_NETWORK_STATUS][MAX_SIZE] * (num_pifs + num_vifs)
@@ -1890,7 +1917,7 @@ def update_capabilities():
     # compute max time & size based on number of domains, VBDs and VIFs
     num_vbds = 0
     if os.path.exists(BLKTAP_DEVICE_PATH):
-        num_vbds = len(filter(lambda x: x.startswith('blktap'), os.listdir(BLKTAP_DEVICE_PATH)))
+        num_vbds = len([vbd for vbd in os.listdir(BLKTAP_DEVICE_PATH) if vbd.startswith('blktap')])
     try:
         num_doms = len(xc().domain_getinfo())
     except xcError:
@@ -1947,7 +1974,9 @@ def size_of(f, pattern, negate):
 def print_capabilities():
     document = getDOMImplementation().createDocument(
         "ns", CAP_XML_ROOT, None)
-    map(lambda key: capability(document, key), [k for k in caps.keys() if not caps[k][HIDDEN]])
+    for key in caps:
+        if not caps[key][HIDDEN]:
+            capability(document, key)
     print(document.toprettyxml())
 
 def capability(document, key):
@@ -1976,13 +2005,13 @@ def yes(prompt):
 
 
 def mdadm_arrays():
-    output = StringIO.StringIO()
+    output = io.BytesIO()
     run_procs([[ProcOutput([MDADM, '--detail', '--scan'],
                            caps[CAP_DISK_INFO][MAX_TIME], output)]])
     # Format along the lines of:
     # ARRAY /dev/mdN metadata=xxx [name=yyy] UUID=zzz
     try:
-        for line in output.getvalue().split("\n"):
+        for line in output.getvalue().decode().split("\n"):
             parts = line.split(" ")
 
             if len(parts) < 2 or parts[0] != "ARRAY":
@@ -2036,13 +2065,22 @@ class ProcOutput:
         try:
             if ProcOutput.debug:
                 output_ts("Starting '%s'" % self.cmdAsStr())
-            self.proc = Popen(self.command, bufsize=1, stdin=dev_null, stdout=PIPE, stderr=dev_null, shell=isinstance(self.command, str))
+            self.proc = Popen(
+                self.command,
+                # Python3 would issue the warning that line buffering
+                # is not available in binary mode, remove this later:
+                bufsize=1 if sys.version_info < (3, 0) else -1,
+                stdin=dev_null,
+                stdout=PIPE,
+                stderr=dev_null,
+                shell=isinstance(self.command, str),
+            )
             old = fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_GETFD)
             fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             self.running = True
             self.failed = False
-        except:
-            output_ts("'%s' failed" % self.cmdAsStr())
+        except Exception as e:
+            output_ts("'%s' failed: %s" % (self.cmdAsStr(), e))
             self.running = False
             self.failed = True
 
@@ -2060,7 +2098,7 @@ class ProcOutput:
     def read_line(self):
         assert self.running
         line = self.proc.stdout.readline()
-        if line == '':
+        if not line:
             # process exited
             self.status = self.proc.wait()
             self.proc = None
@@ -2162,8 +2200,7 @@ def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_
 
     # remove lines contain
     if allowed_keys:
-        lines = filter(lambda x: True in [x.startswith(y) for y in allowed_keys],
-                       lines)
+        lines = [l for l in lines if True in [l.startswith(y) for y in allowed_keys]]
 
     defs = [ (l[:l.find("=")], l[(l.find("=") + 1):]) for l in lines ]
 
@@ -2177,14 +2214,18 @@ def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_
     return dict(defs)
 
 
-class StringIOmtime(StringIO.StringIO):
-    def __init__(self, buf = ''):
-        StringIO.StringIO.__init__(self, buf)
+class StringIOmtime(io.BytesIO):
+    """Collect file content with modification time attribute for TarOutput and ZipOutput"""
+
+    def __init__(self, buf=b""):  # type: (StringIOmtime, bytes) -> None
+        """Init the object and initialize the attribute self.mtime using the current time"""
+        io.BytesIO.__init__(self, buf)
         self.mtime = time.time()
 
-    def write(self, s):
-        StringIO.StringIO.write(self, s)
+    def write(self, s):  # type: (StringIOmtime, ReadableBuffer) -> int
+        """Add the given string or bytes buffer object with mtime for TarOutput/ZipOutput"""
         self.mtime = time.time()
+        return io.BytesIO.write(self, no_unicode(s))
 
 
 if __name__ == "__main__":

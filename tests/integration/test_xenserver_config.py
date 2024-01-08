@@ -1,7 +1,7 @@
 """tests/integration/test_xenserver_config.py: Test xen-bugtool --entries=xenserver-config"""
 import os
 
-from utils import assert_cmd, check_file, run_bugtool_entry, assert_content_from_dom0_template
+from .utils import assert_cmd, check_file, run_bugtool_entry, assert_content_from_dom0_template
 
 
 def test_xenserver_config(output_archive_type):

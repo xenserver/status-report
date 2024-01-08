@@ -4,8 +4,6 @@ import sys
 import xml.dom.minidom
 import xml.etree.ElementTree as ET
 
-import pytest
-
 
 testdir = os.path.dirname(__file__)
 original = r"""<?xml version="1.0" ?>
@@ -72,7 +70,6 @@ def assert_xml_element_trees_equiv(a, b):
         assert_xml_element_trees_equiv(achild, bchild)
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 0), reason="requires python2")
 def test_xapi_database_filter(bugtool):
     """Assert that bugtool.DBFilter().output() filters the xAPI database as expected"""
 

@@ -11,7 +11,15 @@ def testdir():
 
 
 @pytest.fixture(scope="session")
-def bugtool(testdir):
+def dom0_template(testdir):
+    """Test fixture to get the directory of the dom0 template and adding it's /usr/sbin to the PATH"""
+    dom0_root_dir = testdir + "/../integration/dom0-template"
+    os.environ["PATH"] = dom0_root_dir + "/usr/sbin"  # for modinfo, mdadm, etc
+    return dom0_root_dir
+
+
+@pytest.fixture(scope="session")
+def imported_bugtool(testdir):
     """Test fixture to import the xen-bugtool script as a module for executing unit tests on functions"""
 
     # This uses the deprecated imp module because it needs also to run with Python2.7 for now:
@@ -37,4 +45,14 @@ def bugtool(testdir):
             spec.loader.exec_module(module)
             return module
 
-    return import_from_file("bugtool", testdir + "/../../xen-bugtool")
+    bugtool = import_from_file("xen-bugtool", testdir + "/../../xen-bugtool")
+    bugtool.ProcOutput.debug = True
+    return bugtool
+
+
+@pytest.fixture(scope="function")
+def bugtool(imported_bugtool):
+    """Test fixture for unit tests, initializes the bugtool data dict for each test"""
+    # Init import_bugtool.data, so each unit test function gets it pristine:
+    imported_bugtool.data = {}
+    return imported_bugtool
