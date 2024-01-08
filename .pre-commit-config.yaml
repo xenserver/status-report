@@ -64,10 +64,39 @@ repos:
     -   id: pytest
         name: check that the Xen-Bugtool Test Environment passes
         entry: env PYTHONDEVMODE=yes python3 -m pytest tests/unit
+            --cov xen-bugtool
+            --cov tests/unit
+            --junitxml=.git/pytest.xml
+            --cov-report term-missing
+            --cov-report html:.git/coverage.html
+            --cov-report xml:.git/coverage.xml
+        require_serial: true
         pass_filenames: false
         language: python
         types: [python]
-        additional_dependencies: [defusedxml, pytest, lxml, XenAPI]
+        additional_dependencies: [coverage, defusedxml, pytest-coverage, lxml, XenAPI]
+
+
+    -   id: diff-cover
+        name: check that that the changed lines are covered by tests
+        entry: diff-cover --ignore-whitespace --compare-branch=origin/master
+            --show-uncovered --html-report .git/coverage-diff.html
+            --fail-under 100 .git/coverage.xml
+        require_serial: true
+        pass_filenames: false
+        language: python
+        types: [python]
+        additional_dependencies: [diff-cover]
+
+
+    -   id: coverage-report
+        name: check coverage report for minimum overall coverage
+        entry: coverage report --fail-under 55 #| tee .git/coverage.txt
+        require_serial: true
+        pass_filenames: false
+        language: python
+        types: [python]
+        additional_dependencies: [coverage]
 -   repo: https://github.com/PyCQA/autoflake
     rev: v2.2.1
     hooks:
