@@ -31,7 +31,7 @@ def run_test_functions_with_private_tmpfs_output_directory():
     # To provide test files below /var, subdirectories can be bind-mounted/created here
     # (or the tmpfs mount above could be done on BUGTOOL_OUTPUT_DIR)
     # run_bugtool_entry() will chdir to the output directory, so change back afterwards:
-    srcdir = os.getcwd()
+    src_dir = os.getcwd()
     yield
     os.chdir(BUGTOOL_OUTPUT_DIR)
     # Assert that the test case did not leave any unchecked output file as in the output directory:
@@ -44,9 +44,9 @@ def run_test_functions_with_private_tmpfs_output_directory():
         print(remaining_files)
         os.chdir(BUGTOOL_OUTPUT_DIR)
         run(["find", "-type", "f"])
-        os.chdir(srcdir)
+        os.chdir(src_dir)
         print("Ensure that these files are checked, remove them when checked.")
         umount("/var")
         raise RuntimeError("Remaining (possibly unchecked) files found. Run 'pytest -rF' for logs")
-    os.chdir(srcdir)
+    os.chdir(src_dir)
     umount("/var")
