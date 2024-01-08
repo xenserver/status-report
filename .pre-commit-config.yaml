@@ -94,20 +94,26 @@ repos:
         args: [darker-xen-bugtool]
         additional_dependencies:
           - isort
+
+
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+    rev: v1.8.0
     hooks:
     -   id: mypy
         name: Run mypy to check e.g. that all expected arguments are passed to functions etc
         additional_dependencies: [defusedxml, pytest, types-lxml]
+
+
 -   repo: https://github.com/pycqa/pylint
-    rev: v3.0.2
+    rev: v3.0.3
     hooks:
     -   id: pylint
         name: Run pylint to check that docstrings are added (and all other enabled checks)
         log_file: ".git/pre-commit-pylint.log"
+
+
 -   repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.339
+    rev: v1.1.345
     hooks:
     -   id: pyright
         name: Run pyright to check the unit tests for any typing warnings (use for bugtool later)
