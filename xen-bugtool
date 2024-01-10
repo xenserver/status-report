@@ -557,7 +557,11 @@ def func_output(cap, label, func):
 
 
 def get_recent_logs(logs, verbosity):
+    """Return list of filenames, sorted by mtime. On verbosity<9, only the first x"""
+
+    # Get the mtime of each logfile in a list of tuples and sort the tuples by mtime:
     logs = sorted([(os.stat(e).st_mtime, e) for e in logs])
+    # On verbosity<9, return the latest <verbosity> elements, otherwise all logfiles:
     return [x[1] for x in (logs[-verbosity:] if verbosity < 9 else logs)]
 
 
@@ -1592,7 +1596,7 @@ def fd_usage(cap):
                         fd_dict[num_fds] = []
                     fd_dict[num_fds].append(name.replace('\0', ' ').strip())
         except:
-            output += 'Error: Pid %d disappeared\n' % (d,)
+            output += "Error: Pid %s disappeared\n" % d
     keys = list(fd_dict.keys())
     keys.sort(key=int, reverse=True)
     for k in keys:
