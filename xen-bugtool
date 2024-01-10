@@ -1997,11 +1997,6 @@ def capability(document, key):
     document.getElementsByTagName(CAP_XML_ROOT)[0].appendChild(el)
 
 
-def prettyDict(d):
-    format = '%%-%ds: %%s' % max(map(len, [k for k, _ in d.items()]))
-    return '\n'.join([format % i for i in d.items()]) + '\n'
-
-
 def yes(prompt):
     yn = input(prompt)
 
