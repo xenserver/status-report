@@ -1812,7 +1812,8 @@ class TarSubArchive(io.BytesIO):
         :param name: Recorded path of the the file in the tar archive for extraction
         :param filename: Real file name of the file to be added to the tar archive
         """
-        self.file.addfile(self.file.gettarinfo(filename, name), open(filename, "rb"))
+        with open(filename, "rb") as buffered_reader:
+            self.file.addfile(self.file.gettarinfo(filename, name), buffered_reader)
 
 class ArchiveWithTarSubarchives(object):
     """Base class for TarOutput and ZipOutput with support to create sub-archives"""
@@ -1877,7 +1878,9 @@ class TarOutput(ArchiveWithTarSubarchives):
         s = os.stat(filename)
         ti.mtime = s.st_mtime
         ti.size = s.st_size
-        self.tf.addfile(ti, file(filename,'rb'))
+        with open(filename, "rb") as buffered_reader:
+            self.tf.addfile(ti, buffered_reader)
+
 
     def add_path_with_data(self, name, data):  # type:(str, StringIOmtime) -> None
         ti = self._getTi(name)
