@@ -89,9 +89,20 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
 
+      # https://docs.python.org/3/library/devmode.html#resourcewarning-example
+      # If pytest runs with PYTHONDEVMODE=yes, it enables resource checks like
+      # unclosed file warnings. Configure GitHub to show all such warnings as
+      # annotations at the source location they occur in the PR code review:
+
+      - run: echo "::add-matcher::.github/workflows/PYTHONWARNINGS-problemMatcher.json"
+
       - uses: pre-commit/action@v3.0.0
         name: Run pre-commit checks
+        with:
+          # Show the output of the commands for the problem matcher, see above.
+          extra_args: --all-files --verbose
         env:
+          PYTHONDEVMODE: yes  # Enable Python3 checks. See the comment above.
           # Skip the no-commit-to-branch check inside of GitHub CI (for CI on merge to master)
           SKIP: no-commit-to-branch
 

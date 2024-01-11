@@ -13,8 +13,24 @@ def assert_valid_inventory_schema(inventory_tree):
         XMLSchema(parse(xml_schema)).assertValid(inventory_tree)
 
 
-def assert_mock_bugtool_plugin_output(extracted):
+def assert_mock_bugtool_plugin_output(temporary_directory, subdir, names):
     """Assertion check of the output files from the mock bugtool plugin"""
+
+    # Assert the list of file names in the status report archive:
+    expected_names = [
+        subdir + "/etc/group",
+        subdir + "/etc/passwd.tar",
+        subdir + "/inventory.xml",
+        subdir + "/ls-l-%etc.out",
+        subdir + "/proc/self/status",
+        subdir + "/proc/sys/fs/epoll/max_user_watches",
+        subdir + "/proc_version.out",
+    ]
+    assert sorted(names) == expected_names
+
+    extracted = "%s/%s/" % (temporary_directory, subdir)
+
+    # Will be refactored to be more easy in a separate commit soon:
     assert_valid_inventory_schema(parse(extracted + "inventory.xml"))
     with open(extracted + "proc_version.out") as proc_version:
         assert proc_version.read()[:14] == "Linux version "
@@ -24,6 +40,17 @@ def assert_mock_bugtool_plugin_output(extracted):
         assert status.read()[:5] == "Name:"
     with open(extracted + "proc/sys/fs/epoll/max_user_watches") as max_user_watches:
         assert int(max_user_watches.read()) > 0
+    with open(extracted + "etc/group") as group:
+        assert group.readline() == "root:x:0:\n"
+
+    # Check the contents of the sub-archive "etc/passwd.tar":
+    with tarfile.TarFile(extracted + "etc/passwd.tar") as tar:
+        assert tar.getnames() == [subdir + "/etc/passwd"]
+        # TarFile.extractfile() does not support context managers on Python2:
+        passwd = tar.extractfile(subdir + "/etc/passwd")
+        assert passwd
+        assert passwd.readline() == b"root:x:0:0:root:/root:/bin/bash\n"
+        passwd.close()
 
 
 def minimal_bugtool(bugtool, dom0_template, archive, subdir):
@@ -32,7 +59,9 @@ def minimal_bugtool(bugtool, dom0_template, archive, subdir):
     # Load the mock plugin from dom0_template and process the plugin's caps:
     bugtool.PLUGIN_DIR = dom0_template + "/etc/xensource/bugtool"
     bugtool.entries = ["mock"]
+    archive.declare_subarchive("/etc/passwd", subdir + "/etc/passwd.tar")
     bugtool.load_plugins(just_capabilities=False)
+    # Mock the 2nd argument of the ls -l /etc to collect it using dom0_template:
     bugtool.data["ls -l /etc"]["cmd_args"][2] = dom0_template + "/etc"
     bugtool.collect_data(subdir, archive)
     bugtool.include_inventory(archive, subdir)
@@ -51,10 +80,9 @@ def test_tar_output(bugtool, tmp_path, dom0_template):
 
     # Check the TarFile contents
     tmp = tmp_path.as_posix()
-    tar_archive = tarfile.TarFile(tmp + "/tarball.tar")
-    tar_archive.extractall(tmp)
-    tar_archive.close()
-    assert_mock_bugtool_plugin_output(tmp + "/" + subdir + "/")
+    with tarfile.TarFile(tmp + "/tarball.tar") as tar:
+        tar.extractall(tmp)
+        assert_mock_bugtool_plugin_output(tmp, subdir, tar.getnames())
 
 
 def test_zip_output(bugtool, tmp_path, dom0_template):
@@ -69,5 +97,6 @@ def test_zip_output(bugtool, tmp_path, dom0_template):
 
     # Check the ZipFile contents
     tmp = tmp_path.as_posix()
-    zipfile.ZipFile(tmp + "/zipfile.zip").extractall(tmp)
-    assert_mock_bugtool_plugin_output(tmp + "/" + subdir + "/")
+    with zipfile.ZipFile(tmp + "/zipfile.zip") as zip:
+        zip.extractall(tmp)
+        assert_mock_bugtool_plugin_output(tmp, subdir, zip.namelist())
