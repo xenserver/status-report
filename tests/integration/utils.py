@@ -51,19 +51,23 @@ def check_file(path):
 
 
 def assert_content_from_dom0_template(path, control_path=None):
-    """Compare the contents of output directories or files with the test's Dom0 template directories"""
-    assert path[0] != "/"
+    """Check the given path against the files from the test's Dom0 template"""
+
+    assert path[0] != "/"  # We expect a relative path in the report archive
     control = BUGTOOL_DOM0_TEMPL + (control_path or path)
     print(control)
     if os.path.isdir(path):
+        # path is a directory, compare it recursively using dircmp():
         result = filecmp.dircmp(path, control)
         if result.diff_files or result.right_only:  # pragma: no cover
             print(result.report)
             raise RuntimeError("Missing or Differing files found in " + path)
     else:
+        if not os.path.exists(path):
+            raise AssertionError("/%s is missing in the report archive" % path)
         if not filecmp.cmp(path, control):
-            os.system("cat " + path)  # pragma: no cover
-            raise RuntimeError(control)
+            os.system("diff -u %s %s" % (path, control))  # pragma: no cover
+            raise AssertionError("/%s from report has different content" % path)
     # Remove verified output files/directories. Untested files will remain and cause the testcase to FAIL:
     try:
         os.unlink(path)
