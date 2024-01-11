@@ -26,9 +26,10 @@ def assert_mock_bugtool_plugin_output(extracted):
         assert int(max_user_watches.read()) > 0
 
 
-def minimal_bugtool(bugtool, dom0_template, archive, subdir):
+def minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker):
     """Load the plugins from the template and include the generated inventory"""
 
+    mocker.patch("xen-bugtool.time.strftime", return_value="time.strftime")
     # Load the mock plugin from dom0_template and process the plugin's caps:
     bugtool.PLUGIN_DIR = dom0_template + "/etc/xensource/bugtool"
     bugtool.entries = ["mock"]
@@ -39,7 +40,30 @@ def minimal_bugtool(bugtool, dom0_template, archive, subdir):
     archive.close()
 
 
-def test_tar_output(bugtool, tmp_path, dom0_template):
+def assert_minimal_bugtool(bugtool, state_archive, dom0_template, cap):
+    """Check the output of the bugtool unit test.
+    :param bugtool: The tested bugtool module object
+    :param state_archive: The tested bugtool output archive.
+    :param dom0_template: The dom0 template used in the unit test.
+    :param cap: The output (stdout, stderr) pytest captured from the unit test.
+
+    :raises AssertionError: When the output does not match the expected output.
+    """
+    captured_stdout = cap.readouterr().out
+
+    # When debug output from ProcOutput is enabled, "Starting" is printed:
+    if bugtool.ProcOutput.debug:
+        version = "cat /proc/version"
+        etc_dir = "ls -l %s/etc" % dom0_template
+        for msg in [version, etc_dir]:
+            assert "[time.strftime]  Starting '%s'\n" % msg in captured_stdout
+
+    filetype = "tarball" if ".tar" in state_archive.filename else "archive"
+    written = "Writing %s %s successful.\n" % (filetype, state_archive.filename)
+    assert captured_stdout[-len(written) :] == written
+
+
+def test_tar_output(bugtool, tmp_path, dom0_template, mocker, capfd):
     """Assert that a bugtool unit test creates a valid minimal tar archive"""
 
     bugtool.BUG_DIR = tmp_path
@@ -47,7 +71,11 @@ def test_tar_output(bugtool, tmp_path, dom0_template):
     subdir = "tar_dir"
 
     # Create a minimal bugtool output archive to test core functions:
-    minimal_bugtool(bugtool, dom0_template, archive, subdir)
+    bugtool.ProcOutput.debug = True
+    minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker)
+
+    with capfd.disabled():
+        assert_minimal_bugtool(bugtool, archive, dom0_template, capfd)
 
     # Check the TarFile contents
     tmp = tmp_path.as_posix()
@@ -57,7 +85,7 @@ def test_tar_output(bugtool, tmp_path, dom0_template):
     assert_mock_bugtool_plugin_output(tmp + "/" + subdir + "/")
 
 
-def test_zip_output(bugtool, tmp_path, dom0_template):
+def test_zip_output(bugtool, tmp_path, dom0_template, mocker, capfd):
     """Assert that a bugtool unit test creates a valid minimal zip archive"""
 
     bugtool.BUG_DIR = tmp_path
@@ -65,7 +93,11 @@ def test_zip_output(bugtool, tmp_path, dom0_template):
     subdir = "zip_dir"
 
     # Create a minimal bugtool output archive to test core functions:
-    minimal_bugtool(bugtool, dom0_template, archive, subdir)
+    bugtool.ProcOutput.debug = True
+    minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker)
+
+    with capfd.disabled():
+        assert_minimal_bugtool(bugtool, archive, dom0_template, capfd)
 
     # Check the ZipFile contents
     tmp = tmp_path.as_posix()

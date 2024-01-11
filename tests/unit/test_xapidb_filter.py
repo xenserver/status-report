@@ -1,8 +1,8 @@
 """tests/unit/test_xapidb_filter.py: Ensure that the xen-bugtool.DBFilter() filters the XAPI DB properly"""
 import os
 import sys
-import xml.dom.minidom
-import xml.etree.ElementTree as ET
+from xml.dom.minidom import parseString
+from xml.etree.ElementTree import fromstring
 
 
 testdir = os.path.dirname(__file__)
@@ -70,15 +70,20 @@ def assert_xml_element_trees_equiv(a, b):
         assert_xml_element_trees_equiv(achild, bchild)
 
 
-def test_xapi_database_filter(bugtool):
-    """Assert that bugtool.DBFilter().output() filters the xAPI database as expected"""
+def assert_xml_str_equiv(filtered, expected):
+    """Assert that the given dummy Xen-API database to filtered as expected"""
 
-    filtered = bugtool.DBFilter(original).output()
-
-    # Works for Python2 equally, so we can use it to check against Python2/3 regressions:
-    assert_xml_element_trees_equiv(ET.fromstring(filtered), ET.fromstring(expected))
+    # Works for Python2 equally, so we can use it to check Python2/3 to work.:
+    assert_xml_element_trees_equiv(fromstring(filtered), fromstring(expected))
 
     # Double-check with parseString(): Its output will differ between Py2/Py3
     # though, so we will use it for one language version at a time:
     if sys.version_info < (3, 0):  # pragma: no cover
-        assert xml.dom.minidom.parseString(filtered).toprettyxml(indent="    ") == expected
+        assert parseString(filtered).toprettyxml(indent="    ") == expected
+
+
+def test_xapi_database_filter(bugtool):
+    """Assert bugtool.DBFilter().output() filters xAPI database like expected"""
+
+    filtered = bugtool.DBFilter(original).output()
+    assert_xml_str_equiv(filtered, expected)

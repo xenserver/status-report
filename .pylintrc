@@ -64,7 +64,8 @@ py-version=2.7
 [BASIC]
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names=i,
+good-names=b,
+           i,
            fd,
            j,
            k,
@@ -161,6 +162,7 @@ disable=anomalous-backslash-in-string,
         invalid-name,
         invalid-name,
         len-as-condition,
+        missing-type-doc,  # better do typing than type in the param docstring
         no-else-break,
         no-else-return,
         no-name-in-module,
