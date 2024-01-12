@@ -13,6 +13,7 @@
 #
 # When this works, you can enable it as the pre-commit hook for this git clone:
 # $ pre-commit install
+# $ pre-commit install --hook-type pre-push
 #
 # You can skip checks if you commit very often you don't want them to run, e.g:
 # export SKIP=mypy,pylint;git commit -m "quick save" (or for --amend)
@@ -44,7 +45,7 @@ repos:
         name: 'check and fix files to have no trailing whitespace'
     -   id: end-of-file-fixer
         name: 'check and fix that files have a trailing newline'
-        exclude: tests/integration/sar-file-collection.test.sh
+        exclude: tests/integration/dom0-template
     -   id: mixed-line-ending
         args: ['--fix=lf']
         name: 'check and fix that line endings are line feeds'
@@ -58,6 +59,58 @@ repos:
     -   id: check-merge-conflict
     -   id: check-yaml
         name: 'check the syntax of yaml files'
+
+# The fast checks are first, to fix them first,
+# pytest with code coverage at the end.
+
+-   repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.1
+    hooks:
+    -   id: autoflake
+        name: Run autoflake to automatically remove unused variables and imports
+        args: ["--in-place", "--remove-unused-variables", "--remove-all-unused-imports"]
+        language: python
+        files: \.py$
+
+
+-   repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+    -   id: black
+        name: Ensure that all files (excluding xen-bugtool itself) are black-formatted
+        args: [--safe, --quiet]
+        exclude: xen-bugtool
+
+
+-   repo: https://github.com/akaihola/darker
+    rev: 1.7.2
+    hooks:
+    -   id: darker
+        name: Ensure that changes staged for updating xen-bugtool are black-formatted
+        files: xen-bugtool
+        entry: make
+        pass_filenames: false
+        args: [darker-xen-bugtool]
+        additional_dependencies:
+          - isort
+
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+    -   id: mypy
+        name: Run mypy to check e.g. that all expected arguments are passed to functions etc
+        additional_dependencies: [defusedxml, pytest, types-lxml]
+
+
+-   repo: https://github.com/pycqa/pylint
+    rev: v3.0.3
+    hooks:
+    -   id: pylint
+        name: Run pylint to check that docstrings are added (and all other enabled checks)
+        log_file: ".git/pre-commit-pylint.log"
+
+
 # Run "python3 -m pip install -r requirements-dev.txt" to run pytest or use "git commit --no-verify":
 -   repo: local
     hooks:
@@ -74,7 +127,13 @@ repos:
         pass_filenames: false
         language: python
         types: [python]
-        additional_dependencies: [coverage, defusedxml, pytest-coverage, lxml, XenAPI]
+        additional_dependencies:
+        - coverage
+        - defusedxml
+        - pytest-coverage
+        - pytest-mock
+        - lxml
+        - XenAPI
 
 
     -   id: diff-cover
@@ -97,46 +156,10 @@ repos:
         language: python
         types: [python]
         additional_dependencies: [coverage]
--   repo: https://github.com/PyCQA/autoflake
-    rev: v2.2.1
-    hooks:
-    -   id: autoflake
-        name: Run autoflake to automatically remove unused variables and imports
-        args: ["--in-place", "--remove-unused-variables", "--remove-all-unused-imports"]
-        language: python
-        files: \.py$
--   repo: https://github.com/psf/black
-    rev: 23.11.0
-    hooks:
-    -   id: black
-        name: Ensure that all files (excluding xen-bugtool itself) are black-formatted
-        args: [--safe, --quiet]
-        exclude: xen-bugtool
--   repo: https://github.com/akaihola/darker
-    rev: 1.7.2
-    hooks:
-    -   id: darker
-        name: Ensure that changes staged for updating xen-bugtool are black-formatted
-        files: xen-bugtool
-        entry: make
-        pass_filenames: false
-        args: [darker-xen-bugtool]
-        additional_dependencies:
-          - isort
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
-    hooks:
-    -   id: mypy
-        name: Run mypy to check e.g. that all expected arguments are passed to functions etc
-        additional_dependencies: [defusedxml, pytest, types-lxml]
--   repo: https://github.com/pycqa/pylint
-    rev: v3.0.2
-    hooks:
-    -   id: pylint
-        name: Run pylint to check that docstrings are added (and all other enabled checks)
-        log_file: ".git/pre-commit-pylint.log"
+
+
 -   repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.339
+    rev: v1.1.345
     hooks:
     -   id: pyright
         name: Run pyright to check the unit tests for any typing warnings (use for bugtool later)

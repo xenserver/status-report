@@ -1,5 +1,6 @@
 """tests/unit/conftest.py: pytest fixtures for unit-testing functions in the xen-bugtool script"""
 import os
+import sys
 
 import pytest
 
@@ -14,18 +15,15 @@ def testdir():
 def dom0_template(testdir):
     """Test fixture to get the directory of the dom0 template and adding it's /usr/sbin to the PATH"""
     dom0_root_dir = testdir + "/../integration/dom0-template"
-    os.environ["PATH"] = dom0_root_dir + "/usr/sbin"  # for modinfo, mdadm, etc
     return dom0_root_dir
 
 
 @pytest.fixture(scope="session")
-def imported_bugtool(testdir):
+def imported_bugtool(testdir, dom0_template):
     """Test fixture to import the xen-bugtool script as a module for executing unit tests on functions"""
 
     # This uses the deprecated imp module because it needs also to run with Python2.7 for now:
     def import_from_file(module_name, file_path):
-        import sys
-
         if sys.version_info.major == 2:  # pragma: no cover
             import imp  # pylint: disable=deprecated-module  # pyright: ignore[reportMissingImports]
 
@@ -47,6 +45,9 @@ def imported_bugtool(testdir):
 
     bugtool = import_from_file("xen-bugtool", testdir + "/../../xen-bugtool")
     bugtool.ProcOutput.debug = True
+    # Prepend tests/mocks to force the use of our mock xen.lowlevel.xc module:
+    sys.path.insert(0, testdir + "/../mocks")
+    os.environ["PATH"] = dom0_template + "/usr/sbin"  # for modinfo, mdadm, etc
     return bugtool
 
 
@@ -55,4 +56,5 @@ def bugtool(imported_bugtool):
     """Test fixture for unit tests, initializes the bugtool data dict for each test"""
     # Init import_bugtool.data, so each unit test function gets it pristine:
     imported_bugtool.data = {}
+    sys.argv = ["xen-bugtool", "--unlimited"]
     return imported_bugtool
