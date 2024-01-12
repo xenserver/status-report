@@ -101,6 +101,7 @@ def patch_bugtool(bugtool, mocker, dom0_template, report_name, tmp_path):
         "xenserver-config",
         "xenserver-databases",
         "mock",
+        "unknown",
     ]
     sys.argv.append("--entries=" + ",".join(entries))
     bugtool.BUG_DIR = tmp
