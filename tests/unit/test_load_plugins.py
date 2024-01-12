@@ -23,14 +23,22 @@ def test_load_plugins(bugtool, dom0_template):
         False,
         9,
     )
-    # Assert the size of the created mock capability:
-    assert bugtool.cap_sizes["mock"] == 0
+    # Assert the size of the files of the created mock inventory entry:
+    assert bugtool.cap_sizes["mock"] > 0  # /etc/passwd should have content
     # Assert the entries added to the bugtool.data dict:
     assert bugtool.data == {
         "ls -l /etc": {
             "cap": "mock",
             "cmd_args": ["ls", "-l", "/etc"],
             "filter": None,
+        },
+        "/etc/passwd": {
+            "cap": "mock",
+            "filename": "/etc/passwd",
+        },
+        "/etc/group": {
+            "cap": "mock",
+            "filename": "/etc/group",
         },
         "/proc/self/status": {
             "cap": "mock",
