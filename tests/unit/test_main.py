@@ -30,6 +30,30 @@ exclude those logs from the archive.
 """
 
 
+def test_unknown_option(bugtool, caplog):
+    """Test a bugtool module to execute main() and fail for an unknown option.
+
+    This minimal test serves as a teaching and code coverage to show
+    capturing and checking of log messages using the caplog fixture.
+
+    :param bugtool: The imported bugtool module object to be patched.
+    :param caplog: The caplog pytest fixture for capturing log messages.
+    """
+
+    with caplog.at_level(logging.FATAL):
+        sys.argv[1] = "--unknown-option"
+        assert bugtool.main() == 2
+    assert len(caplog.record_tuples) == 2
+    logger, level, message = caplog.record_tuples[0]
+    assert logger == "root"
+    assert level == logging.FATAL
+    assert message == "xen-bugtool: option --unknown-option not recognized"
+    logger, level, message = caplog.record_tuples[1]
+    assert logger == "root"
+    assert level == logging.FATAL
+    assert message == bugtool.usage()
+
+
 def test_no_root_privileges(bugtool, caplog, mocker):
     """Test a bugtool module to execute main() and fail for missing root perms
 
@@ -45,6 +69,7 @@ def test_no_root_privileges(bugtool, caplog, mocker):
     mocker.patch("os.getuid", return_value=1000)
     with caplog.at_level(logging.FATAL):
         assert bugtool.main() == 1
+    assert len(caplog.record_tuples) == 1
     logger, level, message = caplog.record_tuples[0]
     assert logger == "root"
     assert level == logging.FATAL
