@@ -23,3 +23,7 @@ def test_xenserver_config(output_archive_type):
     os.chdir(entry)
     assert_content_from_dom0_template("etc/systemd")
     assert_content_from_dom0_template("etc/xensource-inventory")
+
+    assert check_file("snmp_xs_conf.out") != ""
+    assert check_file("snmpd_xs_conf.out") != ""
+    assert check_file("snmpd_conf.out") != ""
