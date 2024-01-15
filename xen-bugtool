@@ -648,7 +648,8 @@ Capture information to help diagnose bugs.
  -d, --debug         enable debug output
  --help              this help'''
 
-def main(argv = None):  # pylint: disable=too-many-statements
+
+def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
     global ANSWER_YES_TO_ALL, SILENT_MODE
     global entries, dbg
     global unlimited_data, unlimited_time
@@ -747,6 +748,10 @@ def main(argv = None):  # pylint: disable=too-many-statements
                 entries.append(item[0])
                 if item[0] in caps and len(item) > 1:
                     update_cap(item[0], VERBOSITY, min(9, max(1, int(item[1]))))
+            for key in entries:
+                if key not in caps:
+                    logging.warning("--entries=%s is not known!", key)
+                    entries.remove(key)
 
         # If the user runs the script with "-y" or "--yestoall" we don't ask
         # all the really annoying questions.
