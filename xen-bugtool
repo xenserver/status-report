@@ -1734,6 +1734,8 @@ class ArchiveWithTarSubarchives(object):
             if subarchive.file.getmembers():
                 subarchive.file.close()
                 self.add_path_with_data(subarchive.name, subarchive)
+            else:
+                subarchive.file.close()
 
     def add_path_with_data(self, _name, _data):
         """Implemented by the subclasses TarOutput/ZipOutput to add paths with data"""

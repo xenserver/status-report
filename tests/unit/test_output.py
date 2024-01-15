@@ -61,6 +61,8 @@ def minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker):
     bugtool.PLUGIN_DIR = dom0_template + "/etc/xensource/bugtool"
     bugtool.entries = ["mock"]
     archive.declare_subarchive("/etc/passwd", subdir + "/etc/passwd.tar")
+    # For code coverage: This sub-archive will not be created as it has no file
+    archive.declare_subarchive("/not/existing", subdir + "/not_created.tar")
     bugtool.load_plugins(just_capabilities=False)
     # Mock the 2nd argument of the ls -l /etc to collect it using dom0_template:
     bugtool.data["ls -l /etc"]["cmd_args"][2] = dom0_template + "/etc"
