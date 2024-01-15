@@ -152,9 +152,11 @@ jobs:
         with:
           directory: .git
           env_vars: OS,PYTHON
-          fail_ci_if_error: true
+          # Whether the job should fail if Codecov runs into an error during upload.
+          # Not failing the job in this case is ok because the pre-commit checks
+          # also contain a diff-cover job which would fail on missing changed lines:
+          fail_ci_if_error: false
           flags: >
-            unittest,
             ${{ format('python{0}', steps.python.outputs.python-version ) }}
           name: coverage
           verbose: true
