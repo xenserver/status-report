@@ -475,6 +475,7 @@ ANSWER_YES_TO_ALL = False
 SILENT_MODE = False
 entries = None
 data = {}
+directory_specifications = {}
 dev_null = open('/dev/null', 'r+')
 
 def no_unicode(x):
@@ -544,13 +545,42 @@ def file_output(cap, path_list):
 
 def tree_output(cap, path, pattern = None, negate = False):
     if cap in entries:
-        if os.path.exists(path):
-            for f in os.listdir(path):
-                fn = os.path.join(path, f)
-                if os.path.isfile(fn) and matches(fn, pattern, negate):
-                    file_output(cap, [fn])
-                elif os.path.isdir(fn):
-                    tree_output(cap, fn, pattern, negate)
+        directory_specifications[path] = (cap, pattern, negate)
+
+
+def traverse_directory_specifications(directory_specs, requested_capabilities):
+    """Lookup the defined directories on the requested pattern and negate.
+
+    :param directory_specs: Directories to lookup with cap, pattern, and negate.
+    :param requested_capabilities: The list of requested capabilities.
+    """
+    for directory, directory_items in directory_specs.items():
+        # Unpack the stored capability, pattern and negate flag of each row:
+        capability, pattern, negate = directory_items
+        # If the capabilty is in the requested inventory entries, check it:
+        if capability in requested_capabilities:
+            if os.path.isdir(directory):
+                lookup_tree_recursively(capability, directory, pattern, negate)
+
+
+def lookup_tree_recursively(cap, path, pattern, negate):
+    """Lookup the directory at the path for files matching pattern recursively.
+
+    :param cap (str): The inventory entry to associate with all matching files.
+    :param path (str): The path to start traversing from.
+    :param pattern (str or None): The pattern to match the filenames against.
+    :param negate (bool): If True, negate the pattern matching.
+    """
+    try:
+        for f in os.listdir(path):
+            fn = os.path.join(path, f)
+            if matches(fn, pattern, negate) and os.path.isfile(fn):
+                file_output(cap, [fn])
+            elif os.path.isdir(fn):
+                lookup_tree_recursively(cap, fn, pattern, negate)
+    except Exception as e:
+        logging.info("Lookup for " + cap + ": %s" % e)
+
 
 def func_output(cap, label, func):
     if cap in entries:
@@ -563,20 +593,64 @@ def include_inventory(archive, subdir):
                 StringIOmtime(no_unicode(make_inventory(data, subdir))))
 
 
-def collect_data(subdir, archive):
-    process_lists = {}
+def run_procs_and_capture_collected_output(collect, subdir, archive):
+    """Prepare and run processes defined in the passed bugtool data dictionary.
 
-    for (k, v) in data.items():
+    :param collect (dict): Dict with instructions on which processes to run.
+    :param subdir (str): The subdirectory where the output files will be stored.
+    :param archive (obj): The archive object used to store the output files.
+    """
+
+    # Prepare the process_list dictionary
+    process_lists = {}
+    for k, v in collect.items():
         name = construct_filename(subdir, k, v)
         cap = v['cap']
-        filename = v.get('filename')
-        if v.has_key('cmd_args'):
+        if "cmd_args" in v:
             v['output'] = StringIOmtime()
             if not process_lists.has_key(cap):
                 process_lists[cap] = []
-            process_lists[cap].append(ProcOutputAndArchive(v['cmd_args'], caps[cap][MAX_TIME], name, archive, v))
-        elif filename and (filename.startswith('/proc/') or
-                           filename.startswith('/sys/')):
+            process_lists[cap].append(
+                ProcOutputAndArchive(
+                    v["cmd_args"],
+                    caps[cap][MAX_TIME],
+                    name,
+                    archive,
+                    v,
+                )
+            )
+
+    # Run the processes in the process_list dictionary in parallel
+    run_procs(process_lists.values())
+
+    # collect all output from processes and free the allocated memory
+    for k, v in data.items():
+        if 'output' in v:
+            archive.add_path_with_data(construct_filename(subdir, k, v), v["output"])
+            v['md5'] = md5sum(v)
+            del v['output']
+
+
+def collect_data(subdir, archive):
+    """Collect all requested data and archive it in the passed output archive
+
+    :param subdir: The toplevel directory in which to store the output files.
+    :param archive: The archive object used to store the output files.
+    """
+    # Run processes first as some (rrd-cli save_rrds) may create/update files:
+    run_procs_and_capture_collected_output(data, subdir, archive)
+
+    # Afterwards, traverse the directory specifications for files to add
+    traverse_directory_specifications(directory_specifications, entries)
+
+    # Then, loop over the files which were found and collect their contents
+    for k, v in data.items():
+        if "cmd_args" in v:
+            continue  # commands processing has been moved to a different loop
+        name = construct_filename(subdir, k, v)
+        cap = v["cap"]
+        filename = v.get("filename")
+        if filename and (filename.startswith("/proc/") or filename.startswith("/sys/")):
             # proc files must be read into memory
             try:
                 f = open(v['filename'], 'r')
@@ -613,14 +687,6 @@ def collect_data(subdir, archive):
             except:
                 pass
 
-    run_procs(process_lists.values())
-
-    # collect all output (output from processes)
-    for (k, v) in data.items():
-        if 'output' in v:
-            archive.add_path_with_data(construct_filename(subdir, k, v), v['output'])
-            v['md5'] = md5sum(v)
-            del v['output']
 
 def usage():
     return '''Usage: xenserver-status-report [OPTION]...
@@ -1160,6 +1226,9 @@ exclude those logs from the archive.
     for k in sorted(data.keys()):
         if not ANSWER_YES_TO_ALL and not yes("Include '%s'? [Y/n]: " % k):
             del data[k]
+    for k in sorted(directory_specifications.keys()):
+        if not ANSWER_YES_TO_ALL and not yes("Include tree '%s'? [Y/n]: " % k):
+            del directory_specifications[k]
 
     subdir = os.getenv('XENRT_BUGTOOL_BASENAME')
     if subdir:
