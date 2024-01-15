@@ -1567,7 +1567,7 @@ def multipathd_topology(cap):
 
 def filter_snmp_xs_conf(_):
     """Filter /etc/snmp/snmp.xs.conf with keys and community removed"""
-    return snmp_regex_filter(SNMP_XS_CONF, r"((community|\w_key)\s*=\s*)\S+", r"\1REMOVED")
+    return snmp_regex_filter(SNMP_XS_CONF, r'(\"(community|\w*_key)\"\s*:\s*\")\S+(\",*)', r'\1REMOVED\3')
 
 def filter_snmpd_xs_conf(_):
     """Filter /etc/snmp/snmpd.xs.conf with the com2sec community removed"""
