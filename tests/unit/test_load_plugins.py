@@ -44,13 +44,14 @@ def test_load_plugins(bugtool, dom0_template):
             "cap": "mock",
             "filename": "/proc/self/status",
         },
-        "/proc/sys/fs/epoll/max_user_watches": {
-            "cap": "mock",
-            "filename": "/proc/sys/fs/epoll/max_user_watches",
-        },
         "proc_version": {
             "cap": "mock",
             "cmd_args": "cat /proc/version",
             "filter": None,
         },
     }
+    # Assert the tree_output entry for /proc/sys/fs/epoll:
+    cap, regex, negate = bugtool.directory_specifications["/proc/sys/fs/epoll"]
+    assert cap == "mock"
+    assert regex.pattern == ".*ax_user_watches"
+    assert not negate
