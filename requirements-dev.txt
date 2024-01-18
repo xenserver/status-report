@@ -1,4 +1,3 @@
 lxml
 pytest-coverage
 pytest-mock
-future

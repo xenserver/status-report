@@ -1,6 +1,7 @@
 [run]
 source =
        xen-bugtool
+       tests/
 
 [report]
 # Regular expressions for lines to exclude from consideration
@@ -30,3 +31,4 @@ exclude_lines =
 precision = 1
 include =
     xen-bugtool
+    tests/*

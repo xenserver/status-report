@@ -190,7 +190,8 @@ disable=anomalous-backslash-in-string,
         # Py2 compat: Python2 requires calls to super() to have it's arguments:
         super-with-arguments,
         # Py2 compat: As long as we try to use conditional imports for Py2+Py3:
-        ungrouped-imports
+        ungrouped-imports,
+        use-maxsplit-arg
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
