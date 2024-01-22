@@ -1,11 +1,11 @@
 {
   "problemMatcher": [
         {
-            "owner": "python-libs-PYTHONWARNINGS",
+            "owner": "PYTHONWARNINGS",
             "severity": "warning",
             "pattern": [
                 {
-                    "regexp": "^.*/python-libs/(.+):([0-9]*):(.*):(.*)$",
+                    "regexp": "^.*/status-report/(.+):([0-9]*):(.*):(.*)$",
                     "file": 1,
                     "line": 2,
                     "code": 3,

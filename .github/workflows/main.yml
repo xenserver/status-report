@@ -134,7 +134,7 @@ jobs:
       # unclosed file warnings. Configure GitHub to show all such warnings as
       # annotations at the source location they occur in the PR code review:
 
-      - run: echo "::add-matcher::.github/workflows/PYTHONWARNINGS-problemMatcher.json"
+      - run: echo "::add-matcher::.github/workflows/Python-problemMatcher-status-report.json"
 
       - uses: pre-commit/action@v3.0.0
         name: Run pre-commit checks
