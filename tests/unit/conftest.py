@@ -5,6 +5,20 @@ import sys
 import pytest
 
 
+@pytest.fixture(scope="function")
+def builtins():
+    """
+    Pytest fixture to return the name of the built-in module.
+    The built-in module provides the built-in functions, exceptions, etc.
+    It is needed to replace built-in functions like open() with a new mock.
+
+    :returns (str): The name of the built-in module.
+    """
+    if sys.version_info < (3,):
+        return "__builtin__"  # pragma: no cover
+    return "builtins"
+
+
 @pytest.fixture(scope="session")
 def testdir():
     """Test fixture to get the directory of the unit test for finding other files relative to it"""

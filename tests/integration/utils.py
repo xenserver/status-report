@@ -35,19 +35,33 @@ def run(command):
 
 def assert_cmd(cmd, remove_file):
     """Run the given command, print its stdout and stderr and return them. Remove the given remove_file"""
+    # If something causes an Exception, the remove_file will not be removed and
+    # this will cause a final test failure check to trip and fail the test too:
     stdout, stderr = run(cmd)
-    # After successfuly verficiation of the files, remove the checked output file(missed files remain):
+    # After successful verification of the file, remove the checked output file:
     os.unlink(remove_file)
     return stdout, stderr
 
 
-def check_file(path):
+def assert_file(path, expected, only_first_line=False):
     """Return the contents of the passed bugtool output file for verification"""
+    assert os.path.exists(path)
     with open(path) as handle:
-        contents = handle.read()
-    # After successfuly verficiation of the files, remove the checked output file (missed files remain):
+        read_data = handle.read()
+        if only_first_line:
+            read_data = read_data.splitlines()[0]
+        if read_data != expected:
+            error_msg = "Data in %s does not match!" % path
+            print(error_msg)
+            print("- " + expected)
+            print("+ " + read_data)
+            # Exit with an exception, and the file with unexpected contents
+            # is also kept. Any files that are left in the extracted directory
+            # will cause a final test failure check to trip and fail the test too:
+            assert RuntimeError(error_msg)
+
+    # After successful verification of the file, remove the checked output file:
     os.unlink(path)
-    return contents
 
 
 def assert_content_from_dom0_template(path, control_path=None):

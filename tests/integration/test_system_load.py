@@ -1,7 +1,7 @@
 """tests/integration/test_system_load.py: Test xen-bugtool --entries=system-load"""
 import os
 
-from .utils import check_file, run_bugtool_entry, assert_content_from_dom0_template
+from .utils import assert_file, run_bugtool_entry, assert_content_from_dom0_template
 
 
 # In this test case we need to sleep for 1 sec, and it is sufficient
@@ -27,5 +27,5 @@ def test_system_load(output_archive_type="zip"):
     run_bugtool_entry(output_archive_type, entry)
 
     assert_content_from_dom0_template("sar-A.out", "etc/xensource-inventory")
-    assert check_file("var/log/sa/sa01") == "sa01 test data"
-    assert check_file("var/log/sa/sar31") == "sar31 test data"
+    assert_file("var/log/sa/sa01", "sa01 test data")
+    assert_file("var/log/sa/sar31", "sar31 test data")
