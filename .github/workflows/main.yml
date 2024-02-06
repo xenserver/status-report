@@ -41,7 +41,7 @@ jobs:
     # https://github.com/Docker-Hub-frolvlad/docker-alpine-python2
     container: frolvlad/alpine-python2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install test tools
         run: apk add --no-cache libxml2-utils bash
       - name: Install python requirements
@@ -55,7 +55,7 @@ jobs:
     name: "Python2: PyLint and Pytest"
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -80,21 +80,22 @@ jobs:
           --cov-report xml:.git/coverage27.xml
 
       - name: Upload coverage reports to Codecov for the Python 2.7 tests
-        if: ${{ github.actor != 'nektos/act' }}
-        uses: codecov/codecov-action@v3
+        if: ${{ github.actor != 'nektos/act' && github.event.pull_request.number }}
+        uses: codecov/codecov-action@v4
         env:
           PYTHON: python2.7
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           directory: .git
           files: coverage27.xml
           flags: python2.7
           env_vars: OS,PYTHON
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           name: coverage27
           verbose: true
 
       - name: Add Pytest 2.7 coverage comment (if write permission is available)
-        if: ${{ ! github.event.pull_request.head.repo.fork }}
+        if: ${{ ! github.event.pull_request.head.repo.fork && github.event.pull_request.number }}
         uses: MishaKav/pytest-coverage-comment@main
         continue-on-error: true
         with:
@@ -109,12 +110,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # For diff-cover to get the changed lines: origin/master..HEAD
 
       # https://www.python4data.science/en/latest/productive/git/advanced/hooks/ci.html
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         id: python
         with:
           python-version: '3.10'
@@ -123,7 +124,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
         name: Install the pytest dependencies for running the pytest suite using Python3
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Setup cache for running pre-commit fast
         with:
           path: ~/.cache/pre-commit
@@ -134,7 +135,11 @@ jobs:
       # unclosed file warnings. Configure GitHub to show all such warnings as
       # annotations at the source location they occur in the PR code review:
 
-      - run: echo "::add-matcher::.github/workflows/Python-problemMatcher-status-report.json"
+      - run: >
+          echo "::add-matcher::.github/workflows/Python-problemMatcher-status-report.json";
+          echo "::notice::Sorry, GitHub tells that actions/cache@v4 is still v3
+          and warns about using node16, which is wrong. So we've to bear with it.
+          Bug reported: https://github.com/actions/cache/issues/1323"
 
       - uses: pre-commit/action@v3.0.0
         name: Run pre-commit checks
@@ -147,8 +152,8 @@ jobs:
           SKIP: no-commit-to-branch
 
       - name: Upload coverage reports to Codecov
-        if: ${{ github.actor != 'nektos/act' }}
-        uses: codecov/codecov-action@v3
+        if: ${{ github.actor != 'nektos/act' && github.event.pull_request.number }}
+        uses: codecov/codecov-action@v4
         with:
           directory: .git
           env_vars: OS,PYTHON
@@ -160,9 +165,11 @@ jobs:
             ${{ format('python{0}', steps.python.outputs.python-version ) }}
           name: coverage
           verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Add Pytest coverage comment (if write permission is available)
-        if: ${{ ! github.event.pull_request.head.repo.fork }}
+        if: ${{ ! github.event.pull_request.head.repo.fork && github.event.pull_request.number }}
         uses: MishaKav/pytest-coverage-comment@main
         continue-on-error: true
         with:
