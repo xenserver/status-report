@@ -1037,6 +1037,7 @@ exclude those logs from the archive.
     tree_output(CAP_XENSERVER_CONFIG, STATIC_VDIS)
     cmd_output(CAP_XENSERVER_CONFIG, [LS, '-lR', STATIC_VDIS])
     file_output(CAP_XENSERVER_CONFIG, [SYSCONFIG_CLOCK])
+    tree_output(CAP_XENSERVER_CONFIG, SYSTEMD_CONF_DIR)
     file_output(CAP_XENSERVER_CONFIG, [CGRULES_CONF])
     file_output(CAP_XENSERVER_CONFIG, [NRPE_CONF])
     tree_output(CAP_XENSERVER_CONFIG, NRPE_DIR)
@@ -1155,7 +1156,6 @@ exclude those logs from the archive.
     else:
         archive = ZipOutput(subdir)
     archive.declare_subarchive(SYSTEMD_CONF_DIR, subdir + SYSTEMD_CONF_DIR + ".tar")
-    tree_output(CAP_XENSERVER_CONFIG, SYSTEMD_CONF_DIR)
 
     # collect selected data now
     output_ts('Running commands to collect data')
