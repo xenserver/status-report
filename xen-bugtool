@@ -1404,6 +1404,8 @@ def filter_xapi_clusterd_db(cap):
                 clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
                 clusterd_data[config_key]['authkey'] = "REMOVED"
 
+        if "token" in clusterd_data:
+            clusterd_data["token"] = "REMOVED"
         output_str = json.dumps(clusterd_data)
     except Exception:
         output_str = ''
