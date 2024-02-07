@@ -1,11 +1,23 @@
 """tests/unit/test_filter_xapi_clusterd_db.py: Test filter_xapi_clusterd_db()
 
-TODO:
+Steps taken for TDD - Test-Driven Develpment - for fixing CA-388587:
 
-This test must be made to fail to cover two current bugtool bugs
+To write reliable unit tests, always start writing a failing test. And make
+sure it fails for the right reasons.
+
+Follow the Red, Green, Refactor principle of Test-Driven Development (TDD).
+
+- Write a failing test (Red)
+- make it pass, and    (Green)
+- refactor the code.   (Refactor)
+
+This plan was used for TDD of these test cases:
+-----------------------------------------------
+
+These tests were made to initially fail to cover two current bugtool bugs
 because the filter_xapi_clusterd_db() function is not implemented correctly.
 
-Current Bugs in filter_xapi_clusterd_db():
+Now fixed bugs in filter_xapi_clusterd_db():
 
 1.  The filter must replace "token": "secret-token", with "token": "REMOVED"
 2.  The filter must also work if the "pems" key is missing
@@ -21,7 +33,7 @@ and must be fixed:
 - The pytest.mark.xfail decorator must be removed after the bug is fixed
   to ensure the test is run and passes in the future.
 
-TODO START:
+DONE START:
 
 1.  Add additional XFAIL tests, one for each, which fail on the cases above
 [DONE]
@@ -37,10 +49,13 @@ TODO START:
 
 4.  The changes are added as additional commits and pushed.
     The individual sub-tests must be shown failing on each the cases above.
+[DONE] (done for each case)
 
 5.  The filter must be updated to handle these cases.
+[DONE] (done for each case)
 
 6.  The PR is then pushed again and then pass.
+[DONE]
 
     Changes to the test should only be needed if e.g. logging was added
     to test the logging output.
@@ -73,13 +88,13 @@ pre-commit run will:
 
 If you run `pre-commit install`, it will run on every commit in your own clone.
 
-TODO END.
+DONE END.
 
 """
 
 import json
 import os
-
+import re
 
 # Minimal example of a xapi-clusterd/db file, with sensitive data
 # BUG: The new cluster_config has no "pems" key, so the filter has to be updated
@@ -305,4 +320,17 @@ def test_invalid_db(isolated_bugtool, capsys):
 
     with capsys.disabled():
         stdout = capsys.readouterr().out
-        assert stdout == ""
+        assert stdout.startswith("bugtool: Internal error: ")
+        assert "filter_xapi_clusterd_db" in stdout
+        assert "JSON" in stdout
+
+    with open(isolated_bugtool.XEN_BUGTOOL_LOG, "r") as f:
+        log = f.read()
+        assert "filter_xapi_clusterd_db" in log
+        assert "JSON" in log
+
+    # Python2 error message
+    log = re.sub(r"(?s)bugtool: Internal error:.*could be decoded\n\n", "", log)
+
+    with open(isolated_bugtool.XEN_BUGTOOL_LOG, "w") as f:
+        f.write(log)

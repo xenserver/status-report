@@ -470,6 +470,13 @@ def no_unicode(x):
         return x.encode('utf-8')
     return x
 
+
+def log_internal_error(e):
+    """Log an internal error and return an empty string as bugtool output data"""
+    log("bugtool: Internal error: " + traceback.format_exc())
+    return ""  # For now, no diagnostic output in the individual output files
+
+
 def log(x, print_output=True):
     if print_output:
         output(x)
@@ -1394,6 +1401,9 @@ def filter_xenstore_secrets(s, state):
 def filter_xapi_clusterd_db(cap):
     clusterd_data = {}
 
+    if not os.path.exists(XAPI_CLUSTERD):
+        return ""
+
     try:
         with open(XAPI_CLUSTERD, 'r') as f:
             clusterd_data = json.load(f)
@@ -1410,8 +1420,8 @@ def filter_xapi_clusterd_db(cap):
         if "token" in clusterd_data:
             clusterd_data["token"] = "REMOVED"
         output_str = json.dumps(clusterd_data)
-    except Exception:
-        output_str = ''
+    except Exception as e:
+        return log_internal_error(e)
 
     return output_str
 
