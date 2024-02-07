@@ -94,7 +94,7 @@ ORIGINAL = r"""
 # Same as original, but with passwords and private data replaced by: "REMOVED"
 # BUG: "secret-token" has to be replaced by "REMOVED"
 EXPECTED = r"""{
-    "token": "secret-token",
+    "token": "REMOVED",
     "cluster_config": {
         "pems": {
             "blobs": "REMOVED"
@@ -197,7 +197,6 @@ def test_pems_blobs(bugtool):
 
 
 # CA-358870: filter_xapi_clusterd_db: remove token from the report
-@pytest.mark.xfail(reason="bugtool currently fails to remove the token")
 @pytest.mark.usefixtures("tmpdir")
 def test_remove_token(bugtool):
     """CA-358870: Assert that filter_xapi_clusterd_db() removes the token"""
