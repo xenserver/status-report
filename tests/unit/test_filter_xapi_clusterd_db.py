@@ -37,10 +37,13 @@ TODO START:
 
 4.  The changes are added as additional commits and pushed.
     The individual sub-tests must be shown failing on each the cases above.
+[DONE] (done for each case)
 
 5.  The filter must be updated to handle these cases.
+[DONE] (done for each case)
 
 6.  The PR is then pushed again and then pass.
+[DONE]
 
     Changes to the test should only be needed if e.g. logging was added
     to test the logging output.
@@ -79,7 +82,7 @@ TODO END.
 
 import json
 import os
-
+import re
 
 # Minimal example of a xapi-clusterd/db file, with sensitive data
 # BUG: The new cluster_config has no "pems" key, so the filter has to be updated
@@ -305,4 +308,20 @@ def test_invalid_db(isolated_bugtool, capsys):
 
     with capsys.disabled():
         stdout = capsys.readouterr().out
-        assert stdout == ""
+        assert stdout.startswith("bugtool: Internal error: ")
+        assert "filter_xapi_clusterd_db" in stdout
+        assert "JSON" in stdout
+
+    with open(isolated_bugtool.XEN_BUGTOOL_LOG, "r") as f:
+        log = f.read()
+        assert "filter_xapi_clusterd_db" in log
+        assert "JSON" in log
+
+    # Python2 error message
+    log = re.sub(r"(?s)bugtool: Internal error:.*could be decoded\n\n", "", log)
+
+    # Python3 error message is different
+    log = re.sub(r"(?s)bugtool: Internal error:.*umn 1 \(char 0\)\n\n", "", log)
+
+    with open(isolated_bugtool.XEN_BUGTOOL_LOG, "w") as f:
+        f.write(log)
