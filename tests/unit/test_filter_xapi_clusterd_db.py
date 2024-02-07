@@ -326,4 +326,14 @@ def test_invalid_db(bugtool, capsys):
 
     with capsys.disabled():
         stdout = capsys.readouterr().out
-        assert stdout == ""
+        assert stdout.startswith("bugtool: Internal error: ")
+        assert "filter_xapi_clusterd_db" in stdout
+        assert "JSON" in stdout
+
+    with open(bugtool.XEN_BUGTOOL_LOG, "r") as f:
+        log = f.read()
+        assert "Internal error" in log
+        assert "filter_xapi_clusterd_db" in log
+        assert "JSON" in log
+
+    os.remove(bugtool.XEN_BUGTOOL_LOG)
