@@ -72,3 +72,18 @@ def bugtool(imported_bugtool):
     imported_bugtool.data = {}
     sys.argv = ["xen-bugtool", "--unlimited"]
     return imported_bugtool
+
+
+@pytest.fixture(scope="function")
+def tmpdir(tmp_path):
+    """Run test in a temporary directory and check leftovers after the test."""
+    temp_dir = tmp_path.as_posix()
+
+    curdir = os.getcwd()
+    os.chdir(temp_dir)
+    yield temp_dir
+    os.chdir(curdir)
+
+    entries = os.listdir(temp_dir)
+    if entries:  # pragma: no cover
+        pytest.fail("Test left files in tmpdir: " + ", ".join(entries))
