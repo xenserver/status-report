@@ -1401,8 +1401,11 @@ def filter_xapi_clusterd_db(cap):
         config_keys = ['cluster_config', 'old_cluster_config']
         for config_key in config_keys:
             if config_key in clusterd_data.keys():
-                clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
-                clusterd_data[config_key]['authkey'] = "REMOVED"
+                conf = clusterd_data[config_key]
+                if "pems" in conf and "blobs" in conf["pems"]:
+                    conf["pems"]["blobs"] = "REMOVED"
+                if "authkey" in conf:
+                    conf["authkey"] = "REMOVED"
 
         if "token" in clusterd_data:
             clusterd_data["token"] = "REMOVED"
