@@ -103,6 +103,7 @@ def patch_bugtool(bugtool, mocker, dom0_template, report_name, tmp_path):
 
     # These do not have to be exact mocks, they just have to return success:
     bugtool.HA_QUERY_LIVESET = dom0_template + "/usr/sbin/mdadm"
+    bugtool.XENSTORE_LS = dom0_template + "/usr/sbin/xenstore-ls"
     bugtool.PLUGIN_DIR = dom0_template + "/etc/xensource/bugtool"
     bugtool.RPM = dom0_template + "/usr/sbin/multipathd"
     tmp = tmp_path.as_posix()
@@ -133,6 +134,7 @@ def patch_bugtool(bugtool, mocker, dom0_template, report_name, tmp_path):
 
 
 def check_output(bugtool, captured, tmp_path, filename, filetype):
+    # sourcery skip: path-read
     """Check the stdout, db and inventory output of a bugtool's main() function
 
     This function checks the output of the bugtool application to ensure that
@@ -194,6 +196,11 @@ def check_output(bugtool, captured, tmp_path, filename, filetype):
     with open(output_directory + "/xapi-db.xml") as xen_api_db:
         data = xen_api_db.read()
     test_xapidb_filter.assert_xml_str_equiv(data, test_xapidb_filter.expected)
+
+    # Assert that the captured output from the fake xenstore-ls is as expected:
+    with open(output_directory + "/xenstore-ls-f.out") as xenstore_ls_f:
+        d = xenstore_ls_f.read()
+    assert d == "/local/domain/1/data/set_clipboard = <filtered for security>\n"
 
     # Assertion check of the output files is missing an inventory entry:
     # Do this check in a future test which runs

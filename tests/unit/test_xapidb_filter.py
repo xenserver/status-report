@@ -87,3 +87,9 @@ def test_xapi_database_filter(bugtool):
 
     filtered = bugtool.DBFilter(original).output()
     assert_xml_str_equiv(filtered, expected)
+
+
+def test_filter_xenstore_secrets(bugtool):
+    """Assert that filter_xenstore_secrets() does not filter non-secrets"""
+
+    assert bugtool.filter_xenstore_secrets(b"not secret", "_") == b"not secret"
