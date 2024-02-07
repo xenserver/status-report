@@ -18,7 +18,7 @@
 # You can skip checks if you commit very often you don't want them to run, e.g:
 # export SKIP=mypy,pylint;git commit -m "quick save" (or for --amend)
 #
-# For more customisation, see https://pre-commit.com/#temporarily-disabling-hooks
+# For more customizations, see https://pre-commit.com/#temporarily-disabling-hooks
 # and https://pre-commit.com/#confining-hooks-to-run-at-certain-stages (e.g push)
 #
 # After this, the pre-commit fixes and checks run when you commit an update.
@@ -165,6 +165,8 @@ repos:
         name: Run pyright to check the unit tests for any typing warnings (use for bugtool later)
         exclude: xen-bugtool
         additional_dependencies: [defusedxml, pytest, lxml, XenAPI]
+
+
 -   repo: https://github.com/mattseymour/pre-commit-pytype
     rev: '2023.5.8'
     hooks:
