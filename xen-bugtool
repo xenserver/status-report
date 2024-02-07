@@ -1502,15 +1502,18 @@ def filter_xenstore_secrets(s, state):
 def filter_xapi_clusterd_db(cap):
     clusterd_data = {}
 
-    try:
+    try:  # pylint: disable=too-many-try-statements
         with open(XAPI_CLUSTERD, 'r') as f:
             clusterd_data = json.load(f)
 
         config_keys = ['cluster_config', 'old_cluster_config']
         for config_key in config_keys:
-            if config_key in clusterd_data:
-                clusterd_data[config_key]['pems']['blobs'] = "REMOVED"
-                clusterd_data[config_key]['authkey'] = "REMOVED"
+            if config_key in clusterd_data.keys():
+                conf = clusterd_data[config_key]
+                if "pems" in conf and "blobs" in conf["pems"]:
+                    conf["pems"]["blobs"] = "REMOVED"
+                if "authkey" in conf:
+                    conf["authkey"] = "REMOVED"
 
         if "token" in clusterd_data:
             clusterd_data["token"] = "REMOVED"

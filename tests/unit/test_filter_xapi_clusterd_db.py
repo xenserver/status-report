@@ -209,7 +209,7 @@ def test_remove_token(bugtool):
     assert_filter_xapi_clusterd_db(bugtool, ORIGINAL, expected_json)
 
 
-@pytest.mark.xfail(reason="bugtool currently fails to handle missing authkey")
+# CA-388587: filter_xapi_clusterd_db: do not fail on missing authkey
 @pytest.mark.usefixtures("tmpdir")
 def test_no_authkey(bugtool):
     """Assert that filter_xapi_clusterd_db() handles missing authkey"""
@@ -230,7 +230,7 @@ def test_no_authkey(bugtool):
     )
 
 
-@pytest.mark.xfail(reason="bugtool currently fails to handle missing pems")
+# CA-388587: filter_xapi_clusterd_db: do not fail on missing pems
 @pytest.mark.usefixtures("tmpdir")
 def test_no_pems(bugtool):
     """Assert that filter_xapi_clusterd_db() handles missing pems"""
@@ -251,10 +251,10 @@ def test_no_pems(bugtool):
     )
 
 
-@pytest.mark.xfail(reason="bugtool currently fails to handle missing pems.blobs")
+# CA-388587: filter_xapi_clusterd_db: do not fail on missing pems.blobs
 @pytest.mark.usefixtures("tmpdir")
 def test_no_blobs(bugtool):
-    """Assert that filter_xapi_clusterd_db() handles missing blobs"""
+    """Assert that filter_xapi_clusterd_db() handles missing pems.blobs"""
 
     def remove_blobs(json_data):
         """Remove the pems.blobs key from the clusterd db"""
