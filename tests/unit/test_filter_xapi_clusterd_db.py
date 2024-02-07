@@ -80,8 +80,6 @@ TODO END.
 import json
 import os
 
-import pytest
-
 
 # Minimal example of a xapi-clusterd/db file, with sensitive data
 # BUG: The new cluster_config has no "pems" key, so the filter has to be updated
@@ -200,7 +198,6 @@ def test_remove_token(isolated_bugtool):
     assert_filter_xapi_clusterd_db(isolated_bugtool, ORIGINAL, expected_json)
 
 
-@pytest.mark.xfail(reason="bugtool currently fails to handle missing authkey")
 def test_no_authkey(isolated_bugtool):
     """Assert that filter_xapi_clusterd_db() handles missing authkey"""
 
@@ -220,7 +217,6 @@ def test_no_authkey(isolated_bugtool):
     )
 
 
-@pytest.mark.xfail(reason="bugtool currently fails to handle missing pems")
 def test_no_pems(isolated_bugtool):
     """Assert that filter_xapi_clusterd_db() handles missing pems"""
 
@@ -240,7 +236,6 @@ def test_no_pems(isolated_bugtool):
     )
 
 
-@pytest.mark.xfail(reason="bugtool currently fails to handle missing pems.blobs")
 def test_no_blobs(isolated_bugtool):
     """Assert that filter_xapi_clusterd_db() handles missing blobs"""
 
