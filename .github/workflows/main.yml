@@ -33,6 +33,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 env:
+  # Setup Coveralls to for parallel coverage upload from python2 and 3 workflows
+  COVERALLS_PARALLEL: true
   DEBIAN_FRONTEND: noninteractive
   # No warnings for pip and pytest themselves; pytest enables warnings in conftest.py
   PYTHONWARNINGS: ignore
@@ -120,6 +122,13 @@ jobs:
           unique-id-for-comment: pytest-coverage-python27
           title: Pytest Code coverage comment for Python 2.7
 
+      - name: Upload coverage reports to Coveralls
+        env:
+          COVERALLS_FLAG_NAME: python2.7
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sL https://coveralls.io/coveralls-linux.tar.gz | tar -xz
+          ./coveralls --service-name=github
 
   pre-commit:
     name: "Python3: Pre-Commit Suite"
@@ -210,3 +219,10 @@ jobs:
           title: >
             Python3 coverage comment from
             https://github.com/marketplace/actions/pytest-coverage-comment
+
+
+      - name: Upload coverage reports to Coveralls
+        env:
+          COVERALLS_FLAG_NAME: ${{ format('python{0}', steps.python.outputs.python-version ) }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pip install coveralls && coveralls --service=github && coveralls --finish || true
