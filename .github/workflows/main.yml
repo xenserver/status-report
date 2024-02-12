@@ -6,12 +6,14 @@
 # podman system service -t 0 &
 # act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/main.yml
 #--------------------------------------------------------------------------------------
-name: "GitHub CI"
+name: "Pytest test suites"
 
+#
 # The GitHub events that trigger this workflow:
 # Checks can be skipped by adding "skip-checks: true" to a commit message,
 # or requested by adding "request-checks: true" if disabled by default for pushes:
 # https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks#skipping-and-requesting-checks-for-individual-commits
+#
 on: [push, pull_request]
 
 # Docs: https://github.com/marketplace/actions/commit-status-updater#workflow-permissions
@@ -21,9 +23,11 @@ permissions:
   pull-requests: write  # creating a comment
   statuses: write  #  # updating commit status
 
+#
 # Cancel a currently running workflow from the same PR, branch or tag
 # when a new workflow is triggered:
 # https://stackoverflow.com/questions/66335225/how-to-cancel-previous-runs-in-the-pr-when-you-push-new-commitsupdate-the-curre
+#
 concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -57,12 +61,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: LizardByte/setup-python-action@master
+        with:
+          python-version: 2.7
+
       - name: Install dependencies
         run: |
-          #: Install Python 2.7 from Ubuntu 20.04 using apt-get install
-          sudo apt-get update && sudo apt-get install -y python2
-          curl -sSL https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
-          python2 get-pip.py
           if [ -f requirements.txt ]; then pip2 install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip2 install -r requirements-dev.txt; fi
           pip2 install pylint==1.9.4
@@ -76,12 +80,24 @@ jobs:
           --cov tests/
           --junitxml=.git/pytest27.xml
           --cov-report term-missing
-          --cov-report html:.git/coverage27.html
           --cov-report xml:.git/coverage27.xml
 
       - name: Upload coverage reports to Codecov for the Python 2.7 tests
-        if: ${{ github.actor != 'nektos/act' && github.event.pull_request.number }}
-        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        if: env.CODECOV_TOKEN && !cancelled() && github.event.pull_request.number
+        run: >
+          rm -rfv codecov;curl -O https://cli.codecov.io/latest/linux/codecov &&
+          sudo chmod +x codecov && ./codecov upload-process --report-type coverage
+          --git-service github --fail-on-error --dir .git --file coverage27.xml
+          --flag python2.7 --name "Python 2.7 for main"
+        continue-on-error: true
+
+
+      - name: Upload coverage reports to Codecov for the Python 2.7 tests
+        # If CODECOV_TOKEN is not set, use the legacy tokenless codecov action:
+        if: ${{ !env.CODECOV_TOKEN && github.event.pull_request.number }}
+        uses: codecov/codecov-action@v3
         env:
           PYTHON: python2.7
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -91,7 +107,7 @@ jobs:
           flags: python2.7
           env_vars: OS,PYTHON
           fail_ci_if_error: false
-          name: coverage27
+          name: "Python 2.7 for main"
           verbose: true
 
       - name: Add Pytest 2.7 coverage comment (if write permission is available)
@@ -152,8 +168,24 @@ jobs:
           SKIP: no-commit-to-branch
 
       - name: Upload coverage reports to Codecov
-        if: ${{ github.actor != 'nektos/act' && github.event.pull_request.number }}
-        uses: codecov/codecov-action@v4
+        # If CODECOV_TOKEN is set, use the new codecov CLI to upload the coverage reports
+        if: ${{ env.CODECOV_TOKEN && !cancelled() && github.event.pull_request.number }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: >
+          pip install codecov-cli && codecovcli upload-process --report-type coverage
+          --git-service github --fail-on-error --dir .git --file coverage.xml
+          --flag python${{ steps.python.outputs.python-version }}
+          --name "Python 3.x for main"
+        continue-on-error: true
+
+
+      - name: Upload coverage reports to Codecov (legacy Node.js 16 action)
+        # If CODECOV_TOKEN is not set, use the legacy tokenless codecov action:
+        if: ${{ !env.CODECOV_TOKEN && github.event.pull_request.number }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v3
         with:
           directory: .git
           env_vars: OS,PYTHON
@@ -163,10 +195,9 @@ jobs:
           fail_ci_if_error: false
           flags: >
             ${{ format('python{0}', steps.python.outputs.python-version ) }}
-          name: coverage
+          name: "Python 3.x for main"
           verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
 
       - name: Add Pytest coverage comment (if write permission is available)
         if: ${{ ! github.event.pull_request.head.repo.fork && github.event.pull_request.number }}
