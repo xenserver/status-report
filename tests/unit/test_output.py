@@ -20,6 +20,7 @@ def assert_mock_bugtool_plugin_output(temporary_directory, subdir, names):
     expected_names = [
         subdir + "/etc/group",
         subdir + "/etc/passwd.tar",
+        subdir + "/inventory.xml",
         subdir + "/ls-l-%etc.out",
         subdir + "/proc/self/status",
         subdir + "/proc/sys/fs/epoll/max_user_watches",
@@ -30,6 +31,7 @@ def assert_mock_bugtool_plugin_output(temporary_directory, subdir, names):
     extracted = "%s/%s/" % (temporary_directory, subdir)
 
     # Will be refactored to be more easy in a separate commit soon:
+    assert_valid_inventory_schema(parse(extracted + "inventory.xml"))
     with open(extracted + "proc_version.out") as proc_version:
         assert proc_version.read()[:14] == "Linux version "
     with open(extracted + "ls-l-%etc.out") as etc:
@@ -52,7 +54,7 @@ def assert_mock_bugtool_plugin_output(temporary_directory, subdir, names):
 
 
 def minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker):
-    """Load the plugins from dom0_template and collect the specified data"""
+    """Load the plugins from the template and include the generated inventory"""
 
     mocker.patch("xen-bugtool.time.strftime", return_value="time.strftime")
     # Load the mock plugin from dom0_template and process the plugin's caps:
@@ -65,6 +67,7 @@ def minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker):
     # Mock the 2nd argument of the ls -l /etc to collect it using dom0_template:
     bugtool.data["ls -l /etc"]["cmd_args"][2] = dom0_template + "/etc"
     bugtool.collect_data(subdir, archive)
+    bugtool.include_inventory(archive, subdir)
     archive.close()
 
 
