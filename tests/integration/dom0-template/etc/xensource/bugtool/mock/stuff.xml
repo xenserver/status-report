@@ -1,0 +1,8 @@
+<collect>
+<list>/etc</list>
+<files>/etc/passwd</files>
+<files>/etc/group</files>
+<files>/proc/self/status</files>
+<directory pattern=".*ax_user_watches">/proc/sys/fs/epoll</directory>
+<command label="proc_version">cat /proc/version</command>
+</collect>

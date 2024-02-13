@@ -1,0 +1,6 @@
+#!/bin/sh
+echo "\
+# This test data is used and expected by tests/unit/test_mdadm_arrays.py to unit-test bugtool.mdadm_arrays()
+# This configuration was auto-generated on 27 Jun 1971 08:00
+ARRAY /dev/md0 metadata=1.2 name=md0:0 UUID=74f0f4ff-06c9-4e73-b0d1-7d33a695682f
+ARRAY /dev/md1 metadata=1.3 name=md1:0 UUID=bbca0958-d6bb-46e8-93f6-4a488f7cfdce"
