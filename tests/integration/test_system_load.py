@@ -1,13 +1,19 @@
 """tests/integration/test_system_load.py: Test xen-bugtool --entries=system-load"""
+
 import os
 
-from .utils import assert_file, run_bugtool_entry, assert_content_from_dom0_template
+from .utils import (
+    assert_file,
+    run_bugtool_entry,
+    assert_content_from_dom0_template,
+)
 
 
 # In this test case we need to sleep for 1 sec, and it is sufficient
 # to test to only with zip archives to keep the test duration short:
 def test_system_load(output_archive_type="zip"):
-    """Test xen-bugtool --entries=system-load in test jail created by auto-fixtures in conftest.py"""
+    """Test xen-bugtool --entries=system-load"""
+
     entry = "system-load"
 
     # Create test input files:
