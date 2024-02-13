@@ -1,7 +1,7 @@
 # Documentation on the pytest-chroot framework
 
-This (older) test environment runs `xen-bugtool` in a container with simulated `root` capabilities,
-allowing it to be run by any regular user without requiring special system configuration.
+This test environment runs `xen-bugtool` in a container with simulated `root`
+capabilities, for regular users without requiring special system configuration.
 
 Because it uses a container, developers using it must be familiar with tests
 that executes code which switches into a container.
@@ -21,15 +21,13 @@ to run `xen-bugtool` virtually untouched in it, believing it has root
 capabilities and test error handling without any mocking of `xen-bugtool`,
 the unit tests are the preferred environment for beginners.
 
-This document guides you through the setup of the container and the execution of each test case.
-
 ## Implementation of the pytest-chroot Test Environment in Pytest
 
-This section provides detailed information about the test environment for `xen-bugtool`.
+This environment uses autouse `pytest` fixtures creating a container.
 
-This environment uses by automatic `pytest` fixtures creating a container.
-A fresh instance of a clean `bugtool` output directory (located at
-`/var/opt/xen/bug-report`) is provided for invocation of the test functions.
+Using the container, a fresh instance of a clean output directory
+`/var/opt/xen/bug-report`) is provided for each test, and its contents
+are checked after each test.
 
 ## Implementation of the container by pytest-chroot framework
 
@@ -66,7 +64,9 @@ This is mostly implemented in
 
 ## Work flow of Test Case Execution using the pytest-chroot framework
 
-For each test case and each output format, the test fixture and the test case code perform the following steps:
+The test fixture and the test case code perform the following steps
+- for each test case and
+- for each output format:
 
 The test fixture:
 1. mounts a `tmpfs` for `bugtool` to use for its output at the hard-coded path.
