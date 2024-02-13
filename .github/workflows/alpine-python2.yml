@@ -6,7 +6,7 @@
 # podman system service -t 0 &
 # act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/main.yml
 #--------------------------------------------------------------------------------------
-name: Python 2
+name: Shell script tests
 
 # Cancel a currently running workflow from the same PR, branch or tag
 # when a new workflow is triggered:
@@ -36,7 +36,7 @@ jobs:
       matrix:
         python-version: ["2.7"]  # Newer versions will be added during python2to3 work
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install test tools
         run: apk add --no-cache libxml2-utils bash
       - name: Install python requirements

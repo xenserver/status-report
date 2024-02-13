@@ -1,28 +1,127 @@
-name: Build and test
+#--------------------------------------------------------------------------------------
+# This GitHub Actions workflow can be run locally using https://github.com/nektos/act
+#
+# act normally uses docker, but it can also be run using podman on Fedora 37:
+# dnf install act-cli podman
+# podman system service -t 0 &
+# act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/main.yml
+#--------------------------------------------------------------------------------------
+name: "Pytest test suites"
 
-on:
-  push:
-  pull_request:
+#
+# The GitHub events that trigger this workflow:
+# Checks can be skipped by adding "skip-checks: true" to a commit message,
+# or requested by adding "request-checks: true" if disabled by default for pushes:
+# https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks#skipping-and-requesting-checks-for-individual-commits
+#
+on: [push, pull_request]
 
+
+#
+# Cancel a currently running workflow from the same PR, branch or tag
+# when a new workflow is triggered:
+# https://stackoverflow.com/questions/66335225/how-to-cancel-previous-runs-in-the-pr-when-you-push-new-commitsupdate-the-curre
+#
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+  # No warnings for pip and pytest themselves; pytest enables warnings in conftest.py
+  PYTHONWARNINGS: ignore
 jobs:
-  python-checks:
-    name: Python checks
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
+  container-tests:
+    name: "Python2: Container tests"
+    runs-on: ubuntu-22.04
+    # https://github.com/Docker-Hub-frolvlad/docker-alpine-python2
+    container: frolvlad/alpine-python2
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Install test tools
+        run: apk add --no-cache libxml2-utils bash
+      - name: Install python requirements
+        run: pip install -r requirements.txt
+      - name: Test sar file collection, extended by XSI-1385 with plain-text SARs
+        run: bash -x tests/integration/sar-file-collection.test.sh
+      - name: Test creating a tarball for /etc/systemd
+        run: bash -x tests/integration/xenserver-config-systemd.sh
+
+  python2-tests:
+    name: "Python2: PyLint and Pytest"
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           #: Install Python 2.7 from Ubuntu 20.04 using apt-get install
-          sudo apt-get update && sudo apt-get install -y python2-dev
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          pip install pylint==1.9.4
+          sudo apt-get update && sudo apt-get install -y python2
+          curl -sSL https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
+          python2 get-pip.py
+          if [ -f requirements.txt ]; then pip2 install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip2 install -r requirements-dev.txt; fi
+          pip2 install pylint==1.9.4
 
       - name: Run pylint-1.9.4 for pylint --py3k linting (configured in .pylintrc)
-        if: ${{ matrix.python-version == 2.7 }}
+        run: python2 -m pylint xen-bugtool
+      - name: Run python2 -m pytest to execute all unit and integration tests
+        run: >
+          python2 -m pytest -v -rA
+          --cov xen-bugtool
+          --cov tests/
+          --junitxml=.git/pytest27.xml
+          --cov-report term-missing
+          --cov-report html:.git/coverage27.html
+          --cov-report xml:.git/coverage27.xml
+
+      - name: Upload coverage reports to Codecov for the Python 2.7 tests
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        if: env.CODECOV_TOKEN && !cancelled() && github.event.pull_request.number
+        run: >
+          curl -Os https://cli.codecov.io/latest/linux/codecov &&
+          sudo chmod +x codecov &&
+          ./codecov do-upload --report-type test_results
+          --file .git/pytest27.xml
+          --token $CODECOV_TOKEN &&
+          ./codecov do-upload --report-type coverage
+          --file .git/coverage27.xml
+          --flags python2.7
+          --token $CODECOV_TOKEN
+        continue-on-error: true
+
+
+      - name: Upload coverage reports to Codecov for the Python 2.7 tests
+        # If CODECOV_TOKEN is not set, use the legacy tokenless codecov action:
+        if: ${{ !env.CODECOV_TOKEN && github.event.pull_request.number }}
+        uses: codecov/codecov-action@v3
+        env:
+          PYTHON: python2.7
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          directory: .git
+          files: coverage27.xml
+          flags: python2.7
+          env_vars: OS,PYTHON
+          fail_ci_if_error: false
+          name: coverage27
+          verbose: true
+
+      - name: Add Pytest 2.7 coverage comment (if write permission is available)
+        if: ${{ ! github.event.pull_request.head.repo.fork && github.event.pull_request.number }}
+        uses: MishaKav/pytest-coverage-comment@main
+        continue-on-error: true
+        with:
+          junitxml-path: .git/pytest27.xml
+          pytest-xml-coverage-path: .git/coverage27.xml
+          unique-id-for-comment: pytest-coverage-python27
+          title: Pytest Code coverage comment for Python 2.7
+
+      - name: Upload coverage reports to Coveralls
+        env:
+          COVERALLS_FLAG_NAME: python2.7
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pylint xen-bugtool
+          curl -sL https://coveralls.io/coveralls-linux.tar.gz | tar -xz
+          ./coveralls --service-name=github

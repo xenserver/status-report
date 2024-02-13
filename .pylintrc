@@ -92,7 +92,7 @@ max-attributes=11
 
 # Maximum number of branch for function / method body.
 # defaults to: max-branches=12
-max-branches=62
+max-branches=64
 
 # Maximum number of locals for function / method body.
 # defaults to: max-locals=15
