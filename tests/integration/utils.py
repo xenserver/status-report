@@ -113,8 +113,12 @@ def extract(zip_or_tar_archive, archive_type):  # pragma: no cover
 def run_bugtool_entry(archive_type, test_entries):
     """Run bugtool for the given entry or entries, extract the output, and chdir to it"""
     os.environ["XENRT_BUGTOOL_BASENAME"] = test_entries
-    # For case the default python interpreter of the user is python3, we must use python2(for now):
-    command = "python2 ./xen-bugtool -y --output=%s --entries=%s" % (archive_type, test_entries)
+
+    command = "python%s ./xen-bugtool -y --output=%s --entries=%s" % (
+        sys.version_info.major,
+        archive_type,
+        test_entries,
+    )
     print("# " + command)
     error_code, output = getstatusoutput(command)
     print(output)
@@ -122,9 +126,7 @@ def run_bugtool_entry(archive_type, test_entries):
         raise RuntimeError(output)
     src_dir = os.getcwd()
     os.chdir(BUGTOOL_OUTPUT_DIR)
-    output_file = test_entries + "." + archive_type
-    print("# Unpacking " + BUGTOOL_OUTPUT_DIR + output_file + " and verifying inventory.xml")
-    extract(output_file, archive_type)
+    extract(test_entries + "." + archive_type, archive_type)
     os.chdir(test_entries)
     # Validate the extracted inventory.xml using the XML schema from the test framework:
     with open(src_dir + "/tests/integration/inventory.xsd") as xml_schema:
