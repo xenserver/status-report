@@ -1,0 +1,186 @@
+# For more configuration details:
+# https://docs.codecov.io/docs/codecov-yaml
+
+# After making edits, check if this file is valid by running:
+# curl -X POST --data-binary @.codecov.yml https://codecov.io/validate
+
+#
+# Coverage configuration
+# ----------------------
+#
+codecov:
+  #
+  # Show the Codecov status without waiting for other status to pass:
+  #
+  require_ci_to_pass: no
+  notify:
+    wait_for_ci: no
+
+github_checks:
+  #
+  # On adding coverage annotations to the code in the GitHub
+  # Code Review for now:
+  #
+  # - The annotations consume a lot of space in the PR code review,
+  #   and can make it hard to review files that are not covered yet.
+  #
+  # - The coverage can be visited using the Codecov link at all times.
+  #   https://app.codecov.io/gh/xapi-project/xen-api/pulls
+  #
+  # - The annotations can be hidden in GitHub PR code review by
+  #   pressing the "a" key or by deselecting the "Show comments"
+  #   checkbox but they are shown by default.
+  #
+  # - The Codecov Chrome and Firefox extension is a much nicer
+  #   way to indicate coverage:
+  #
+  #   Link: https://github.com/codecov/codecov-browser-extension
+  #
+  #   - How to enable: You need to log in to Codecov using Github.
+  #     For Firefox, enable the needed permissions:
+  #     https://github.com/codecov/codecov-browser-extension/issues/50
+  #
+  # Reference:
+  # http://docs.codecov.com/docs/common-recipe-list#disable-github-check-run-annotations
+  #
+  annotations: true
+
+
+#
+# Pull request comments:
+# ----------------------
+# This feature adds the code coverage summary as a comment on each PR.
+# See https://docs.codecov.io/docs/pull-request-comments
+# This same information is available from the Codecov checks in the PR's
+# "Checks" tab in GitHub even when this feature is disabled.
+#
+comment:
+  #
+  # Legend:
+  # "diff" is the Coverage Diff of the pull request.
+  # "files" are the files impacted by the pull request
+  # "flags" are the coverage status of the pull request
+  #
+  # For an even shorter layout, this may be used:
+  # layout: "condensed_header, diff, files, flags"
+  #
+  layout: "header, diff, files, flags"
+
+  #
+  # Only add the Codecov comment to the PR when coverage changes
+  #
+  require_changes: true
+  #
+  # The overall project coverage is secondary to the individual coverage
+  # and it is always shown in the repository at:
+  # - https://app.codecov.io/gh/xapi-project/xen-api
+  #
+  hide_project_coverage: false
+
+
+#
+# Coverage limits and display details:
+# ------------------------------------
+#
+coverage:
+
+  #
+  # Number of precision digits when showing coverage percentage e.g. 82%:
+  #
+  precision: 0
+
+  #
+  # Commit status checks and display:
+  # ---------------------------------
+  # https://docs.codecov.io/docs/commit-status
+  #
+  # target: Fail the PR if coverage is below that
+  # threshold: Allow reducing coverage by this amount
+  #
+  # - The values added are a very generous, friendly limit to not block most PRs
+  #
+  # - XAPI maintainers may tighten these screws more to require better tests
+  #
+  status: # global coverage status and limits
+
+    #
+    # Patch limits
+    # ------------
+    # These checks look at only the diff of the PR as basis for them.
+    #
+    patch:
+      script:
+
+        #
+        # The script limit applies to:
+        # -----------------------------
+        paths: ["xen-bugtool"]
+
+        #
+        # For script, coverage should not be reduced compared to its base:
+        #
+        target: auto
+
+        #
+        # Don't allow to reduce coverage for the script:
+        #
+        threshold: 0%
+
+      tests:
+        #
+        # The tests limit applies to:
+        # -----------------------------
+        paths: ["tests/**/test_*.py"]
+
+        #
+        # For tests, coverage should not be reduced compared to its base:
+        #
+        target: auto
+
+        #
+        # Don't allow to reduce coverage for the script:
+        #
+        threshold: 0%
+
+      # Checks each Python version separately:
+      python-3.11:
+        flags: ["python3.11"]
+      python-2.7:
+        flags: ["python2.7"]
+
+    #
+    # Project limits
+    # --------------
+    # These checks are relative to all code, not the changes (not the diff of the PR)
+    #
+    project:
+
+      #
+      # Test files
+      #
+      tests:
+        # Ensure that all tests are executed (tests themselves must be 100% covered)
+        target: 100%
+        paths: ["tests/**/test_*.py"]
+
+      script:
+        #
+        # The script limit applies to:
+        # -----------------------------
+        paths: ["xen-bugtool"]
+
+        #
+        # Coverage should not be reduced compared to its base:
+        #
+        target: auto
+
+        #
+        # Don't allow to reduce coverage for the script:
+        #
+        threshold: 0%
+
+      # Checks each Python version separately:
+      python-3.11:
+        flags: ["python3.11"]
+      python-2.7:
+        flags: ["python2.7"]
