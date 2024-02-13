@@ -537,6 +537,13 @@ def func_output(cap, label, func):
     if cap in entries:
         data[label] = {'cap': cap, 'func': func}
 
+
+def include_inventory(archive, subdir):
+    inventory = {'cap': None, 'output': StringIOmtime(no_unicode(make_inventory(data, subdir)))}
+    archive.add_path_with_data(construct_filename(subdir, 'inventory.xml', inventory),
+                StringIOmtime(no_unicode(make_inventory(data, subdir))))
+
+
 def collect_data(subdir, archive):
     process_lists = {}
 
@@ -1162,9 +1169,7 @@ exclude those logs from the archive.
     collect_data(subdir, archive)
 
     # include inventory
-    inventory = {'cap': None, 'output': StringIOmtime(no_unicode(make_inventory(data, subdir)))}
-    archive.add_path_with_data(construct_filename(subdir, 'inventory.xml', inventory),
-                StringIOmtime(no_unicode(make_inventory(data, subdir))))
+    include_inventory(archive, subdir)
 
     if archive.close():
         res = 0
