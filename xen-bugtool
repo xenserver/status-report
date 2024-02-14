@@ -486,6 +486,21 @@ data = {}
 directory_specifications = {}
 dev_null = open('/dev/null', 'r+')
 
+
+class StringIOmtime(io.BytesIO):
+    """Byte buffer object with mtime for TarOutput/ZipOutput"""
+
+    def __init__(self, buf=b""):  # type: (StringIOmtime, bytes) -> None
+        """Create a StringIOmtime object with mtime for TarOutput/ZipOutput"""
+        io.BytesIO.__init__(self, buf)
+        self.mtime = time.time()
+
+    def write(self, s):  # type: (StringIOmtime, ReadableBuffer) -> int
+        """Write to the StringIOmtime object and update the mtime"""
+        self.mtime = time.time()
+        return io.BytesIO.write(self, no_unicode(s))
+
+
 def no_unicode(x):
     if isinstance(x, unicode_type):
         return x.encode('utf-8')
@@ -2335,20 +2350,6 @@ def readKeyValueFile(filename, allowed_keys = None, strip_quotes = True, assert_
         defs = [ (a, quotestrip(b)) for (a,b) in defs ]
 
     return dict(defs)
-
-
-class StringIOmtime(io.BytesIO):
-    """Collect file content with modification time attribute for TarOutput and ZipOutput"""
-
-    def __init__(self, buf=b""):  # type: (StringIOmtime, bytes) -> None
-        """Init the object and initialize the attribute self.mtime using the current time"""
-        io.BytesIO.__init__(self, buf)
-        self.mtime = time.time()
-
-    def write(self, s):  # type: (StringIOmtime, ReadableBuffer) -> int
-        """Add the given string or bytes buffer object with mtime for TarOutput/ZipOutput"""
-        self.mtime = time.time()
-        return io.BytesIO.write(self, no_unicode(s))
 
 
 if __name__ == "__main__":
