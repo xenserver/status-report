@@ -2147,16 +2147,16 @@ def mdadm_arrays():
 partition_re = re.compile(r'(.*[0-9]+$)|(^xvd)')
 
 def disk_list():
+    """Return a list of native disks, excluding partitions and virtual disks."""
     disks = []
     try:
-        f = open('/proc/partitions')
-        f.readline()
-        f.readline()
-        for line in f.readlines():
-            major, _, _, name = line.split()
-            if int(major) < 254 and not partition_re.match(name):
-                disks.append(name)
-        f.close()
+        with open(PROC_PARTITIONS, "r") as f:
+            f.readline()
+            f.readline()
+            for line in f.readlines():
+                major, _, _, name = line.split()
+                if int(major) < 254 and not partition_re.match(name):
+                    disks.append(name)
     except:
         pass
     return disks
