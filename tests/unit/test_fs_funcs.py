@@ -19,6 +19,36 @@ def test_read_inventory(bugtool, dom0_template):
     assert inventory["PRODUCT_VERSION"] == "8.3.0"
 
 
-def test_disk_list(bugtool):
-    """Assert that the return value of disk_list() contains sda or nvme0n1"""
-    assert "sda" in bugtool.disk_list() or "nvme0n1" in bugtool.disk_list()
+def test_disk_list(bugtool, tmpdir):
+    """Test bugtool.disk_list() to filter disks an only return native disks"""
+
+    # Arrange:
+
+    # Save the original value of bugtool.PROC_PARTITIONS and set it to the new file:
+    proc_partitions = bugtool.PROC_PARTITIONS
+
+    # Replace the original file with a new one:
+    bugtool.PROC_PARTITIONS = str(tmpdir.join("partitions"))
+    tmpdir.join("partitions").write(
+        """major minor  #blocks  name
+
+    8    0  125034840 sda
+    8    1  125033856 sda1
+    8   16  125034840 sdb
+    8   17  125033856 sdb1
+    220  0  125034840 xvda
+    220  1  125033856 xvda1
+    259  0  125034840 nvme0n1
+    259  1  125033856 nvme0n1p1
+    """
+    )
+
+    # Assert:
+
+    # nvme0n1 is removed by disk_list as its major number is 259 (not < 254):
+    assert bugtool.disk_list() == ["sda", "sdb"]
+
+    # Restore:
+
+    # Restore the original value of bugtool.PROC_PARTITIONS:
+    bugtool.PROC_PARTITIONS = proc_partitions
