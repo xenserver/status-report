@@ -1,13 +1,16 @@
-# The Xen-Bugtool Test Environment
+# The pytest-based Xen-Bugtool Test Environment
 
-The test environment contains two classes of test frameworks
+See [doc/testing.md](doc/testing.md) for general introduction to testing
+`xenserver-status-report`.
+
+The test environment contains two classes of test frameworks:
 
 - [tests/unit](tests/unit): Classic unit test framework using pytest fixtures.
-  - It provides a number of pytest fixtures for testing functions including the
+  - It provides a number of pytest fixtures for testing functions including
     the `main()` function of Xen-Bugtool, which allows to run any kind of test.
 
 - [tests/integration](tests/integration) runs `xen-bugtool` in a container with
-  simulated `root` capabilities, allowing any regular user to test xen-bugtool
+  simulated `root` capabilities, allowing any regular user to test `xen-bugtool`
   without patching it and without requiring special system configuration.
 
   In this framework, two kinds of tests exist:
@@ -17,7 +20,7 @@ The test environment contains two classes of test frameworks
     Linux development VM without any setup.
 
   Caveats:
-  Because thest tests run xen-bugtool in a container, collecting code coverage
+  Because the test start `xen-bugtool` in a container, collecting code coverage
   from them would require merging the collected code coverage from each test.
   Because this is not yet implemented, these currently do not contribute to
   the reported code coverage.
@@ -36,9 +39,9 @@ For development, do show also logs from passing tests, run `pytest -rA`
 
 In case a test fails on an asserting, use `pytest -vv` to get the full assert.
 
-### Introduction to pytest, pytest.mark and pytest fixtures:
+### Introduction to `pytest`, `pytest.mark` and `pytest fixtures`:
 
-[![Automated Testing in Python with pytest, tox, and GitHub Actions](https://img.youtube.com/vi/DhUpxWjOhME/0.jpg)](https://www.youtube.com/watch?v=DhUpxWjOhME)
+[![Automated Testing in Python with `pytest`, `tox`, and GitHub Actions](https://img.youtube.com/vi/DhUpxWjOhME/0.jpg)](https://www.youtube.com/watch?v=DhUpxWjOhME)
 
 Note: For simplicity, this project uses `pre-commit` instead of `tox`:
 `pre-commit` is much easier to handle and pre-commit also provides
@@ -49,27 +52,6 @@ Whenever in this Video, `tox` is mentioned, think of `pre-commit` instead!
 See [README-pre-commmit.md](README-pre-commmit.md)
 on using `pre-commit` to run the test and analysis suites locally.
 
-
-## Suggested `pytest` plugins for development of test cases
-
-### pytest-pickled
-When updating existing tests or developing new code with new test coverage, we might want to
-ignore all other tests. This can be achieved with an exciting plugin called `pytest-picked`:
-`pytest --picked` will collect all test modules that were newly created or changed but not
-yet committed in a Git repository and run only them.
-
-### pytest-sugar
-`pytest-sugar` is a plugin that, once installed, automatically changes the format of the
-`pytest` standard output to include a graphical %-progress bar when running the test suite.
-
-### Installation of these pytest plugins
-For nicer diffs of dictionaries, arrays and the like, use `pytest-clarity` or `pytest-icdiff`:
-
-```py
-pip install "pytest<7" pytest-picked pytest-sugar pytest-clarity # pytest-icdiff
-```
-
-For more information to debug `pytest` test suites see: https://stribny.name/blog/pytest/
 
 ## Running the Xen-Bugtool Test Environment
 
@@ -90,46 +72,84 @@ python3 -m pytest tests/unit/test_filter_xapi_clusterd_db.py
 
 See the https://docs.pytest.org for more documentation on `pytest.
 
-## Unit Tests in [tests/unit](tests/unit)
 
-### Classical unit test cases
+## Test cases for xenserver-status-report
 
-The strength of classic unit testing is that these test cases can
-all a tested function with many different input values and thereby
-check all conditions and branches in the test function to work.
+See [doc/testing.md](doc/testing.md) for the different types of tests.
 
-- [tests/unit/test_filter_xapi_clusterd_db.py](tests/unit/test_filter_xapi_clusterd_db.py) -
-  Recommended example to use for testing a function in multiple ways in order
-  to assert that it works with different input data and generates expected output.
-  It has extensive documentation and should be used as the basis for new tests.
-- [tests/unit/test_xapidb_filter.py](tests/unit/test_xapidb_filter.py) -
+### Unit Tests in [tests/unit](tests/unit)
+
+- [`test_filter_xapi_clusterd_db.py`](tests/unit/test_filter_xapi_clusterd_db.py):
+
+  Tests a function in multiple ways to assert that it works with different input
+  data and generates expected output.
+
+  It has good amount of inline comments and should be used as the basis for new tests.
+
+- [`test_xapidb_filter.py`](tests/unit/test_xapidb_filter.py):
   Simple test case passing XML to a function filtering it.
-- [tests/unit/test_snmp.py](tests/unit/test_snmp.py) -
+- [`test_snmp.py`](tests/unit/test_snmp.py):
   Ditto, but for testing the filtering of SNMP config data
-- [tests/unit/test_fs_funcs.py](tests/unit/test_fs_funcs.py) -
+- [`test_fs_funcs.py`](tests/unit/test_fs_funcs.py):
   Examples for testing functions that need to access some files of Dom0
-- [tests/unit/test_dir_list.py](tests/unit/test_dir_list.py) -
+- [`test_dir_list.py`](tests/unit/test_dir_list.py):
   Example of testing function that writes xen-bugtool's global data
-- [tests/unit/test_load_plugins.py](tests/unit/test_load_plugins.py) -
-  Larger example of the same test where a number of global variables are checked
-- [tests/unit/test_process_output.py](tests/unit/test_process_output.py) -
-  Tests that check functions which run external programs from the dom0_template
 
-### Advanced test cases
+### Integration tests (also in [tests/unit](tests/unit))
 
-These cover a lot of code, for code coverage testing, and are needed to test the
-big function of xen-bugtool to work as expected. They cover a lot of ground, but
-need the classical unit tests for asserting that the smaller individual
-functions handle all cases that could arise with different input formats.
+- [`test_load_plugins.py`](tests/unit/test_load_plugins.py):
+  Tests the ingestion of a bugtool plugin and its effect on the global state
+- [`test_process_output.py`](tests/unit/test_process_output.py):
+  Tests functions run external programs and collects their output.
+- [`test_output.py`](tests/unit/test_output.py):
 
-These functions only use static input from
-[tests/integration/dom0-template](tests/integration/dom0-template)
-so they cannot cover code conditions that require many different variants
-of inputs. But, they test overall functioning of the major functions of the status-report tool:
+  Generate bug-reports using all output formats and verify the output
+  by directly calling the functions without involving `main()`.
 
-- [tests/unit/test_output.py](tests/unit/test_output.py)
-  - Call individual functions in `xen-bugtool` that allow the test to
-    generate bug-reports using all output formats and then, it verifies these.
-- [tests/unit/test_main.py](tests/unit/test_main.py)
-  - Call the main() function of `xen-bugtool`, to
-    generate bug-reports using all output formats and then, it verifies these.
+### End-to-End tests
+
+- [`tests/unit/test_main.py`](tests/unit/test_main.py):
+
+  Calls `xen-bugtool`'s `main()` to generate bug-reports using all output
+  formats and verifies the output.
+
+## Discussion on the current state of testing of `xen-bugtool`
+
+- Unit test cover the cases where we need to supply different input data.
+- Integration and E2E tests use files from
+[`tests/integration/dom0-template`](tests/integration/dom0-template) directly:
+  - We can start to add tests that copy these files into the virtual
+    [pyfakefs](https://pytest-pyfakefs.readthedocs.io/en/v3.7.2/usage.html)
+    file system to test using a virtual file system.
+  - It allows to vary the input data to test different kinds of input data.
+  - Six test cases of [python-libs](https://github.com/xenserver/python-libs)
+    use it very successfully.
+
+- Currently, the End-to-End and integration tests provide most code coverage,
+  which we urgently needed to verify the correctness of the Python3 migrations.
+
+- Unit tests to ensure that the individual functions handle specific correctly
+  are needed still.
+
+
+## Suggested `pytest` plugins for development of test cases
+
+### pytest-pickled
+When updating existing tests or developing new code with new test coverage, we might want to
+ignore all other tests. This can be achieved with an exciting plugin called `pytest-picked`:
+`pytest --picked` will collect all test modules that were newly created or changed but not
+yet committed in a Git repository and run only them.
+
+### pytest-sugar
+`pytest-sugar` is a plugin that, once installed, automatically changes the format of the
+`pytest` standard output to include a graphical %-progress bar when running the test suite.
+
+### Installation of these pytest plugins
+For nicer diffs of dictionaries, arrays, and the like,
+use `pytest-clarity` or `pytest-icdiff`:
+
+```py
+pip install "pytest<7" pytest-picked pytest-sugar pytest-clarity # pytest-icdiff
+```
+
+For more information to debug `pytest` test suites see: https://stribny.name/blog/pytest/
