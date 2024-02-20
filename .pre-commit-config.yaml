@@ -130,6 +130,7 @@ repos:
         additional_dependencies:
         - coverage
         - defusedxml
+        - pyfakefs
         - pytest-coverage
         - pytest-mock
         - lxml

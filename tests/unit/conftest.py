@@ -15,8 +15,18 @@ from __future__ import print_function
 import os
 import shutil
 import sys
+from types import ModuleType
 
 import pytest
+
+#
+# Prevent the import of the pandas module: It is not needed for unit tests:
+# But pyfakefs tries to import it for patching it. This is not needed and
+# causes a DeprecationWarning when Pandas is imported: It warns that the
+# pyarrow backend is deprecated and will be removed in a future version. Also,
+# the time to import pandas is very noticeable(0.3s) when starting tests:
+#
+sys.modules["pandas"] = ModuleType("pandas")
 
 
 @pytest.fixture(scope="function")

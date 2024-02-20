@@ -1,3 +1,4 @@
 lxml
+pyfakefs
 pytest-coverage
 pytest-mock
