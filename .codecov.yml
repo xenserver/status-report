@@ -1,0 +1,165 @@
+# For more configuration details:
+# https://docs.codecov.io/docs/codecov-yaml
+
+# After making edits, check if this file is valid by running:
+# curl -X POST --data-binary @.codecov.yml https://codecov.io/validate
+
+#
+# Coverage configuration
+# ----------------------
+#
+codecov:
+  #
+  # Show the Codecov status without waiting for other status to pass:
+  #
+  require_ci_to_pass: no
+  notify:
+    wait_for_ci: no
+
+github_checks:
+  #
+  # On adding coverage annotations to the code in the GitHub
+  # Code Review for now:
+  #
+  # - The annotations consume a lot of space in the PR code review,
+  #   and can make it hard to review files that are not covered yet.
+  #
+  # - The coverage can be visited using the Codecov link at all times.
+  #   https://app.codecov.io/gh/xapi-project/xen-api/pulls
+  #
+  # - The annotations can be hidden in GitHub PR code review by
+  #   pressing the "a" key or by deselecting the "Show comments"
+  #   checkbox but they are shown by default.
+  #
+  # - The Codecov Chrome and Firefox extension is a much nicer
+  #   way to indicate coverage:
+  #
+  #   Link: https://github.com/codecov/codecov-browser-extension
+  #
+  #   - How to enable: You need to log in to Codecov using Github.
+  #     For Firefox, enable the needed permissions:
+  #     https://github.com/codecov/codecov-browser-extension/issues/50
+  #
+  # Reference:
+  # http://docs.codecov.com/docs/common-recipe-list#disable-github-check-run-annotations
+  #
+  annotations: true
+
+
+#
+# Pull request comments:
+# ----------------------
+# This feature adds the code coverage summary as a comment on each PR.
+# See https://docs.codecov.io/docs/pull-request-comments
+# This same information is available from the Codecov checks in the PR's
+# "Checks" tab in GitHub even when this feature is disabled.
+#
+comment:
+  #
+  # Legend:
+  # "diff" is the Coverage Diff of the pull request.
+  # "files" are the files impacted by the pull request
+  # "flags" are the coverage status of the pull request
+  #
+  # For an even shorter layout, this may be used:
+  # layout: "condensed_header, diff, files, flags"
+  #
+  layout: "header, diff, files, flags"
+
+  #
+  # Only add the Codecov comment to the PR when coverage changes
+  #
+  require_changes: true
+  #
+  # The overall project coverage is secondary to the individual coverage
+  # and it is always shown in the repository at:
+  # - https://app.codecov.io/gh/xapi-project/xen-api
+  #
+  hide_project_coverage: false
+
+
+#
+# Coverage limits and display details:
+# ------------------------------------
+#
+coverage:
+
+  #
+  # Number of precision digits when showing coverage percentage e.g. 82%:
+  #
+  precision: 0
+
+  #
+  # Commit status checks and display:
+  # ---------------------------------
+  # https://docs.codecov.io/docs/commit-status
+  #
+  # target: Fail the PR if coverage is below that
+  # threshold: Allow reducing coverage by this amount
+  #
+  # - The values added are a very generous, friendly limit to not block most PRs
+  #
+  # - XAPI maintainers may tighten these screws more to require better tests
+  #
+  status: # global coverage status and limits
+    #
+    # Project limits
+    # --------------
+    # These checks are relative to the sum of all lines of code in total
+    project:
+      default:
+        #
+        # removed_code_behavior: Set it so that as long the patch is fully covered,
+        #
+        # https://about.codecov.io/blog/new-codecov-setting-removed-code-behavior/
+        # https://docs.codecov.com/docs/commit-status#removed_code_behavior
+        #
+        removed_code_behavior: adjust_base # off, removals_only, fully_covered_patch
+
+      # The above defaults apply to each of these, unless overridden here:
+      #
+      tool-py2:  # declare a new status context "tool-py2"
+        paths: ["xen-bugtool"]
+        flags: ["python2.7"]
+      tool-py3:  # declare a new status context "tool-py3"
+        paths: ["xen-bugtool"]
+        flags: ["python3.10.13"]
+
+      tests-py2:
+        paths: ["tests/**/test_*.py"]
+        flags: ["python2.7"]
+      tests-py3:
+        paths: ["tests/**/test_*.py"]
+        flags: ["python3.10.13"]
+
+    #
+    # Patch limits
+    # ------------
+    # These checks are relative to the changed lines of a PR
+    #
+    patch:
+
+      default:
+        #
+        # Coverage should not be reduced below current base:
+        #
+        target: auto
+        #
+        # Don't allow to reduce coverage by default
+        #
+        threshold: 0%
+
+      # The above defaults apply to each of these, unless overridden here:
+      script-py2:
+        paths: ["xen-bugtool"]
+        flags: ["python2.7"]
+      script-py3:
+        paths: ["xen-bugtool"]
+        flags: ["python3.10.13"]
+
+      tests-py2:
+        paths: ["tests/**/test_*.py"]
+        flags: ["python2.7"]
+      tests-py3:
+        paths: ["tests/**/test_*.py"]
+        flags: ["python3.10.13"]
