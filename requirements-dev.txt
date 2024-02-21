@@ -1,3 +1,5 @@
 lxml
+mock
 pytest-coverage
 pytest-mock
+types-mock

@@ -62,15 +62,25 @@ import xml
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
-try:
-    import hashlib
-    def md5_new():
-        return hashlib.md5()
-except:
-    import md5
-    def md5_new():
-        return md5.new()
+import defusedxml.sax
 
+if sys.version_info.major == 2:  # pragma: no cover
+    from commands import getoutput  # pyright: ignore[reportMissingImports]
+    from urllib2 import HTTPError, urlopen  # type:ignore[attr-defined]
+
+    unicode_type = unicode  # pyright:ignore[reportUndefinedVariable] # pylint: disable=unicode-builtin
+else:
+    from subprocess import getoutput
+    from urllib.request import HTTPError, urlopen
+
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:  # Used for type checking only:
+        from _typeshed import ReadableBuffer  # pylint: disable=unused-import
+
+    unicode_type = str
+
+# Fixed in 3.7: https://github.com/python/cpython/pull/12628
 # Monkey-patch zipfile's __del__ function to be less stupid
 #   Specifically, it calls close which further writes to the file, which
 #   fails with ENOSPC if the root filesystem is full
@@ -1096,7 +1106,7 @@ exclude those logs from the archive.
     # tree_output(CAP_PAM, SAMBA_DATA_DIR) # Explictly skip samba data as it contains credentials
     tree_output(CAP_PAM, VAR_LOG_DIR + "samba")
 
-    func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', dump_xapi_rrds)
+    dump_xapi_rrds(entries)
 
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,nwchan,wchan:25,args'], label='process-tree')
     func_output(CAP_PROCESS_LIST, 'fd_usage', fd_usage)
@@ -1376,7 +1386,17 @@ def dump_xapi_subprocess_info(cap):
     pp = pprint.PrettyPrinter(indent=4)
     return pp.pformat(result)
 
-def dump_xapi_rrds(cap):
+
+def dump_xapi_rrds(requested_entries):
+    """
+    Query xcp-rrdd to get the RRDs for all VMs and the host or pool master.
+
+    Due to triggering memory leaks, it was disabled by default (unless -a is used)
+    in 2013, it and was superceeded by collecting the compressed rrd files instead.
+    It's capability for --entries=persistent-stats is also hidden from the user.
+    """
+    if CAP_PERSISTENT_STATS not in requested_entries:
+        return
     socket.setdefaulttimeout(5)
     session = xapi_local_session()
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
@@ -1386,27 +1406,38 @@ def dump_xapi_rrds(cap):
     i_am_master = (this_host == pool['master'])
 
     for vm in session.xenapi.VM.get_all_records().values():
-        if vm['is_a_template']:
+        # CA-376326: Skip templates and VMs that are not resident on a host:
+        if vm['is_a_template'] or vm.get("resident_on") == "OpaqueRef:NULL":
             continue
         if vm['resident_on'] == this_host or (i_am_master and vm['power_state'] in ['Suspended', 'Halted']):
-            rrd = urllib.urlopen('http://localhost/vm_rrd?session_id=%s&uuid=%s' % (session._session, vm['uuid']))
             try:
-                i, _, _ = select([rrd], [], [], 5.0)
-                if len(i) == 1:
-                    data['xapi_rrd-%s' % vm['uuid']] = {'cap': cap,
-                                                        'output': StringIOmtime(rrd.read())}
+                rrd = urlopen(
+                    "http://localhost/vm_rrd?session_id=%s&uuid=%s"
+                    % (session._session, vm["uuid"]),
+                    timeout=5,
+                )
+            except HTTPError as e:
+                log("Failed to fetch RRD for VM %s: %s" % (vm["uuid"], e))
+                continue
+            try:
+                name = "xapi_rrd-%s.out" % vm['uuid']
+                vm_rrds = rrd.read()
+
+                def create_lambda(x=None):
+                    return lambda _: x
+
+                func_output(CAP_PERSISTENT_STATS, name, create_lambda(vm_rrds))
             finally:
                 rrd.close()
 
-    output = ''
-    rrd = urllib.urlopen('http://localhost/host_rrd?session_id=%s' % session._session)
     try:
+        rrd = urlopen("http://localhost/host_rrd?session_id=%s" % session._session)
         output = rrd.read()
+        func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', lambda _: output)
     finally:
         rrd.close()
 
     session.xenapi.session.logout()
-    return output
 
 
 class XapiDBContentHandler(xml.sax.ContentHandler):
@@ -1848,7 +1879,7 @@ class TarOutput(ArchiveWithTarSubarchives):
         ti.size = s.st_size
         self.tf.addfile(ti, file(filename,'rb'))
 
-    def add_path_with_data(self, name, data):
+    def add_path_with_data(self, name, data):  # type:(str, StringIOmtime) -> None
         ti = self._getTi(name)
         ti.mtime = data.mtime
         ti.size = len(data.getvalue())
@@ -1892,7 +1923,7 @@ class ZipOutput(ArchiveWithTarSubarchives):
             compress_type = zipfile.ZIP_DEFLATED
         self.zf.write(filename, name, compress_type)
 
-    def add_path_with_data(self, name, data):
+    def add_path_with_data(self, name, data):  # type:(str, StringIOmtime) -> None
         self.zf.writestr(name, data.getvalue())
 
     def close(self):
