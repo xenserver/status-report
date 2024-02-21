@@ -1,6 +1,6 @@
 .RECIPEPREFIX=>
 
-DARKER_OPTS = --isort -tpy36 --skip-string-normalization
+DARKER_OPTS = --isort -tpy36 --skip-string-normalization -l88
 darker-xen-bugtool:
 >@ pip install 'darker[isort]'
 >@ tmp=`mktemp`                                       ;\
