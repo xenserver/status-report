@@ -2172,7 +2172,10 @@ def capability(document, key):
 
 
 def yes(prompt):
-    yn = input(prompt)
+    if sys.version_info.major == 2:  # pragma: no cover
+        yn = raw_input(prompt)  # pyright: ignore[reportUndefinedVariable]
+    else:
+        yn = input(prompt)
 
     return len(yn) == 0 or yn.lower()[0] == 'y'
 

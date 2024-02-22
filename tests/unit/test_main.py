@@ -118,10 +118,15 @@ def patch_bugtool(bugtool, mocker, dom0_template, report_name, tmp_path):
     bugtool.DB_CONF = xensource_db_conf
 
     # To cover the the code resulting from inputting "n", we need to mock input:
-    def input(prompt):
+    def return_no_for_proc_files(prompt):
+        """Mock the input() function to return "n" when prompted for /proc files"""
+
         return "n" if "/proc" in prompt else "y"
 
-    bugtool.input = input
+    if sys.version_info.major == 2:  # pragma: no cover
+        bugtool.raw_input = return_no_for_proc_files
+    else:
+        bugtool.input = return_no_for_proc_files
 
     entries = [
         "xenserver-config",
