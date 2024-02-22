@@ -100,7 +100,7 @@ repos:
     hooks:
     -   id: mypy
         name: Run mypy to check e.g. that all expected arguments are passed to functions etc
-        additional_dependencies: [defusedxml, pytest, types-lxml]
+        additional_dependencies: [defusedxml, pytest, types-lxml, types-mock]
 
 
 -   repo: https://github.com/pycqa/pylint
@@ -130,9 +130,10 @@ repos:
         additional_dependencies:
         - coverage
         - defusedxml
+        - lxml
+        - mock
         - pytest-coverage
         - pytest-mock
-        - lxml
         - XenAPI
 
 
@@ -164,7 +165,7 @@ repos:
     -   id: pyright
         name: Run pyright to check the unit tests for any typing warnings (use for bugtool later)
         exclude: xen-bugtool
-        additional_dependencies: [defusedxml, pytest, lxml, XenAPI]
+        additional_dependencies: [defusedxml, pytest, lxml, mock, XenAPI]
 
 
 -   repo: https://github.com/mattseymour/pre-commit-pytype
