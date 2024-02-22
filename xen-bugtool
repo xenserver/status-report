@@ -58,6 +58,7 @@ import time
 import traceback
 import xml
 import zipfile
+from collections import OrderedDict
 from hashlib import md5 as md5_new
 from select import select
 from signal import SIGHUP, SIGTERM, SIGUSR1
@@ -497,7 +498,7 @@ dictionaries with the following keys:
   - "filter": An optional filter function to pass the file data through
 """
 
-directory_specifications = {}
+directory_specifications = OrderedDict()
 dev_null = open('/dev/null', 'r+')
 
 
