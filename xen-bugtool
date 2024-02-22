@@ -46,6 +46,8 @@ import pprint
 from xml.dom.minidom import parse, getDOMImplementation
 import zipfile
 from subprocess import Popen, PIPE
+from collections import OrderedDict
+from hashlib import md5 as md5_new
 from select import select
 from signal import SIGTERM, SIGUSR1, SIGHUP
 import platform
@@ -475,7 +477,20 @@ ANSWER_YES_TO_ALL = False
 SILENT_MODE = False
 entries = None
 data = {}
-directory_specifications = {}
+"""The global data dictionary of xen-bugtool
+It is filled by the various *_output functions, and then used to create the
+inventory.xml and the tarball or zipfile.
+
+The keys are the filenames of the collected data, and the values are
+dictionaries with the following keys:
+  - "cap": The capability of the data: one of the CAP_ constants
+  - "path": If created by file_output: The path to the file to collect
+  - "func": If created by func_output: A function that returns the file data
+  - "cmd_args": If crated by cmd_output: The command to return the file data
+  - "filter": An optional filter function to pass the file data through
+"""
+
+directory_specifications = OrderedDict()
 dev_null = open('/dev/null', 'r+')
 
 def no_unicode(x):
