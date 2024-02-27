@@ -174,7 +174,9 @@ jobs:
         env:
           PYTHONDEVMODE: yes  # Enable Python3 checks. See the comment above.
           # Skip the no-commit-to-branch check inside of GitHub CI (for CI on merge to master)
-          SKIP: no-commit-to-branch
+          # TODO: For push workflows, fix check-branch-needs-rebase to work in GitHub CI.
+          # GitHub PR workflows are already always rebased to the target branch (on run):
+          SKIP: no-commit-to-branch,check-branch-needs-rebase
 
       - name: Upload coverage reports to Codecov
         # If CODECOV_TOKEN is set, use the new codecov CLI to upload the coverage reports

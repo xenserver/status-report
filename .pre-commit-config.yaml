@@ -100,7 +100,12 @@ repos:
     hooks:
     -   id: mypy
         name: Run mypy to check e.g. that all expected arguments are passed to functions etc
-        additional_dependencies: [defusedxml, pytest, types-lxml, types-mock]
+        additional_dependencies:
+        - defusedxml
+        - pytest
+        - types-lxml
+        - types-mock
+        - types-requests
 
 
 -   repo: https://github.com/pylint-dev/pylint
@@ -114,6 +119,15 @@ repos:
 
 -   repo: local
     hooks:
+    -   id: check-branch-needs-rebase
+        name: Check if the current branch needs a rebase
+        entry: .github/workflows/check_branch-needs-rebase.py
+        language: python
+        always_run: true
+        pass_filenames: false
+        additional_dependencies: [requests]
+
+
     -   id: git-diff # Ref: https://github.com/pre-commit/pre-commit/issues/1712
         name: Show not staged changes (fixups may make them too)
         entry: sh -c '.vscode/ltex-sort-dictionary.sh && git diff --exit-code'
@@ -184,6 +198,13 @@ repos:
     rev: '2023.5.8'
     hooks:
     -   id: pytype
+        # Note: Pytype does not support Python 3.12 yet:
+        # https://google.github.io/pytype/support.html
+        #
+        # If your pre-commit has been installed in a Python3.12 environment,
+        # you need to uncomment the next line to run pytype in a Python3.10 environment:
+        # that also the GitHub Action currently uses:
+        # language_version: "3.10"
         name: Run pytype to check the unit tests for any typing warnings (does not work on bugtool yet)
         exclude: xen-bugtool
         additional_dependencies: [pytest]

@@ -7,6 +7,7 @@ attr
 authkey
 autoflake
 autouse
+backend
 basename
 basepath
 basestring
@@ -131,6 +132,7 @@ nsswitch
 nvme
 O_CREAT
 O_RDONLY
+oneline
 openvswitch
 opterr
 os
@@ -238,6 +240,7 @@ xc
 xcp
 xen
 xen-bugtool
+xenapi
 XenCenter
 xenopsd
 XENRT
