@@ -143,6 +143,7 @@ repos:
         - defusedxml
         - lxml
         - mock
+        - pyfakefs
         - pytest-coverage
         - pytest-mock
         - XenAPI
