@@ -1920,7 +1920,11 @@ class TarOutput(ArchiveWithTarSubarchives):
         if output_fd == -1:
             self.tf = tarfile.open(self.filename, mode)
         else:
-            self.tf = tarfile.open(None, 'w|', os.fdopen(output_fd, 'ab'))
+            try:  # Python3.6 does not support "ab" if the file is not seekable:
+                binary_fileobj = os.fdopen(output_fd, "ab")
+            except OSError:  # pragma: no cover
+                binary_fileobj = os.fdopen(output_fd, "wb")
+            self.tf = tarfile.open(name=None, mode="w|", fileobj=binary_fileobj)
 
     def _getTi(self, filename):
         ti = tarfile.TarInfo(filename)

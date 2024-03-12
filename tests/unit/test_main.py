@@ -265,7 +265,6 @@ def test_main_func_output_to_zipfile(patched_bugtool, capfd):
     assert_valid_inventory(bugtool, args, capfd, tmp_path, base_path, filetype)
 
 
-@pytest.mark.skipif(sys.version_info < (3,), reason="GitHub CI flaky for it")
 def test_main_func_output_to_tarfd(patched_bugtool, capfd):
     """Assert writing a tar fd creates a tarball with a valid XML inventory
 
