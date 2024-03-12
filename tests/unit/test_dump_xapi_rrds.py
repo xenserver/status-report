@@ -132,9 +132,9 @@ def assert_mock_session1(bugtool, mock_urlopen):
 def run_dump_xapi_rrds(mocker, bugtool, mock_session, mock_urlopen):
     """Run the bugtool function dump_xapi_rrds(entries) with the given mocks."""
     # Patch the urlopen, xapi_local_session and entries
-    mocker.patch("xen-bugtool.urlopen", side_effect=mock_urlopen)
-    mocker.patch("xen-bugtool.xapi_local_session", return_value=mock_session)
-    mocker.patch("xen-bugtool.entries", [bugtool.CAP_PERSISTENT_STATS])
+    mocker.patch("bugtool.urlopen", side_effect=mock_urlopen)
+    mocker.patch("bugtool.xapi_local_session", return_value=mock_session)
+    mocker.patch("bugtool.entries", [bugtool.CAP_PERSISTENT_STATS])
 
     # Run the function
     bugtool.dump_xapi_rrds(bugtool.entries)

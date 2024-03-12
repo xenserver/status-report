@@ -78,7 +78,14 @@ def imported_bugtool(testdir, dom0_template):
             spec.loader.exec_module(module)
             return module
 
-    bugtool = import_from_file("xen-bugtool", testdir + "/../../xen-bugtool")
+    #
+    # Import the xen-bugtool script as a module:
+    # Python3.12's mocker.patch() stopped supporting modules with a "-" in them.
+    #
+    # Use "bugtool" as the module name instead of "xen-bugtool" to avoid this
+    # problem with the mocker.patch() function in Python 3.12.
+    #
+    bugtool = import_from_file("bugtool", testdir + "/../../xen-bugtool")
     bugtool.ProcOutput.debug = True
 
     # Prepend tests/mocks to force the use of our mock xen.lowlevel.xc module:
