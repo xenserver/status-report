@@ -170,6 +170,7 @@ rrdd
 rrds
 sar
 sbin
+seekable
 SETFD
 setgroups
 SIGUSR
@@ -189,6 +190,7 @@ subarchive
 subarchives
 subclasses
 subdir
+subdirectories
 subdirectory
 subprocesses
 swtpm
