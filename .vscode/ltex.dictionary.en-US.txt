@@ -7,6 +7,8 @@ attr
 authkey
 autoflake
 autouse
+backend
+backtrace
 basename
 basepath
 basestring
@@ -56,6 +58,7 @@ dir
 dircmp
 dirs
 docstrings
+dont
 dp
 dunder
 efi
@@ -126,11 +129,13 @@ networkd
 NEWNET
 NEWNS
 nonexisting
+NOSONAR
 NRPE
 nsswitch
 nvme
 O_CREAT
 O_RDONLY
+oneline
 openvswitch
 opterr
 os
@@ -187,6 +192,7 @@ subarchive
 subarchives
 subclasses
 subdir
+subdirectories
 subdirectory
 subprocesses
 swtpm
@@ -238,6 +244,7 @@ xc
 xcp
 xen
 xen-bugtool
+xenapi
 XenCenter
 xenopsd
 XENRT
