@@ -1,9 +1,30 @@
 """Unit tests for bugtool core functions creating minimal output archives"""
+
 import os
 import tarfile
 import zipfile
 
 from lxml.etree import XMLSchema, parse  # pytype: disable=import-error
+
+MOCK_EXCEPTION_STRINGS = (
+    "Traceback (most recent call last):",
+    ", in collect_data",
+    ", in mock_data_collector",
+    'raise Exception("mock data collector failed")',
+    "Exception: mock data collector failed",
+)
+
+
+def mock_data_collector(capability):
+    """Mock data collector for the mock plugin"""
+
+    # Assert that the mock data collector is called with the correct capability:
+    assert capability == "mock"
+
+    # Raise an exception to test the backtrace output in the bugtool log:
+    # sourcery skip: raise-specific-error
+    # pylint: disable-next=broad-exception-raised
+    raise Exception("mock data collector failed")
 
 
 def assert_valid_inventory_schema(inventory_tree):
@@ -20,6 +41,7 @@ def assert_mock_bugtool_plugin_output(temporary_directory, subdir, names):
     expected_names = [
         subdir + "/etc/group",
         subdir + "/etc/passwd.tar",
+        subdir + "/function_output.out",
         subdir + "/inventory.xml",
         subdir + "/ls-l-%etc.out",
         subdir + "/proc/self/status",
@@ -64,8 +86,17 @@ def minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker):
     # For code coverage: This sub-archive will not be created as it has no file
     archive.declare_subarchive("/not/existing", subdir + "/not_created.tar")
     bugtool.load_plugins(just_capabilities=False)
+
+    # Add a mock data collector function to the mock plugin that raises an exception:
+    bugtool.func_output("mock", "function_output.out", mock_data_collector)
+
+    # Add collecting the xen-bugtool.log file (as CAP_XEN_BUGTOOL) to the archive:
+    bugtool.file_output(bugtool.CAP_XEN_BUGTOOL, [bugtool.XEN_BUGTOOL_LOG])
+
     # Mock the 2nd argument of the ls -l /etc to collect it using dom0_template:
     bugtool.data["ls -l /etc"]["cmd_args"][2] = dom0_template + "/etc"
+
+    # Collect the data from the mock plugin and write the output to the archive:
     bugtool.collect_data(subdir, archive)
     bugtool.include_inventory(archive, subdir)
     archive.close()
@@ -88,6 +119,10 @@ def assert_minimal_bugtool(bugtool, state_archive, dom0_template, cap):
         etc_dir = "ls -l %s/etc" % dom0_template
         for msg in [version, etc_dir]:
             assert "[time.strftime]  Starting '%s'\n" % msg in captured_stdout
+
+    # Assert that the backtrace from the mock data collector is printed:
+    for backtrace_string in MOCK_EXCEPTION_STRINGS:
+        assert backtrace_string in captured_stdout
 
     filetype = "tarball" if ".tar" in state_archive.filename else "archive"
     written = "Writing %s %s successful.\n" % (filetype, state_archive.filename)

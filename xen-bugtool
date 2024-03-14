@@ -720,8 +720,9 @@ def collect_data(subdir, archive):
             try:
                 s = no_unicode(v["func"](cap))
             except Exception:
-                s = traceback.format_exc()
-                log(s)
+                backtrace = traceback.format_exc()  # type: str
+                log(backtrace)
+                s = backtrace.encode()
             if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                     cap_sizes[cap] < caps[cap][MAX_SIZE]:
                 v['output'] = StringIOmtime(s)
