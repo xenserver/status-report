@@ -245,14 +245,9 @@ def assert_bugtool_logfile_data(logfile):
     # caught and logged, the log file should contain the backtrace from the
     # raised exception:
     #
-    # FIXME: This is not working in Python 2.7 yet (in this specific case): CA-390127
-    # CA-390127 affects Python3 in principle too, but it does not make this test fail
-    # Fixing CA-390127 is a prerequisite for enabling this check for Python 2.7:
-    #
-    if sys.version_info.major > 2:  # pragma: no cover
-        assert len(lines) == 9
-        for backtrace_string in MOCK_EXCEPTION_STRINGS:
-            assert backtrace_string in log
+    assert len(lines) == 9
+    for backtrace_string in MOCK_EXCEPTION_STRINGS:
+        assert backtrace_string in log
 
 
 def assert_valid_inventory(bugtool, args, cap, tmp_path, base_path, filetype):
