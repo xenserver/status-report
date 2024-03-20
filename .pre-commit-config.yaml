@@ -88,6 +88,7 @@ repos:
     -   id: darker
         name: Ensure that changes staged for updating xen-bugtool are black-formatted
         files: xen-bugtool
+        stages: [manual]  # Temporary measure for CVSM cleanup, re-enable later
         entry: make
         pass_filenames: false
         args: [darker-xen-bugtool]

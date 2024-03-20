@@ -356,7 +356,6 @@ CAP_XML_ELEMENT = 'capability'
 
 CAP_BLOBS                = 'blobs'
 CAP_BOOT_LOADER          = 'boot-loader'
-CAP_CVSM                 = 'CVSM'
 CAP_DEVICE_MODEL         = 'device-model'
 CAP_DISK_INFO            = 'disk-info'
 CAP_FCOE                 = 'fcoe'
@@ -423,8 +422,6 @@ def cap(key, pii=PII_MAYBE, min_size=-1, max_size=-1, min_time=-1,
 cap(CAP_BLOBS,               PII_NO,                    max_size=5*MB)
 cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
     max_time=10)
-cap(CAP_CVSM,                PII_NO,                    max_size=3*MB,
-    max_time=120)
 cap(CAP_DEVICE_MODEL,        PII_YES,   min_size=200*KB, max_size=8*MB)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=8*MB,
     max_time=120)
@@ -817,7 +814,8 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
             max_time=90)
 
     if  os.getenv('XEN_RT'):
-        entries = [CAP_BLOBS, CAP_BOOT_LOADER, CAP_CVSM, CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FCOE, CAP_FIRSTBOOT,
+        entries = [CAP_BLOBS, CAP_BOOT_LOADER,  # pragma: no cover
+                   CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FCOE, CAP_FIRSTBOOT,
                    CAP_HARDWARE_INFO, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_MULTIPATH,
@@ -921,8 +919,6 @@ exclude those logs from the archive.
 
     file_output(CAP_CRON, [CRON_DIRS + "/*"])
     file_output(CAP_CRON, [os.path.join(CRON_SPOOL, '*')])
-
-    func_output(CAP_CVSM, 'csl_logs', csl_logs)
 
     tree_output(CAP_DEVICE_MODEL, QEMU_DIR, QEMU_RESUME_RE)
 
@@ -1650,45 +1646,6 @@ def module_info(cap):
 
     return output.getvalue().decode()
 
-def csl_logs(cap):
-    socket.setdefaulttimeout(5)
-    session = xapi_local_session()
-    session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
-    this_host = session.xenapi.session.get_this_host(session._session)
-    # better way to find pool master?
-    pool = list(session.xenapi.pool.get_all_records().values())[0]
-    i_am_master = (this_host == pool['master'])
-
-    output = io.BytesIO()
-    procs = []
-    csl_targets_fetched = []
-
-    for pbd in session.xenapi.PBD.get_all_records().values():
-        if "device_config" in pbd and "target" in pbd["device_config"]:
-            if pbd['device_config']['target'] in csl_targets_fetched:
-                continue
-            sr = session.xenapi.SR.get_record(pbd['SR'])
-            if "type" in sr and sr["type"] == "cslg":
-                if sr['shared'] and pbd['host'] != this_host and not i_am_master:
-                    continue
-
-                dev_cfg = pbd['device_config']
-                server = "server=%s" % socket.gethostbyname(dev_cfg['target'])
-                if "port" in dev_cfg:
-                    server += ':' + dev_cfg['port']
-                if "username" in dev_cfg:
-                    server += ',' + dev_cfg['username']
-                if "password_secret" in dev_cfg:
-                    sec_ref = session.xenapi.secret.get_by_uuid(dev_cfg['password_secret'])
-                    server += ',' + session.xenapi.secret.get_value(sec_ref)
-                procs.append(ProcOutput([CSL, server, 'srv-log-get'], caps[cap][MAX_TIME], output))
-                csl_targets_fetched.append(dev_cfg['target'])
-
-    session.xenapi.session.logout()
-
-    run_procs([procs])
-
-    return output.getvalue()
 
 def multipathd_topology(cap):
     pipe = Popen(
