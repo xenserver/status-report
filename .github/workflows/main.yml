@@ -84,21 +84,25 @@ jobs:
           --cov-report term-missing
           --cov-report xml:.git/coverage27.xml
 
-      - name: Upload coverage reports to Codecov for the Python 2.7 tests
+      - name: Upload to Codecov (CLI uploader with CODECOV_TOKEN)
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        if: env.CODECOV_TOKEN && !cancelled() && github.event.pull_request.number
+        if: |
+          env.CODECOV_TOKEN && !cancelled() &&
+          ( github.event.pull_request.number || github.ref == 'refs/heads/master' )
         run: >
           rm -rfv codecov;curl -O https://cli.codecov.io/latest/linux/codecov &&
           sudo chmod +x codecov && ./codecov upload-process --report-type coverage
-          --git-service github --fail-on-error --dir .git --file coverage27.xml
-          --flag python2.7 --name "Python 2.7 for main"
+          --git-service github --fail-on-error --file .git/coverage27.xml
+          --flag python2.7 --name "Python 2.7 CLI uploader"
         continue-on-error: true
 
 
-      - name: Upload coverage reports to Codecov for the Python 2.7 tests
+      - name: Upload to Codecov (legacy Node.js 16 action, tokenless)
         # If CODECOV_TOKEN is not set, use the legacy tokenless codecov action:
-        if: ${{ !env.CODECOV_TOKEN && github.event.pull_request.number }}
+        if: |
+          !env.CODECOV_TOKEN && !cancelled() &&
+          ( github.event.pull_request.number || github.ref == 'refs/heads/master' )
         uses: codecov/codecov-action@v3
         env:
           PYTHON: python2.7
@@ -109,7 +113,7 @@ jobs:
           flags: python2.7
           env_vars: OS,PYTHON
           fail_ci_if_error: false
-          name: "Python 2.7 for main"
+          name: "Python 2.7 Node.js uploader"
           verbose: true
 
       - name: Add Pytest 2.7 coverage comment (if write permission is available)
@@ -133,6 +137,8 @@ jobs:
   pre-commit:
     name: "Python3: Pre-Commit Suite"
     runs-on: ubuntu-22.04
+    env:
+      PYTHON_VERSION: "3.10"
     steps:
 
       - uses: actions/checkout@v4
@@ -143,7 +149,7 @@ jobs:
       - uses: actions/setup-python@v5
         id: python
         with:
-          python-version: '3.10'
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - run: pip install -r requirements-dev.txt
@@ -202,22 +208,42 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+
+      # Codecov's tokenless upload requires Codecov to query the GitHub API to check
+      # the repo and the commit. Due to the massive rate of tokenless uploads, Codecov
+      # uploads often fail due to GitHub API rate limits. Therefore, the CODECOV_TOKEN
+      # should be set in the repository's secrets by the repository owner:
+      # https://docs.codecov.com/docs/adding-the-codecov-token
+
+      # For gh.com/xenserver/status-report, these are the links to get and set the token:
+      # Get: https://app.codecov.io/gh/xenserver/status-report/settings
+      # Set: https://github.com/xenserver/status-report/settings/secrets/actions
+
+      # Without it, the API calls are rate-limited by GitHub, and the upload may fail:
+      # https://github.com/codecov/feedback/issues/126#issuecomment-1932658904
+
       - name: Upload coverage reports to Codecov
-        # If CODECOV_TOKEN is set, use the new codecov CLI to upload the coverage reports
-        if: ${{ env.CODECOV_TOKEN && !cancelled() && github.event.pull_request.number }}
+        # If CODECOV_TOKEN is set, use the new Codecov CLI to upload the coverage reports
+        if: |
+          env.CODECOV_TOKEN && !cancelled() &&
+          ( github.event.pull_request.number || github.ref == 'refs/heads/master' )
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: >
-          pip install codecov-cli && codecovcli upload-process --report-type coverage
-          --git-service github --fail-on-error --dir .git --file coverage.xml
-          --flag python${{ steps.python.outputs.python-version }}
-          --name "Python 3.x for main"
-        continue-on-error: true
+          cp .git/coverage.xml coverage3.xml &&
+          rm -rfv codecov;curl -O https://cli.codecov.io/latest/linux/codecov &&
+          sudo chmod +x codecov && ./codecov upload-process --report-type coverage
+          --git-service github --fail-on-error --file coverage3.xml --disable-search
+          --flag python${{ env.PYTHON_VERSION }}
+          --name "CLI Upload for ${{ env.PYTHON_VERSION }}"
+        continue-on-error: false  # Fail the job if the upload with CODECOV_TOKEN fails
 
 
-      - name: Upload coverage reports to Codecov (legacy Node.js 16 action)
-        # If CODECOV_TOKEN is not set, use the legacy tokenless codecov action:
-        if: ${{ !env.CODECOV_TOKEN && github.event.pull_request.number }}
+      - name: Upload coverage reports to Codecov (fallback, legacy Node.js 16 action)
+        # If CODECOV_TOKEN is not set, use the legacy tokenless Codecov action:
+        if: |
+          !env.CODECOV_TOKEN && !cancelled() &&
+          ( github.event.pull_request.number || github.ref == 'refs/heads/master' )
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         uses: codecov/codecov-action@v3
@@ -228,10 +254,8 @@ jobs:
           # Not failing the job in this case is ok because the pre-commit checks
           # also contain a diff-cover job which would fail on missing changed lines:
           fail_ci_if_error: false
-          flags: >
-            ${{ format('python{0}', steps.python.outputs.python-version ) }}
-          name: "Python 3.x for main"
-          verbose: true
+          flags: python${{ env.PYTHON_VERSION }}
+          name: "Node.js Uploader for ${{ steps.python.outputs.python-version }}"
 
 
       - name: Add Pytest coverage comment (if write permission is available)
