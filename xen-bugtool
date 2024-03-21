@@ -1274,8 +1274,6 @@ exclude those logs from the archive.
     cmd_output(CAP_YUM, [RPM, '-qa'])
     tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
 
-    file_output(CAP_XEN_BUGTOOL, [XEN_BUGTOOL_LOG])
-
     # permit the user to filter out data
     for k in sorted(data.keys()):
         if not ANSWER_YES_TO_ALL and not yes("Include '%s'? [Y/n]: " % k):
@@ -1311,6 +1309,12 @@ exclude those logs from the archive.
     # collect selected data now
     output_ts('Running commands to collect data')
     collect_data(subdir, archive)
+
+    # after all is done, include all log() entries from the XEN_BUGTOOL_LOG file
+    if CAP_XEN_BUGTOOL in entries:
+        archive.addRealFile(
+            construct_filename(subdir, XEN_BUGTOOL_LOG, {}), XEN_BUGTOOL_LOG
+        )
 
     # include inventory
     include_inventory(archive, subdir)
