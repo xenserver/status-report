@@ -56,7 +56,7 @@ def assert_mock_bugtool_plugin_output(temporary_directory, subdir, names):
 def minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker):
     """Load the plugins from the template and include the generated inventory"""
 
-    mocker.patch("xen-bugtool.time.strftime", return_value="time.strftime")
+    mocker.patch("bugtool.time.strftime", return_value="time.strftime")
     # Load the mock plugin from dom0_template and process the plugin's caps:
     bugtool.PLUGIN_DIR = dom0_template + "/etc/xensource/bugtool"
     bugtool.entries = ["mock"]
