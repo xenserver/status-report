@@ -7,6 +7,7 @@ import zipfile
 
 import pytest
 
+# sourcery skip: dont-import-test-modules
 from . import test_xapidb_filter
 from .test_output import assert_valid_inventory_schema, parse
 
@@ -189,11 +190,15 @@ def check_output(bugtool, captured, tmp_path, filename, filetype):
 
     # Extract the created output file into the tmp_path
     if filetype == "zip":
-        zipfile.ZipFile(filename).extractall(tmp_path)
+        zipfile.ZipFile(filename).extractall(tmp_path)  # nosec # noqa: B202 # NOSONAR
     elif filetype == "tar":
-        tarfile.TarFile.open(filename).extractall(tmp_path)
+        tar = tarfile.TarFile.open(filename)
+        tar.extractall(tmp_path)  # nosec
+        tar.close()
     elif filetype == "tar.bz2":
-        tarfile.TarFile.open(filename, "r:bz2").extractall(tmp_path)
+        tar = tarfile.TarFile.open(filename, "r:bz2")
+        tar.extractall(tmp_path)  # nosec
+        tar.close()
 
     output_directory = filename.replace(".%s" % filetype, "/")
 

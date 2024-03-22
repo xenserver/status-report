@@ -514,9 +514,7 @@ class StringIOmtime(io.BytesIO):
 
 
 def no_unicode(x):
-    if isinstance(x, unicode_type):
-        return x.encode('utf-8')
-    return x
+    return x.encode("utf-8") if isinstance(x, unicode_type) else x
 
 
 def log_internal_error(e):
@@ -2168,7 +2166,7 @@ def disk_list():
         with open(PROC_PARTITIONS, "r") as f:
             f.readline()
             f.readline()
-            for line in f.readlines():
+            for line in f:
                 major, _, _, name = line.split()
                 if int(major) < 254 and not partition_re.match(name):
                     disks.append(name)
@@ -2235,9 +2233,12 @@ class ProcOutput:
 
     def read_line(self):
         assert self.running
+        assert self.proc
+        assert self.proc.stdout
         line = self.proc.stdout.readline()
         if not line:
             # process exited
+            self.proc.stdout.close()
             self.status = self.proc.wait()
             self.proc = None
             self.running = False

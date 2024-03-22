@@ -186,10 +186,10 @@ def isolated_bugtool(bugtool_log):
     """
 
     # Make the current cwd (a temporary directory) read-only:
-    os.chmod(".", 0o555)
+    os.chmod(".", 0o555)  # nosec
 
     yield bugtool_log  # runs the test function in the read-only directory
 
-    os.chmod(".", 0o777)  # restore write permissions (for cleanup)
+    os.chmod(".", 0o777)  # nosec # restore write permissions (for cleanup)
 
     # upon return, bugtool_log continues with its cleanup

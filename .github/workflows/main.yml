@@ -178,6 +178,30 @@ jobs:
           # GitHub PR workflows are already always rebased to the target branch (on run):
           SKIP: no-commit-to-branch,check-branch-needs-rebase
 
+      - uses: frabert/replace-string-action@v2
+        id: get_sonarcloud_project_key
+        with:
+          pattern: '(\w+)/(\w+)'
+          replace-with: '$1_$2'
+          string: ${{ github.repository }}
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        if: ${{ env.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.projectKey=${{ steps.get_sonarcloud_project_key.outputs.replaced }}
+            -Dsonar.python.version=3.6
+            -Dsonar.python.coverage.reportPaths=.git/coverage.xml
+            -Dsonar.python.xunit.reportPath=.git/pytest.xml
+            -Dsonar.sources=.
+            -Dsonar.exclusions=tests/**
+            -Dsonar.tests=tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: Upload coverage reports to Codecov
         # If CODECOV_TOKEN is set, use the new codecov CLI to upload the coverage reports
         if: ${{ env.CODECOV_TOKEN && !cancelled() && github.event.pull_request.number }}

@@ -28,7 +28,7 @@ def test_system_load(output_archive_type="zip"):
     os.environ["PATH"] = "/var:" + os.environ["PATH"]
     with open("/var/sar", "w") as sar:
         sar.write("#!/bin/sh\nsleep 1;cat /etc/xensource-inventory\n")
-    os.chmod("/var/sar", 0o777)
+    os.chmod("/var/sar", 0o777)  # nosec
 
     run_bugtool_entry(output_archive_type, entry)
 

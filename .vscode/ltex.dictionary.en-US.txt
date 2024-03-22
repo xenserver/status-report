@@ -8,6 +8,7 @@ authkey
 autoflake
 autouse
 backend
+backtrace
 basename
 basepath
 basestring
@@ -37,6 +38,7 @@ cli
 CLOEXEC
 clusterd
 Codecov
+codecovcli
 conf
 CONFD
 config
@@ -57,7 +59,9 @@ dir
 dircmp
 dirs
 docstrings
+dont
 dp
+Dsonar
 dunder
 efi
 efivars
@@ -80,6 +84,8 @@ filesystem
 filetype
 finalizer
 firstboot
+frabert
+frolvlad
 fs
 getgid
 getuid
@@ -114,6 +120,7 @@ ltex
 maxsplit
 mdadm
 mdstat
+Misha
 modinfo
 mountpoint
 mountpoints
@@ -127,6 +134,9 @@ networkd
 NEWNET
 NEWNS
 nonexisting
+noninteractive
+noqa
+NOSONAR
 NRPE
 nsswitch
 nvme
@@ -159,6 +169,7 @@ pytest
 pytest's
 PYTHONDEVMODE
 PYTHONDONTWRITEBYTECODE
+PYTHONWARNINGS
 pytype
 rebase
 reportMissingImports
@@ -179,6 +190,7 @@ snmp
 snmpd
 softirqs
 softnet
+sonarcloud
 sourcery
 src
 startswith
@@ -210,6 +222,7 @@ tmpdata
 tmpdir
 tmpdir's
 tmpfs
+tokenless
 toolstack
 toplevel
 typeshed
@@ -256,6 +269,7 @@ xml
 xs
 xsconfig
 xsversion
+xunit
 xvda
 yestoall
 zipfile
