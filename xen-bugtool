@@ -59,6 +59,7 @@ import traceback
 import xml
 import zipfile
 from collections import OrderedDict
+from contextlib import contextmanager
 from hashlib import md5 as md5_new
 from select import select
 from signal import SIGHUP, SIGTERM, SIGUSR1
@@ -517,7 +518,16 @@ def no_unicode(x):
     return x.encode("utf-8") if isinstance(x, unicode_type) else x
 
 
-def log_internal_error(e):
+@contextmanager
+def log_exceptions():
+    """Context manager to log exceptions."""
+    try:
+        yield
+    except Exception as e:  # pylint: disable=broad-except
+        log("%s, %s" % (e, traceback.format_exc()))
+
+
+def log_internal_error(_):
     """Log an internal error and return an empty string as bugtool output data"""
     log("bugtool: Internal error: " + traceback.format_exc())
     return ""  # For now, no diagnostic output in the individual output files
@@ -717,8 +727,9 @@ def collect_data(subdir, archive):
             try:
                 s = no_unicode(v["func"](cap))
             except Exception:
-                s = traceback.format_exc()
-                log(s)
+                backtrace = traceback.format_exc()  # type: str
+                log(backtrace)
+                s = backtrace.encode()
             if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                     cap_sizes[cap] < caps[cap][MAX_SIZE]:
                 v['output'] = StringIOmtime(s)
@@ -1127,7 +1138,8 @@ exclude those logs from the archive.
     # tree_output(CAP_PAM, SAMBA_DATA_DIR) # Explictly skip samba data as it contains credentials
     tree_output(CAP_PAM, VAR_LOG_DIR + "samba")
 
-    dump_xapi_rrds(entries)
+    with log_exceptions():
+        dump_xapi_rrds(entries)
 
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,nwchan,wchan:25,args'], label='process-tree')
     func_output(CAP_PROCESS_LIST, 'fd_usage', fd_usage)
@@ -1270,8 +1282,6 @@ exclude those logs from the archive.
     cmd_output(CAP_YUM, [RPM, '-qa'])
     tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
 
-    file_output(CAP_XEN_BUGTOOL, [XEN_BUGTOOL_LOG])
-
     # permit the user to filter out data
     for k in sorted(data.keys()):
         if not ANSWER_YES_TO_ALL and not yes("Include '%s'? [Y/n]: " % k):
@@ -1307,6 +1317,12 @@ exclude those logs from the archive.
     # collect selected data now
     output_ts('Running commands to collect data')
     collect_data(subdir, archive)
+
+    # after all is done, include all log() entries from the XEN_BUGTOOL_LOG file
+    if CAP_XEN_BUGTOOL in entries:
+        archive.addRealFile(
+            construct_filename(subdir, XEN_BUGTOOL_LOG, {}), XEN_BUGTOOL_LOG
+        )
 
     # include inventory
     include_inventory(archive, subdir)

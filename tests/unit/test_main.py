@@ -1,4 +1,5 @@
 """pytest module for unit-testing xen-bugtool's main() function"""
+
 import logging
 import os
 import sys
@@ -9,7 +10,7 @@ import pytest
 
 # sourcery skip: dont-import-test-modules
 from . import test_xapidb_filter
-from .test_output import assert_valid_inventory_schema, parse
+from .test_output import MOCK_EXCEPTION_STRINGS, assert_valid_inventory_schema, mock_data_collector, parse
 
 
 yes_to_all_warning = """\
@@ -133,6 +134,7 @@ def patch_bugtool(bugtool, mocker, dom0_template, report_name, tmp_path):
         "xenserver-config",
         "xenserver-databases",
         "mock",
+        "xen-bugtool",
         "unknown",
     ]
     sys.argv.append("--entries=" + ",".join(entries))
@@ -178,6 +180,10 @@ def check_output(bugtool, captured, tmp_path, filename, filetype):
     # Provides a nicely formatted diff (unlike str.startswith()) on assertions:
     assert captured.out[: len(out_begin)] == out_begin
 
+    # Assert that the backtrace from the mock data collector is printed:
+    for backtrace_string in MOCK_EXCEPTION_STRINGS:
+        assert backtrace_string in captured.out
+
     if bugtool.ProcOutput.debug:
         assert p + "Starting '%s list'\n" % bugtool.BIN_STATIC_VDIS in captured.out
         for ls in ("/opt/xensource", "/etc/xensource/static-vdis"):
@@ -212,9 +218,40 @@ def check_output(bugtool, captured, tmp_path, filename, filetype):
         d = xenstore_ls_f.read()
     assert d == "/local/domain/1/data/set_clipboard = <filtered for security>\n"
 
+    #
+    # Given that --entries= includes `xen-bugtool`, the output should contain a log
+    # file with the backtrace from the Exception raised by the mock data collector:
+    #
+    with open(output_directory + "/xen-bugtool.log") as logfile:
+        assert_bugtool_logfile_data(logfile)
+
     # Assertion check of the output files is missing an inventory entry:
     # Do this check in a future test which runs
     assert_valid_inventory_schema(parse(output_directory + "inventory.xml"))
+
+
+def assert_bugtool_logfile_data(logfile):
+    """
+    Given that --entries= includes `xen-bugtool`, the output should contain a log
+    file with the backtrace from the Exception raised by the mock data collector:
+    """
+    log = logfile.read()
+    lines = log.splitlines()
+    assert len(lines) >= 2
+    assert lines[0].startswith(
+        "xen-bugtool --unlimited --entries=xenserver-config,"
+        "xenserver-databases,mock,xen-bugtool,unknown --out",
+    )
+    assert lines[1].startswith("PATH=")
+
+    #
+    # Given that the exception raised by the mock data collector function is
+    # caught and logged, the log file should contain the backtrace from the
+    # raised exception:
+    #
+    assert len(lines) == 9
+    for backtrace_string in MOCK_EXCEPTION_STRINGS:
+        assert backtrace_string in log
 
 
 def assert_valid_inventory(bugtool, args, cap, tmp_path, base_path, filetype):
@@ -233,6 +270,12 @@ def assert_valid_inventory(bugtool, args, cap, tmp_path, base_path, filetype):
     :raises AssertionError: When the output does not match the expected output.
     """
     sys.argv.extend(args)
+
+    # Given that we'd like to test handling of exceptions from func_output callbacks,
+    # we add a mock data collector function to a mock entry that raises an exception:
+    #
+    bugtool.entries = ["mock"]
+    bugtool.func_output("mock", "function_output.out", mock_data_collector)
 
     assert bugtool.main() == 0
     filename = base_path + "." + filetype
