@@ -119,6 +119,15 @@ repos:
         files: '(^xen-bugtool|\.py)$'
 
 
+# --------------------
+# Hint about this hook
+# --------------------
+#
+# If you want to skip this hook (in case the branch shall not be rebased), use:
+# export SKIP=check-branch-needs-rebase or (for example):
+# SKIP=check-branch-needs-rebase pre-commit run --hook-stage push --all-files -v
+# SKIP=check-branch-needs-rebase git commit -s -m "your message"
+#
 -   repo: local
     hooks:
     -   id: check-branch-needs-rebase
