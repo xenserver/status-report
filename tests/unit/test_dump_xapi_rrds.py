@@ -158,3 +158,37 @@ def test_dump_xapi_rrds_master(mocker, isolated_bugtool, mock_session1, mock_url
 
     run_dump_xapi_rrds(mocker, isolated_bugtool, mock_session1, mock_urlopen)
     assert_mock_session1(isolated_bugtool, mock_urlopen)
+
+
+def test_log_exceptions(isolated_bugtool, capsys):
+    """Test log_exceptions() to log the exception message and return the exception type."""
+
+    try:
+        with isolated_bugtool.log_exceptions():
+            raise IOError("message")
+    except BaseException:  # pragma: no cover # NOSONAR
+        assert False, "log_exceptions() is expected to catch all Exceptions"
+    finally:
+        with capsys.disabled():
+            # Assert that the exception message is logged to stdout
+            assert_log_contents(capsys.readouterr().out.splitlines())
+
+            # Assert that the exception message is logged to the log file
+            with open(isolated_bugtool.XEN_BUGTOOL_LOG, "r") as f:
+                log = f.read().splitlines()
+                assert_log_contents(log)
+
+            # Clear the log file to indicate that we checked the log file contents
+            with open(isolated_bugtool.XEN_BUGTOOL_LOG, "w") as f:
+                f.write("")
+
+
+def assert_log_contents(log):
+    """Assert the contents of the log"""
+
+    # Check the log file contents
+    assert log[0] == "message, Traceback (most recent call last):"
+    assert ", in log_exceptions" in log[1]
+    assert log[2] == "    yield"
+    assert ", in test_log_exceptions" in log[3]
+    assert log[4] == '    raise IOError("message")'
