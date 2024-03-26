@@ -40,17 +40,21 @@ def test_xenserver_config(output_archive_type):
     assert_content_from_dom0_template("etc/xensource-inventory")
 
     # Sample SNMP config files are currently not in the dom0_template!
-    # Reading them records the error message in the file content, do we want this?
-    # I think the "Failed to filter" is redundant in it.
-    # Maybe decide on a standardized error for missing files in bugtool?
 
-    # TODO: To be clarified or fixed as part of CP-46759 or a follow-up!
-
+    # sourcery skip: no-loop-in-tests
     for input_file in [
         "/etc/snmp/snmp.xs.conf",
         "/etc/snmp/snmpd.xs.conf",
         "/var/lib/net-snmp/snmpd.conf",
     ]:
+        #
+        # Here, we assert that the filter functions were called and tried to read
+        # the file (they fail here as the files are not part of the dom0_template).
+        #
+        # But this is fine, all we want to test here is that the filter was called:
+        # The filter functions are tested as part of the unit tests
+        # in tests/unit/test_snmp.py instead:
+        #
         assert_file(
             input_file.split("/")[-1].replace(".", "_") + ".out",
             # That's a very long error message an the 1st two parts are redundant:

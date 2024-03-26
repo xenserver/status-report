@@ -1,5 +1,9 @@
 # Developer Documentation for Xen-Bugtool
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xenserver-next_status-report&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=xenserver-next_status-report)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=xenserver-next_status-report&metric=bugs)](https://sonarcloud.io/summary/new_code?id=xenserver-next_status-report)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=xenserver-next_status-report&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=xenserver-next_status-report)
+
 This developer documentation provides detailed information about
 the development environment for `xen-bugtool`,
 a tool designed to assist with debugging XenServer issues.
