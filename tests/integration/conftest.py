@@ -24,7 +24,7 @@ def create_and_enter_test_environment(mocks_dir):
 
     activate_private_test_namespace(
         BUGTOOL_DOM0_TEMPL,
-        ["/etc", "/opt", "/usr/sbin", "/usr/lib/systemd"],
+        ["/etc", "/opt/xensource", "/usr/sbin", "/usr/lib/systemd"],
     )
 
     # Add the mocks directory to the PYTHONPATH for sub-processes to find the mocks:
