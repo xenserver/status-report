@@ -10,14 +10,14 @@ from .utils import (
 )
 
 
-def test_xenserver_config(output_archive_type):
+def test_xenserver_config(bugtool_script, output_archive_type):
     """
     Run xen-bugtool --entries=xenserver-config in test jail
     (created by auto-fixtures, see README-pytest-chroot.md)
     """
     entry = "xenserver-config"
 
-    run_bugtool_entry(output_archive_type, entry)
+    run_bugtool_entry(bugtool_script, output_archive_type, entry)
 
     # Check the output of xen-bugtool --entries=xenserver-config:
 

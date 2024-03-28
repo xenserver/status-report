@@ -11,7 +11,7 @@ from .utils import (
 
 # In this test case we need to sleep for 1 sec, and it is sufficient
 # to test to only with zip archives to keep the test duration short:
-def test_system_load(output_archive_type="zip"):
+def test_system_load(bugtool_script, output_archive_type="zip"):
     """Test xen-bugtool --entries=system-load"""
 
     entry = "system-load"
@@ -30,7 +30,7 @@ def test_system_load(output_archive_type="zip"):
         sar.write("#!/bin/sh\nsleep 1;cat /etc/xensource-inventory\n")
     os.chmod("/var/sar", 0o777)  # nosec
 
-    run_bugtool_entry(output_archive_type, entry)
+    run_bugtool_entry(bugtool_script, output_archive_type, entry)
 
     assert_content_from_dom0_template("sar-A.out", "etc/xensource-inventory")
     assert_file("var/log/sa/sa01", "sa01 test data")

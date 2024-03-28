@@ -6,6 +6,7 @@ see README-pytest-chroot.md for an overview:
 from __future__ import print_function
 
 import os
+import sys
 
 import pytest
 
@@ -18,10 +19,18 @@ from .utils import BUGTOOL_DOM0_TEMPL, BUGTOOL_OUTPUT_DIR, run
 
 
 @pytest.fixture(autouse=True, scope="session")
-def create_and_enter_test_environment():
+def create_and_enter_test_environment(mocks_dir):
     """Activate a namespace with bind mounts for testing xen-bugtool"""
-    activate_private_test_namespace(BUGTOOL_DOM0_TEMPL, ["/etc", "/opt", "/usr/sbin", "/usr/lib/systemd"])
-    os.environ["PYTHONPATH"] = "tests/mocks"
+
+    activate_private_test_namespace(
+        BUGTOOL_DOM0_TEMPL,
+        ["/etc", "/opt", "/usr/sbin", "/usr/lib/systemd"],
+    )
+
+    # Add the mocks directory to the PYTHONPATH for sub-processes to find the mocks:
+    os.environ["PYTHONPATH"] = mocks_dir
+    # Add the mocks directory to the sys.path for the current process to find the mocks:
+    sys.path.insert(0, mocks_dir)
 
 
 # zip, tar, tar.bz2 are the three output formats supported by xen_bugtool:
