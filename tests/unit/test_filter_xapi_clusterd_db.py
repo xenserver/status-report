@@ -140,28 +140,11 @@ EXPECTED = r"""{
 def assert_filter_xapi_clusterd_db(bugtool, original, expected):
     """Assert that filter_xapi_clusterd_db() replaces sensitive strings"""
 
-    # -------------------------------------------------------------------------
-    # Common setup:
-    # -------------
-    # - Define the file name of the temporary xAPI clusterd db.
-    #
-    # Notes:
-    # ------
-    # - To allow for checking of logged errors, the bugtool_log fixture will be used.
-    #
-    # - After the test function returns, the bugtool_log fixture checks the log:
-    #
-    #   The bugtool_log fixture will raise an error if the xen-bugtool.log file
-    #   as unexpected content, and the error message will be printed to stderr.
-    #
-    #   This way, cases where errors logged by the code under test can be checked.
+    # -> Common setup: Define the file name of the temporary xAPI clusterd db.
     #
     temporary_test_clusterd_db = "tmp/xapi_clusterd_db.json"
-    # -------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------
-    # Prepare:
-    # --------
+    # -> Prepare:
     #
     # 1. Write the original xapi-clusterd/db contents to the temporary file
     # 2. Patch the bugtool module to use the temporary file for reading the db
@@ -170,30 +153,26 @@ def assert_filter_xapi_clusterd_db(bugtool, original, expected):
         f.write(original)
 
     bugtool.XAPI_CLUSTERD = temporary_test_clusterd_db
-    # -------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------
-    # Act:
-    # ----
-    #
-    # -> Call the  filter function
+    # -> Act: Call the  filter function
     #
     filtered = bugtool.filter_xapi_clusterd_db("_")
-    # -------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------
-    # Assert:
-    # -------
-    #
-    # -> Compare the filtered output with the expected output
+    # -> Assert: Compare the filtered output with the expected output
     #
     try:
         assert json.loads(filtered) == json.loads(expected)
     except ValueError:  # For invalid json (to test handing of corrupted db)
         assert filtered == expected
 
+    # -> Cleanup: Remove the temporary xapi clusterd file
+    #
+    # Remove the temporary file for the xapi-clusterd/db contents after the test
+    # is done. The test fixtures used by the test functions check that the test
+    # did not cause xen-bugtool to leave any temporary files files behind,
+    # and this temporary file would also trigger that check.
+    #
     os.remove(temporary_test_clusterd_db)
-    # -------------------------------------------------------------------------
 
 
 def test_pems_blobs(isolated_bugtool):
