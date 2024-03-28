@@ -2,17 +2,19 @@
 
 This project uses `pre-commit` to run the tests in `virtualenv`s for Python2.7
 and Python3.x:
+- It fixes the code style of the tests with black and of xen-bugtool with darker
+- It runs pytest with coverage and check the coverage on the changed lines
+- It runs `pylint`, `mypy`, `pyright` and `pytype`:
 
 The pre-commit configuration defines how it runs
 `pytest`, `pylint` and static analysis using `mypy`, `pyright`, and `pytype`.
 Links:
-
 - https://mypy.readthedocs.io/en/stable/
 - https://microsoft.github.io/pyright/
 - https://google.github.io/pytype/user_guide.html
 
-- Because this project straddles Python2 and Python3, type comments as described
-  in PEP 484 is used instead of Python3 type annotations:
+- Because this project is a hybrid Python2 & Python3 project, type comments
+  (described in PEP 484) are used instead of Python3 type annotations:
 [Suggested syntax for Python 2.7 and straddling code](https://peps.python.org/pep-0484/#suggested-syntax-for-python-2-7-and-straddling-code)
 
 `pre-commit` runs the full analysis and test suite for Python 2.7 and 3.x.
@@ -57,10 +59,17 @@ pre-commit install
 
 ## Advanced: Run pre-commit hooks as part of `git rebase -i`
 
-For reference only:
+Ideally, if possible, pre-commit hooks should run on every commit to ensure that
+each works without any errors, even when checking out an intermediary commit.
+This is needed to allow for `git bisect` for finding commits causing breakage.
 
-By default, `pre-commit` does not run during `git rebase` commands.
+However, by default, `pre-commit` does not run during `git rebase` commands.
 It checks only regular commits, not amends and not rebases.
+
+`pre-commit` can be run during `git rebase` explicitly by using:
+    git rebase -x 'pre-commit run --from-ref HEAD~ --to-ref HEAD' HEAD~1
+
+Note: Replace the `1` with the number of commits to run the pre-commit hooks on.
 
 When moving changes between commits while rebasing, they can get broken.
 
@@ -74,15 +83,7 @@ new commit in the stack work for itself, you can use a git alias:
 When using `git prebase -i` instead of `git rebase -i`, pre-commit will
 run the configured commit hooks for each commit of the rebase.
 
-When the hoosk include tests such as in status-report, this ensures that tests
-also pass on each intermediate commit.
-
-Example: Commits from the end of a PR shall be postponed to a new PR:
-1. Create a copy of the branch and as a backup.
-2. Remove the commit(s) that shall be moved to a new PR.
-
-Independent on which commits this has to be done, the remaining commits
-are still unit-tested and working on their own.
+This ensures that tests also pass on each intermediate commit.
 
 When, during a `git prebase -i`, a pre-commit hook fails or makes changes,
 the `rebase` stops, this is the workflow:
