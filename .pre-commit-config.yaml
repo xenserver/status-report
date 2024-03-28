@@ -152,13 +152,8 @@ repos:
     hooks:
     -   id: pytest
         name: check that the Xen-Bugtool Test Environment passes
-        entry: env PYTHONDEVMODE=yes python3 -m pytest tests/unit
-            --cov xen-bugtool
-            --cov tests/unit
-            --junitxml=.git/pytest.xml
-            --cov-report term-missing
-            --cov-report html:.git/coverage.html
-            --cov-report xml:.git/coverage.xml
+        entry: env PYTHONDEVMODE=yes sh -c
+            "coverage run && coverage xml && coverage html"
         require_serial: true
         pass_filenames: false
         language: python

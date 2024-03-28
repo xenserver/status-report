@@ -116,9 +116,9 @@ def extract(zip_or_tar_archive, archive_type):  # pragma: no cover
         if archive_type == "zip":
             archive = zipfile.ZipFile(zip_or_tar_archive)  # type: zipfile.ZipFile|tarfile.TarFile
         elif archive_type == "tar":
-            archive = tarfile.open(zip_or_tar_archive)
+            archive = tarfile.open(zip_or_tar_archive)  # NOSONAR
         elif archive_type == "tar.bz2":
-            archive = tarfile.open(zip_or_tar_archive, "r:bz2")
+            archive = tarfile.open(zip_or_tar_archive, "r:bz2")  # NOSONAR
         else:
             raise RuntimeError("Unsupported output archive type: %s" % archive_type)
         archive.extractall()

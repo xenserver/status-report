@@ -27,6 +27,9 @@ def mock_data_collector(capability):
     raise Exception("mock data collector failed")
 
 
+ETC_PASSWD = "/etc/passwd"
+
+
 def assert_valid_inventory_schema(inventory_tree):
     """Assert that the passed inventory validates against the inventory schema"""
 
@@ -55,21 +58,21 @@ def assert_mock_bugtool_plugin_output(temporary_directory, subdir, names):
     # Will be refactored to be more easy in a separate commit soon:
     assert_valid_inventory_schema(parse(extracted + "inventory.xml"))
     with open(extracted + "proc_version.out") as proc_version:
-        assert proc_version.read()[:14] == "Linux version "
+        assert proc_version.read().startswith("Linux version ")
     with open(extracted + "ls-l-%etc.out") as etc:
-        assert etc.read()[:6] == "total "
+        assert etc.read().startswith("total ")
     with open(extracted + "proc/self/status") as status:
-        assert status.read()[:5] == "Name:"
+        assert status.read().startswith("Name:")
     with open(extracted + "proc/sys/fs/epoll/max_user_watches") as max_user_watches:
         assert int(max_user_watches.read()) > 0
     with open(extracted + "etc/group") as group:
         assert group.readline() == "root:x:0:\n"
 
     # Check the contents of the sub-archive "etc/passwd.tar":
-    with tarfile.TarFile(extracted + "etc/passwd.tar") as tar:
-        assert tar.getnames() == [subdir + "/etc/passwd"]
+    with tarfile.TarFile(extracted + ETC_PASSWD + ".tar") as tar:
+        assert tar.getnames() == [subdir + ETC_PASSWD]
         # TarFile.extractfile() does not support context managers on Python2:
-        passwd = tar.extractfile(subdir + "/etc/passwd")
+        passwd = tar.extractfile(subdir + ETC_PASSWD)
         assert passwd
         assert passwd.readline() == b"root:x:0:0:root:/root:/bin/bash\n"
         passwd.close()
@@ -82,7 +85,7 @@ def minimal_bugtool(bugtool, dom0_template, archive, subdir, mocker):
     # Load the mock plugin from dom0_template and process the plugin's caps:
     bugtool.PLUGIN_DIR = dom0_template + "/etc/xensource/bugtool"
     bugtool.entries = ["mock"]
-    archive.declare_subarchive("/etc/passwd", subdir + "/etc/passwd.tar")
+    archive.declare_subarchive(ETC_PASSWD, subdir + ETC_PASSWD + ".tar")
     # For code coverage: This sub-archive will not be created as it has no file
     archive.declare_subarchive("/not/existing", subdir + "/not_created.tar")
     bugtool.load_plugins(just_capabilities=False)
