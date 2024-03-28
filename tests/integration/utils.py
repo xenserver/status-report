@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import filecmp
 import os
+import runpy
 import shutil
 import sys
 import tarfile
@@ -11,12 +12,6 @@ import zipfile
 from subprocess import PIPE, Popen
 
 from lxml.etree import XMLSchema, parse  # pytype: disable=import-error
-
-# pyright: ignore[reportMissingImports]
-if sys.version_info.major == 2:  # pragma: no cover
-    from commands import getstatusoutput  # type:ignore[import-not-found]
-else:
-    from subprocess import getstatusoutput
 
 BUGTOOL_OUTPUT_DIR = "/var/opt/xen/bug-report/"
 BUGTOOL_DOM0_TEMPL = os.path.join(os.path.dirname(__file__), "dom0-template")
@@ -138,17 +133,18 @@ def run_bugtool_entry(bugtool_script, archive_type, test_entries):
 
     os.environ["XENRT_BUGTOOL_BASENAME"] = test_entries
 
-    command = "python%s ./xen-bugtool -y --output=%s --entries=%s" % (
-        sys.version_info.major,
-        archive_type,
-        test_entries,
-    )
-    print("# " + command)
-    error_code, output = getstatusoutput(command)
-
-    print(output)
-    if error_code:
-        raise RuntimeError(output)
+    sys.argv = [
+        "xen-bugtool",
+        "-y",
+        "--output=%s" % archive_type,
+        "--entries=%s" % test_entries,
+    ]
+    print(" ".join(sys.argv))
+    try:
+        runpy.run_path(bugtool_script, run_name="__main__")
+    except SystemExit as e:
+        if e.code:  # pylint: disable=using-constant-test  # pragma: no cover
+            raise
 
     #
     # Switch to the BUGTOOL_OUTPUT_DIR and extract the bugball in it.
