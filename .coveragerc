@@ -1,5 +1,5 @@
 [run]
-command_line = -m pytest --junitxml=.git/pytest.xml --cov-report=term-missing tests/unit
+command_line = -m pytest --junitxml=.git/pytest.xml --cov-report=term-missing
 # Default data file for "coverage run": Store coverage data in .git/.coverage
 data_file = .git/.coverage
 relative_files = True

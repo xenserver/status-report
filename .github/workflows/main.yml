@@ -71,7 +71,7 @@ jobs:
         run: |
           if [ -f requirements.txt ]; then pip2 install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip2 install -r requirements-dev.txt; fi
-          pip2 install pylint==1.9.4
+          pip2 install pylint==1.9.4; sudo mkdir /opt/xensource # mountpoint for tests
 
       - name: Run pylint-1.9.4 for pylint --py3k linting (configured in .pylintrc)
         run: python2 -m pylint xen-bugtool
@@ -146,7 +146,7 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
 
-      - run: pip install -r requirements-dev.txt
+      - run: pip install -r requirements-dev.txt; sudo mkdir /opt/xensource
         name: Install the pytest dependencies for running the pytest suite using Python3
 
       - uses: actions/cache@v4
