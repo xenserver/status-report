@@ -42,12 +42,6 @@ def testdir():
 
 
 @pytest.fixture(scope="session")
-def dom0_template(testdir):
-    """Test fixture to get the directory of the dom0 template"""
-    return testdir + "/../integration/dom0-template"
-
-
-@pytest.fixture(scope="session")
 def imported_bugtool(testdir, dom0_template):
     """Fixture to provide the xen-bugtool script as a module for unit tests"""
 

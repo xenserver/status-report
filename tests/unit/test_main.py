@@ -249,7 +249,10 @@ def assert_bugtool_logfile_data(logfile):
     # caught and logged, the log file should contain the backtrace from the
     # raised exception:
     #
-    assert len(lines) == 9
+    if sys.version_info >= (3, 11):  # pragma: no cover
+        assert len(lines) == 10  # Python 3.11+ includes a new line in the backtrace
+    else:
+        assert len(lines) == 9
     for backtrace_string in MOCK_EXCEPTION_STRINGS:
         assert backtrace_string in log
 

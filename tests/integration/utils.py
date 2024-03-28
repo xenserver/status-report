@@ -19,7 +19,7 @@ else:
     from subprocess import getstatusoutput
 
 BUGTOOL_OUTPUT_DIR = "/var/opt/xen/bug-report/"
-BUGTOOL_DOM0_TEMPL = "tests/integration/dom0-template/"
+BUGTOOL_DOM0_TEMPL = os.path.join(os.path.dirname(__file__), "dom0-template")
 
 
 def run(command):
@@ -78,7 +78,7 @@ def assert_content_from_dom0_template(path, control_path=None):
     """Check the given path against the files from the test's Dom0 template"""
 
     assert path[0] != "/"  # We expect a relative path in the report archive
-    control = BUGTOOL_DOM0_TEMPL + (control_path or path)
+    control = os.path.join(BUGTOOL_DOM0_TEMPL, (control_path or path))
     print(control)
     if os.path.isdir(path):
         # path is a directory, compare it recursively using dircmp():
@@ -126,7 +126,7 @@ def extract(zip_or_tar_archive, archive_type):  # pragma: no cover
     os.unlink(zip_or_tar_archive)
 
 
-def run_bugtool_entry(archive_type, test_entries):
+def run_bugtool_entry(bugtool_script, archive_type, test_entries):
     """
     Execute the bugtool script with the given entries and prepare testing it.
 
@@ -150,8 +150,6 @@ def run_bugtool_entry(archive_type, test_entries):
     if error_code:
         raise RuntimeError(output)
 
-    src_dir = os.getcwd()
-
     #
     # Switch to the BUGTOOL_OUTPUT_DIR and extract the bugball in it.
     #
@@ -166,9 +164,7 @@ def run_bugtool_entry(archive_type, test_entries):
     os.chdir(test_entries)
 
     # Validate the extracted inventory.xml using the XML schema from the test framework:
-    with open(src_dir + "/tests/integration/inventory.xsd") as xml_schema:
+    with open(os.path.join(os.path.dirname(__file__), "inventory.xsd")) as xml_schema:
         XMLSchema(parse(xml_schema)).assertValid(parse("inventory.xml"))
         # Remove valid inventory.xml (not removed files will make the tests fail):
         os.unlink("inventory.xml")
-    # Add a symlink, so assert_content_from_dom0_template() can find the tests:
-    os.symlink(src_dir + "/tests", "tests")

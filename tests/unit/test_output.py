@@ -33,7 +33,8 @@ ETC_PASSWD = "/etc/passwd"
 def assert_valid_inventory_schema(inventory_tree):
     """Assert that the passed inventory validates against the inventory schema"""
 
-    with open(os.getcwd() + "/tests/integration/inventory.xsd") as xml_schema:
+    inventory_schema = os.path.dirname(__file__) + "/../integration/inventory.xsd"
+    with open(inventory_schema) as xml_schema:
         XMLSchema(parse(xml_schema)).assertValid(inventory_tree)
 
 
