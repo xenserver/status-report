@@ -8,6 +8,7 @@ authkey
 autoflake
 autouse
 backend
+backporting
 backtrace
 basename
 basepath
@@ -117,6 +118,7 @@ logfiles
 LOSETUP
 lowlevel
 ltex
+lwidentity
 maxsplit
 mdadm
 mdstat
