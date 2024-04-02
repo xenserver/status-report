@@ -19,7 +19,7 @@ because the filter_xapi_clusterd_db() function is not implemented correctly.
 
 Now fixed bugs in filter_xapi_clusterd_db():
 
-1.  The filter must replace "token": "secret-token", with "token": "REMOVED"
+1.  The filter must replace "token": "secret-token" with: "token": "REMOVED"
 2.  The filter must also work if the "pems" key is missing
 3.  The filter must also work if "pems.blobs" is missing
 4.  The filter must also work if "authkey" is missing
@@ -33,63 +33,19 @@ and must be fixed:
 - The pytest.mark.xfail decorator must be removed after the bug is fixed
   to ensure the test is run and passes in the future.
 
-DONE START:
-
+DONE:
 1.  Add additional XFAIL tests, one for each, which fail on the cases above
-[DONE]
-
 2.  Add additional PASS test:
     The filter must also work if "cluster_config" or/and "old_cluster_config"
     are missing.
-[DONE]
-
 3.  Add additional PASS test:
     The filter must also work if the "token" key is missing.
-[DONE]
-
 4.  The changes are added as additional commits and pushed.
     The individual sub-tests must be shown failing on each the cases above.
-[DONE] (done for each case)
-
 5.  The filter must be updated to handle these cases.
-[DONE] (done for each case)
-
 6.  The PR is then pushed again and then pass.
-[DONE]
-
     Changes to the test should only be needed if e.g. logging was added
     to test the logging output.
-
-Ideally, if there is capacity for it, pre-commit hooks should run on every
-commit to ensure that each works without any errors
-
-This can be done by running:
-    git rebase -x 'pre-commit run --from-ref HEAD~ --to-ref HEAD' HEAD~1
-[DONE] (for all commits in this PR)
-
-Replace the `1` with the number of commits to run the pre-commit hooks on.
-This opens an editor with the commits and checks to run on them. When it,
-by mistake contains one or more commits that are not only the ones that
-are in the current PR, remove them all commits from the editor and save
-the file. In this case `git rebase` will do nothing and no commits are changed.
-
-With all of these TODO done, step-by-step, in order, work will be complete.
-
-Tip:
-
-Run `pip install pre-commit` and then use `pre-commit run`
-to check the code and run all unit tests and checks before committing
-and pushing the code.
-
-pre-commit run will:
-- remove trailing whitespace from the code for uniformity
-- fix the code style of the tests with black and of xen-bugtool with darker
-- run unit tests with coverage and check the coverage on the changed lines
-
-If you run `pre-commit install`, it will run on every commit in your own clone.
-
-DONE END.
-
 """
 
 import json
