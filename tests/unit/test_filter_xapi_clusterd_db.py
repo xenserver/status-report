@@ -52,9 +52,9 @@ import json
 import os
 import re
 
+import pytest
+
 # Minimal example of a xapi-clusterd/db file, with sensitive data
-# BUG: The new cluster_config has no "pems" key, so the filter has to be updated
-# to handle this case, pass data and still filter the "old_cluster_config" key.
 ORIGINAL = r"""
 {
     "token": "secret-token",
@@ -74,7 +74,6 @@ ORIGINAL = r"""
 }"""
 
 # Same as original, but with passwords and private data replaced by: "REMOVED"
-# BUG: "secret-token" has to be replaced by "REMOVED"
 EXPECTED = r"""{
     "token": "REMOVED",
     "cluster_config": {
@@ -131,21 +130,63 @@ def assert_filter_xapi_clusterd_db(bugtool, original, expected):
     os.remove(temporary_test_clusterd_db)
 
 
-def test_pems_blobs(isolated_bugtool):
-    """Assert that filter_xapi_clusterd_db() replaces pems.blobs strings"""
+def test_removal_of_all_secrets(isolated_bugtool):
+    """Assert that filter_xapi_clusterd_db() replaces all secrets in the db"""
     assert_filter_xapi_clusterd_db(isolated_bugtool, ORIGINAL, EXPECTED)
 
 
-# CA-358870: filter_xapi_clusterd_db: remove token from the report
-def test_remove_token(isolated_bugtool):
-    """CA-358870: Assert that filter_xapi_clusterd_db() removes the token"""
+def check_assert_on_unexpected_differences_in_output(bugtool, expected, diff):
+    """Self-test: Ensure that the assertion function asserts on unexpected output"""
 
-    # Load the expected output and remove the token from it
+    # -> Test setup:
+    #
+    # The expected output is modified to contain an unexpected token value
+    # that should cause the assertion function to fail.
+
+    # -> Act: Call the assertion function
+    with pytest.raises(AssertionError) as exc_info:
+        assert_filter_xapi_clusterd_db(bugtool, ORIGINAL, json.dumps(expected))
+
+    # -> Assert: Check that the assertion function failed on the unexpected output
+    #
+    # The assertion function should assert on the differing token value
+    # and the diff should be in the assertion error message
+
+    if diff not in exc_info.value.args[0]:  # pragma: no cover
+        print(exc_info.value.args)
+        pytest.fail("The assertion function did not assert on the unexpected output")
+
+
+def test_assertion_on_unexpected_token(isolated_bugtool):
+    """Self-test: Ensure that the assertion function asserts on unexpected token"""
+
+    # -> Test setup: Modify the expected output to contain an unexpected token value
+
     expected = json.loads(EXPECTED)
-    expected["token"] = "REMOVED"
-    expected_json = json.dumps(expected)
+    expected["token"] = "unexpected token value"
 
-    assert_filter_xapi_clusterd_db(isolated_bugtool, ORIGINAL, expected_json)
+    # -> Act and assert: Check that the assertion function fails on the unexpected output
+    #    The assertion function should assert on the differing authkey value and the
+    #    diff with the wrongly expected string should be in the assertion error message
+
+    diff = "{'token': 'REMOVED'} != {'token': 'unexpected token value'}"
+    check_assert_on_unexpected_differences_in_output(isolated_bugtool, expected, diff)
+
+
+def test_assertion_on_unexpected_authkey(isolated_bugtool):
+    """Self-test: Ensure that the assertion function asserts on unexpected authkey"""
+
+    # -> Test setup: Modify the expected output to contain an unexpected authkey value
+
+    expected = json.loads(EXPECTED)
+    expected["cluster_config"]["authkey"] = "unexpected authkey value"
+
+    # -> Act and assert: Check that the assertion function fails on the unexpected output
+    #    The assertion function should assert on the differing authkey value
+    #    and the wrongly expected string should be in the assertion error message
+
+    diff = "unexpected authkey value"
+    check_assert_on_unexpected_differences_in_output(isolated_bugtool, expected, diff)
 
 
 def test_no_authkey(isolated_bugtool):
