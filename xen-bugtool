@@ -199,6 +199,18 @@ YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 PAM_DIR = '/etc/pam.d'
 FIST_RE = re.compile(r'.*/fist_')
+# -------------------------------------------------------------------------------
+# LWIDENTITY files and LIKEWISE_DIR are added as basis for backporting to 8.2 CU1
+
+# LWIDENTITY_JOIN_LOG is a temporary file created by lwidentity-join
+LWIDENTITY_JOIN_LOG = "/tmp/lwidentity.join.log"
+
+# HOSTS_LWIDENTITY_ORIG is a backup of /etc/hosts created by lwidentity-join
+HOSTS_LWIDENTITY_ORIG = "/etc/hosts.lwidentity.orig"
+
+# Likewise configuration files
+LIKEWISE_DIR = "/var/lib/likewise"
+# -------------------------------------------------------------------------------
 KRB5_CONF = '/etc/krb5.conf'
 SAMBA_CONFIG_DIR = '/etc/samba'
 # SAMBA_DATA_DIR = '/var/lib/samba'
@@ -985,6 +997,7 @@ exclude those logs from the archive.
 
     tree_output(CAP_PAM, PAM_DIR)
     file_output(CAP_PAM, [KRB5_CONF, SSHD_CONFIG])
+    tree_output(CAP_PAM, LIKEWISE_DIR)
     file_output(CAP_PAM, [AD_USERS, AD_GROUPS])
     tree_output(CAP_PAM, SAMBA_CONFIG_DIR)
     # tree_output(CAP_PAM, SAMBA_DATA_DIR) # Explictly skip samba data as it contains credentials
@@ -1015,6 +1028,7 @@ exclude those logs from the archive.
                            'blktap.log.%d', 'wtmp.%d.gz']]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
+    file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
 
     cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
     cmd_output(CAP_SYSTEM_SERVICES, [SYSTEMCTL, 'status'])
