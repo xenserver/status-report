@@ -1053,7 +1053,7 @@ exclude those logs from the archive.
     cmd_output(CAP_NETWORK_STATUS, [EBTABLES, '-L'])
     cmd_output(CAP_NETWORK_STATUS, [IPTABLES, '-nvL'])
     cmd_output(CAP_NETWORK_STATUS, [BRCTL, 'show'])
-    cmd_output(CAP_NETWORK_STATUS, [BIOSDEVNAME, '-d'])
+    cmd_output(CAP_NETWORK_STATUS, [BIOSDEVNAME, '-d', '-x'])
     for p in os.listdir('/sys/class/net/'):
         if os.path.isdir('/sys/class/net/%s/bridge' % p):
             cmd_output(CAP_NETWORK_STATUS, [BRCTL, 'showmacs', p])
