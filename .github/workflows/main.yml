@@ -132,7 +132,8 @@ jobs:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -sL https://coveralls.io/coveralls-linux.tar.gz | tar -xz
-          ./coveralls --service-name=github
+          cp .git/coverage27.xml coverage.xml
+          ./coveralls --service-name=github --format=cobertura
 
   pre-commit:
     name: "Python3: Pre-Commit Suite"
