@@ -50,6 +50,7 @@ CRASHDUMP
 CRASHDUMPS
 CVSM
 cwd
+Cyclomatic
 dbcache
 dbfilter
 defusedxml
@@ -93,6 +94,7 @@ getuid
 gid
 gidmap
 HDPARM
+Hotfixes
 http
 HTTPResponse
 hwconf
