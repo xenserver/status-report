@@ -118,7 +118,6 @@ GRUB_EFI_CONFIG = '/boot/efi/EFI/xenserver/grub.cfg'
 BOOT_KERNEL = '/boot/vmlinuz-' + OS_RELEASE
 BOOT_INITRD = '/boot/initrd-' + OS_RELEASE + '.img'
 PROC_PARTITIONS = '/proc/partitions'
-FCOE_BLACKLIST_FILE = '/etc/sysconfig/fcoe-blacklist'
 FCOE_CONFIG_DIR = '/etc/fcoe/'
 FSTAB = '/etc/fstab'
 PROC_MOUNTS = '/proc/mounts'
@@ -1119,7 +1118,6 @@ exclude those logs from the archive.
     cmd_output(CAP_FCOE, [FCOEADM, '-i'])
     cmd_output(CAP_FCOE, [FCOEADM, '-t'])
     tree_output(CAP_FCOE, FCOE_CONFIG_DIR)
-    file_output(CAP_FCOE, [FCOE_BLACKLIST_FILE])
 
     for p in os.listdir('/sys/class/net/'):
         if p.startswith('eth') and p.isalnum():
