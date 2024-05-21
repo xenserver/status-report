@@ -1671,7 +1671,7 @@ def module_info(cap):
 
     run_procs([procs])
 
-    return output.getvalue().decode()
+    return output.getvalue()
 
 
 def multipathd_topology(cap):
