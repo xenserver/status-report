@@ -1,7 +1,5 @@
 """Regression tests for the bugtool helper function mdadm_arrays()"""
 
-import pytest
-
 
 def test_mdadm_arrays(bugtool, dom0_template):
     """Assert mdadm_arrays() returning arrays dom0_template/usr/sbin/mdadm"""
@@ -9,7 +7,6 @@ def test_mdadm_arrays(bugtool, dom0_template):
     assert list(bugtool.mdadm_arrays()) == ["/dev/md0", "/dev/md1"]
 
 
-@pytest.mark.xfail("True", reason="Python2 decode() fails with UTF-8: remove it next")
 def test_module_info(bugtool, dom0_template):
     """Assert module_info() returning module names from test_module_info.modules"""
 
