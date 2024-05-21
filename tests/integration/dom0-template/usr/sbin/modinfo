@@ -1,2 +1,19 @@
 #!/bin/sh
-echo "modinfo for $*"
+if [ "$1" = dell_smbios ]; then
+    # This is the real output for dell-smbios that contains an UTF-8 character
+    echo "\
+filename:       /lib/modules/6.6.22+0/kernel/drivers/platform/x86/dell/dell-smbios.ko
+license:        GPL
+description:    Common functions for kernel modules using Dell SMBIOS
+author:         Mario Limonciello <mario.limonciello@outlook.com>
+author:         Pali Rohár <pali@kernel.org>
+author:         Gabriele Mazzotta <gabriele.mzt@gmail.com>
+author:         Matthew Garrett <mjg@redhat.com>
+srcversion:     CBEF13F3C192A771A462239
+alias:          wmi:A80593CE-A997-11DA-B012-B622A1EF5492
+depends:        dell-wmi-descriptor,dcdbas,wmi
+retpoline:      Y
+intree:         Y
+name:           dell_smbios
+vermagic:       6.6.22+0 SMP mod_unload modversions"
+fi
