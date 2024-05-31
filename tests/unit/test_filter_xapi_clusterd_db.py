@@ -168,8 +168,13 @@ def test_assertion_on_unexpected_token(isolated_bugtool):
     # -> Act and assert: Check that the assertion function fails on the unexpected output
     #    The assertion function should assert on the differing authkey value and the
     #    diff with the wrongly expected string should be in the assertion error message
+    #
+    # pytest-8 adds very fine-grained coloring of the assertion error message
+    # which makes it harder to match the diff string in the assertion error message.
+    # Apparently, we cannot disable the coloring for a single assertion, so we can
+    # only check for the the unexpected token in the assertion:
 
-    diff = "{'token': 'REMOVED'} != {'token': 'unexpected token value'}"
+    diff = "'token': 'unexpected token value'"
     check_assert_on_unexpected_differences_in_output(isolated_bugtool, expected, diff)
 
 
