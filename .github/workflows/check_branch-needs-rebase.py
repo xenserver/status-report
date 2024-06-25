@@ -4,11 +4,12 @@
 # pylint: disable=using-f-string-in-unsupported-version
 import subprocess
 import sys
-from logging import info as log
+from logging import basicConfig, INFO, info as log
 
 
 def run(command: list[str], check=False) -> tuple[int, str]:
     """Run a command and return the output."""
+    log(" ".join(command))
     cmd: subprocess.CompletedProcess[str] = subprocess.run(
         command,
         check=check,
@@ -30,8 +31,7 @@ def check_if_local_branch_is_behind_target(
 
     # Fetch the remote branch in order to get the number of commits behind
     if run(["git", "fetch", *target.split("/", maxsplit=1)])[0]:
-        log("Failed to fetch the remote branch")
-        return 1
+        log("Failed to fetch the remote branch, but you may be offline, go online.")
 
     # Get the number of commits behind the remote branch
     error, commits_behind = run(
@@ -99,4 +99,5 @@ def main():
 
 
 if __name__ == "__main__":
+    basicConfig(format="%(message)s", level=INFO)
     sys.exit(main())
