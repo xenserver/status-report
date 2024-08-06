@@ -169,11 +169,7 @@ jobs:
 
       - run: >
           echo "::add-matcher::.github/workflows/Python-problemMatcher-status-report.json";
-          echo "::notice::Sorry, GitHub tells that actions/cache@v4 is still v3
-          and warns about using node16, which is wrong. So we've to bear with it.
-          Bug reported: https://github.com/actions/cache/issues/1323"
-
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
         name: Run pre-commit checks
         with:
           # Show the output of the commands for the problem matcher, see above.
