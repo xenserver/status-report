@@ -971,6 +971,8 @@ exclude those logs from the archive.
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
     cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
     cmd_output(CAP_BLOCK_SCHEDULER, [LSBLK, '-io', 'type,name,sched,tran,rota,log-sec,rq-size,vendor,model'], label='lsblk')
+    file_output(CAP_DISK_INFO, ['/sys/block/sd*/device/scsi_disk/*/provisioning_mode',
+                                '/sys/block/sd*/device/scsi_disk/*/thin_provisioning'])
 
     # mdadm information
     cmd_output(CAP_DISK_INFO, [MDADM, '--detail-platform'])
