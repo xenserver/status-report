@@ -46,6 +46,8 @@ import pprint
 from xml.dom.minidom import parse, getDOMImplementation
 import zipfile
 from subprocess import Popen, PIPE
+from collections import OrderedDict
+from hashlib import md5 as md5_new
 from select import select
 from signal import SIGTERM, SIGUSR1, SIGHUP
 import platform
@@ -60,15 +62,25 @@ import xml
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
-try:
-    import hashlib
-    def md5_new():
-        return hashlib.md5()
-except:
-    import md5
-    def md5_new():
-        return md5.new()
+import defusedxml.sax
 
+if sys.version_info.major == 2:  # pragma: no cover
+    from commands import getoutput  # pyright: ignore[reportMissingImports]
+    from urllib2 import HTTPError, urlopen  # type:ignore[attr-defined]
+
+    unicode_type = unicode  # pyright:ignore[reportUndefinedVariable] # pylint: disable=unicode-builtin
+else:
+    from subprocess import getoutput
+    from urllib.request import HTTPError, urlopen
+
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:  # Used for type checking only:
+        from _typeshed import ReadableBuffer  # pylint: disable=unused-import
+
+    unicode_type = str
+
+# Fixed in 3.7: https://github.com/python/cpython/pull/12628
 # Monkey-patch zipfile's __del__ function to be less stupid
 #   Specifically, it calls close which further writes to the file, which
 #   fails with ENOSPC if the root filesystem is full
@@ -475,6 +487,20 @@ ANSWER_YES_TO_ALL = False
 SILENT_MODE = False
 entries = None
 data = {}
+"""The global data dictionary of xen-bugtool
+It is filled by the various *_output functions, and then used to create the
+inventory.xml and the tarball or zipfile.
+
+The keys are the filenames of the collected data, and the values are
+dictionaries with the following keys:
+  - "cap": The capability of the data: one of the CAP_ constants
+  - "path": If created by file_output: The path to the file to collect
+  - "func": If created by func_output: A function that returns the file data
+  - "cmd_args": If crated by cmd_output: The command to return the file data
+  - "filter": An optional filter function to pass the file data through
+"""
+
+directory_specifications = OrderedDict()
 dev_null = open('/dev/null', 'r+')
 
 def no_unicode(x):
@@ -544,13 +570,47 @@ def file_output(cap, path_list):
 
 def tree_output(cap, path, pattern = None, negate = False):
     if cap in entries:
-        if os.path.exists(path):
-            for f in os.listdir(path):
-                fn = os.path.join(path, f)
-                if os.path.isfile(fn) and matches(fn, pattern, negate):
-                    file_output(cap, [fn])
-                elif os.path.isdir(fn):
-                    tree_output(cap, fn, pattern, negate)
+        if path in directory_specifications:
+            directory_specifications[path].append((cap, pattern, negate))
+        else:
+            directory_specifications[path] = [(cap, pattern, negate)]
+
+
+def traverse_directory_specifications(directory_specs, requested_capabilities):
+    """Lookup the defined directories on the requested pattern and negate.
+
+    :param directory_specs: Directories to lookup with cap, pattern, and negate.
+    :param requested_capabilities: The list of requested capabilities.
+    """
+    for directory, tree_output_entries in directory_specs.items():
+        # Multiple tree_output calls may have appended multiple output entries:
+        for directory_items in tree_output_entries:
+            # Unpack the stored capability, pattern and negate flag of each row:
+            capability, pattern, negate = directory_items
+            # If the capability is in the requested inventory entries, check it:
+            if capability in requested_capabilities:
+                if os.path.isdir(directory):
+                    lookup_tree_recursively(capability, directory, pattern, negate)
+
+
+def lookup_tree_recursively(cap, path, pattern, negate):
+    """Lookup the directory at the path for files matching pattern recursively.
+
+    :param cap (str): The inventory entry to associate with all matching files.
+    :param path (str): The path to start traversing from.
+    :param pattern (str or None): The pattern to match the filenames against.
+    :param negate (bool): If True, negate the pattern matching.
+    """
+    try:
+        for f in os.listdir(path):
+            fn = os.path.join(path, f)
+            if matches(fn, pattern, negate) and os.path.isfile(fn):
+                file_output(cap, [fn])
+            elif os.path.isdir(fn):
+                lookup_tree_recursively(cap, fn, pattern, negate)
+    except Exception as e:
+        logging.info("Lookup for " + cap + ": %s" % e)
+
 
 def func_output(cap, label, func):
     if cap in entries:
@@ -563,20 +623,64 @@ def include_inventory(archive, subdir):
                 StringIOmtime(no_unicode(make_inventory(data, subdir))))
 
 
-def collect_data(subdir, archive):
-    process_lists = {}
+def run_procs_and_capture_collected_output(collect, subdir, archive):
+    """Prepare and run processes defined in the passed bugtool data dictionary.
 
-    for (k, v) in data.items():
+    :param collect (dict): Dict with instructions on which processes to run.
+    :param subdir (str): The subdirectory where the output files will be stored.
+    :param archive (obj): The archive object used to store the output files.
+    """
+
+    # Prepare the process_list dictionary
+    process_lists = {}
+    for k, v in collect.items():
         name = construct_filename(subdir, k, v)
         cap = v['cap']
-        filename = v.get('filename')
-        if v.has_key('cmd_args'):
+        if "cmd_args" in v:
             v['output'] = StringIOmtime()
             if not process_lists.has_key(cap):
                 process_lists[cap] = []
-            process_lists[cap].append(ProcOutputAndArchive(v['cmd_args'], caps[cap][MAX_TIME], name, archive, v))
-        elif filename and (filename.startswith('/proc/') or
-                           filename.startswith('/sys/')):
+            process_lists[cap].append(
+                ProcOutputAndArchive(
+                    v["cmd_args"],
+                    caps[cap][MAX_TIME],
+                    name,
+                    archive,
+                    v,
+                )
+            )
+
+    # Run the processes in the process_list dictionary in parallel
+    run_procs(process_lists.values())
+
+    # collect all output from processes and free the allocated memory
+    for k, v in data.items():
+        if 'output' in v:
+            archive.add_path_with_data(construct_filename(subdir, k, v), v["output"])
+            v['md5'] = md5sum(v)
+            del v['output']
+
+
+def collect_data(subdir, archive):
+    """Collect all requested data and archive it in the passed output archive
+
+    :param subdir: The toplevel directory in which to store the output files.
+    :param archive: The archive object used to store the output files.
+    """
+    # Run processes first as some (rrd-cli save_rrds) may create/update files:
+    run_procs_and_capture_collected_output(data, subdir, archive)
+
+    # Afterwards, traverse the directory specifications for files to add
+    traverse_directory_specifications(directory_specifications, entries)
+
+    # Then, loop over the files which were found and collect their contents
+    for k, v in data.items():
+        if "cmd_args" in v:
+            continue  # commands processing has been moved to a different loop
+        name = construct_filename(subdir, k, v)
+        cap = v["cap"]
+        filename = v.get("filename")
+        if filename and (filename.startswith("/proc/") or filename.startswith("/sys/")):
             # proc files must be read into memory
             try:
                 f = open(v['filename'], 'r')
@@ -613,14 +717,6 @@ def collect_data(subdir, archive):
             except:
                 pass
 
-    run_procs(process_lists.values())
-
-    # collect all output (output from processes)
-    for (k, v) in data.items():
-        if 'output' in v:
-            archive.add_path_with_data(construct_filename(subdir, k, v), v['output'])
-            v['md5'] = md5sum(v)
-            del v['output']
 
 def usage():
     return '''Usage: xenserver-status-report [OPTION]...
@@ -1010,7 +1106,7 @@ exclude those logs from the archive.
     # tree_output(CAP_PAM, SAMBA_DATA_DIR) # Explictly skip samba data as it contains credentials
     tree_output(CAP_PAM, VAR_LOG_DIR + "samba")
 
-    func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', dump_xapi_rrds)
+    dump_xapi_rrds(entries)
 
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,nwchan,wchan:25,args'], label='process-tree')
     func_output(CAP_PROCESS_LIST, 'fd_usage', fd_usage)
@@ -1160,6 +1256,9 @@ exclude those logs from the archive.
     for k in sorted(data.keys()):
         if not ANSWER_YES_TO_ALL and not yes("Include '%s'? [Y/n]: " % k):
             del data[k]
+    for k in sorted(directory_specifications.keys()):
+        if not ANSWER_YES_TO_ALL and not yes("Include tree '%s'? [Y/n]: " % k):
+            del directory_specifications[k]
 
     subdir = os.getenv('XENRT_BUGTOOL_BASENAME')
     if subdir:
@@ -1287,7 +1386,17 @@ def dump_xapi_subprocess_info(cap):
     pp = pprint.PrettyPrinter(indent=4)
     return pp.pformat(result)
 
-def dump_xapi_rrds(cap):
+
+def dump_xapi_rrds(requested_entries):
+    """
+    Query xcp-rrdd to get the RRDs for all VMs and the host or pool master.
+
+    Due to triggering memory leaks, it was disabled by default (unless -a is used)
+    in 2013, it and was superceeded by collecting the compressed rrd files instead.
+    It's capability for --entries=persistent-stats is also hidden from the user.
+    """
+    if CAP_PERSISTENT_STATS not in requested_entries:
+        return
     socket.setdefaulttimeout(5)
     session = xapi_local_session()
     session.xenapi.login_with_password('', '', '', 'xenserver-status-report')
@@ -1297,27 +1406,38 @@ def dump_xapi_rrds(cap):
     i_am_master = (this_host == pool['master'])
 
     for vm in session.xenapi.VM.get_all_records().values():
-        if vm['is_a_template']:
+        # CA-376326: Skip templates and VMs that are not resident on a host:
+        if vm['is_a_template'] or vm.get("resident_on") == "OpaqueRef:NULL":
             continue
         if vm['resident_on'] == this_host or (i_am_master and vm['power_state'] in ['Suspended', 'Halted']):
-            rrd = urllib.urlopen('http://localhost/vm_rrd?session_id=%s&uuid=%s' % (session._session, vm['uuid']))
             try:
-                i, _, _ = select([rrd], [], [], 5.0)
-                if len(i) == 1:
-                    data['xapi_rrd-%s' % vm['uuid']] = {'cap': cap,
-                                                        'output': StringIOmtime(rrd.read())}
+                rrd = urlopen(
+                    "http://localhost/vm_rrd?session_id=%s&uuid=%s"
+                    % (session._session, vm["uuid"]),
+                    timeout=5,
+                )
+            except HTTPError as e:
+                log("Failed to fetch RRD for VM %s: %s" % (vm["uuid"], e))
+                continue
+            try:
+                name = "xapi_rrd-%s.out" % vm['uuid']
+                vm_rrds = rrd.read()
+
+                def create_lambda(x=None):
+                    return lambda _: x
+
+                func_output(CAP_PERSISTENT_STATS, name, create_lambda(vm_rrds))
             finally:
                 rrd.close()
 
-    output = ''
-    rrd = urllib.urlopen('http://localhost/host_rrd?session_id=%s' % session._session)
     try:
+        rrd = urlopen("http://localhost/host_rrd?session_id=%s" % session._session)
         output = rrd.read()
+        func_output(CAP_PERSISTENT_STATS, 'xapi_rrd-host', lambda _: output)
     finally:
         rrd.close()
 
     session.xenapi.session.logout()
-    return output
 
 
 class XapiDBContentHandler(xml.sax.ContentHandler):
@@ -1759,7 +1879,7 @@ class TarOutput(ArchiveWithTarSubarchives):
         ti.size = s.st_size
         self.tf.addfile(ti, file(filename,'rb'))
 
-    def add_path_with_data(self, name, data):
+    def add_path_with_data(self, name, data):  # type:(str, StringIOmtime) -> None
         ti = self._getTi(name)
         ti.mtime = data.mtime
         ti.size = len(data.getvalue())
@@ -1803,7 +1923,7 @@ class ZipOutput(ArchiveWithTarSubarchives):
             compress_type = zipfile.ZIP_DEFLATED
         self.zf.write(filename, name, compress_type)
 
-    def add_path_with_data(self, name, data):
+    def add_path_with_data(self, name, data):  # type:(str, StringIOmtime) -> None
         self.zf.writestr(name, data.getvalue())
 
     def close(self):

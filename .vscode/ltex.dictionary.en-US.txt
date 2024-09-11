@@ -98,6 +98,7 @@ init
 initialisation
 initialised
 initiatorname
+inotify
 iomem
 ioports
 iscsi

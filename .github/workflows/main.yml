@@ -85,4 +85,10 @@ jobs:
           flags: python2.7-xs8-yangtze
           env_vars: OS,PYTHON
           name: Python 2.7 Coverage for XS8/Yangtze
+          # Whether the job should fail if Codecov runs into an error during upload.
+          # Not failing the job in this case is ok because the pre-commit checks
+          # also contain a diff-cover job which would fail on missing changed lines:
+          fail_ci_if_error: false
+          flags: >
+            ${{ format('python{0}', steps.python.outputs.python-version ) }}
           verbose: true
