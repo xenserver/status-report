@@ -266,7 +266,6 @@ ARPTABLES = 'arptables'
 BIN_STATIC_VDIS = 'static-vdis'
 BIOSDEVNAME = 'biosdevname'
 BRCTL = 'brctl'
-CHKCONFIG = 'chkconfig'
 CHRONYC = 'chronyc'
 DCBTOOL = 'dcbtool'
 DF = 'df'
@@ -1186,7 +1185,6 @@ exclude those logs from the archive.
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
     file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
 
-    cmd_output(CAP_SYSTEM_SERVICES, [CHKCONFIG, '--list'])
     cmd_output(CAP_SYSTEM_SERVICES, [SYSTEMCTL, 'status'])
 
     #file_output(CAP_TAPDISK_LOGS,
