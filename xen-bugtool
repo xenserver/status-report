@@ -151,6 +151,7 @@ PROC_XEN_BALLOON = '/proc/xen/balloon'
 PROC_NET_BONDING_DIR = '/proc/net/bonding'
 PROC_NET_VLAN_DIR = '/proc/net/vlan'
 PROC_NET_SOFTNET_STAT = '/proc/net/softnet_stat'
+PROC_NET_NETSTAT = '/proc/net/netstat'
 PROC_XSVERSION = '/proc/xsversion'
 ETC_MDADM_CONF = '/etc/mdadm.conf'
 ETC_MDADM_MDADM_CONF = '/etc/mdadm/mdadm.conf'
@@ -280,7 +281,7 @@ FCOEADM = 'fcoeadm'
 FDISK = 'fdisk'
 HA_QUERY_LIVESET = '/opt/xensource/debug/debug_ha_query_liveset'
 HDPARM = 'hdparm'
-IFCONFIG = 'ifconfig'
+IP = "ip"
 IPTABLES = 'iptables'
 ISCSIADM = 'iscsiadm'
 KPATCH = 'kpatch'
@@ -296,7 +297,6 @@ MD5SUM = 'md5sum'
 MDADM = 'mdadm'
 MODINFO = 'modinfo'
 MULTIPATHD = 'multipathd'
-NETSTAT = 'netstat'
 NSTAT = 'nstat'
 SS = 'ss'
 OVS_APPCTL = 'ovs-appctl'
@@ -1046,14 +1046,13 @@ exclude those logs from the archive.
     file_output(CAP_NETWORK_CONFIG, [CHRONY_CONF, IPTABLES_CONFIG, HOSTS_ALLOW, HOSTS_DENY])
     file_output(CAP_NETWORK_CONFIG, [OPENVSWITCH_CONF, OPENVSWITCH_CONF_DB])
 
-    cmd_output(CAP_NETWORK_STATUS, [IFCONFIG, '-a'])
-    cmd_output(CAP_NETWORK_STATUS, [ROUTE, '-n'])
-    cmd_output(CAP_NETWORK_STATUS, [ARP, '-n'])
-    cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-anop'])
-    cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-s'])
-    cmd_output(CAP_NETWORK_STATUS, [NETSTAT, '-gn'])
+    cmd_output(CAP_NETWORK_STATUS, [IP, '-s', 'addr'])
+    cmd_output(CAP_NETWORK_STATUS, [IP, 'route'])
+    cmd_output(CAP_NETWORK_STATUS, [IP, 'neighbour'])
+    cmd_output(CAP_NETWORK_STATUS, [SS, '-s'])
+    cmd_output(CAP_NETWORK_STATUS, [IP, 'maddr'])
     cmd_output(CAP_NETWORK_STATUS, [NSTAT, '-a'])
-    cmd_output(CAP_NETWORK_STATUS, [SS, '-nampi'])
+    cmd_output(CAP_NETWORK_STATUS, [SS, '-nampio'])
     tree_output(CAP_NETWORK_STATUS, DHCP_LEASE_DIR)
     cmd_output(CAP_NETWORK_STATUS, [ARPTABLES, '-nvL'])
     cmd_output(CAP_NETWORK_STATUS, [EBTABLES, '-L'])
@@ -1092,6 +1091,7 @@ exclude those logs from the archive.
     cmd_output(CAP_NETWORK_STATUS, [CHRONYC, 'sourcestats', '-v'])
     cmd_output(CAP_NETWORK_STATUS, [CHRONYC, 'tracking'])
     file_output(CAP_NETWORK_STATUS, [PROC_NET_SOFTNET_STAT])
+    file_output(CAP_NETWORK_STATUS, [PROC_NET_NETSTAT])
     tree_output(CAP_NETWORK_STATUS, OPENVSWITCH_CORE_DIR)
     if os.path.exists(OPENVSWITCH_VSWITCHD_PID) and CAP_NETWORK_STATUS in entries:
         cmd_output(CAP_NETWORK_STATUS, [OVS_VSCTL, 'list', 'open_vswitch'])
