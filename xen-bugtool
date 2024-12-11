@@ -835,8 +835,9 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
         cap(CAP_OEM,                 PII_MAYBE,                 max_size=5*MB,
             max_time=90)
 
-    if  os.getenv('XEN_RT'):
-        entries = [CAP_BLOBS, CAP_BOOT_LOADER,  # pragma: no cover
+    entries = [cap_key for cap_key in caps if caps[cap_key][CHECKED]]
+    if os.getenv('XEN_RT'):
+        entries += [e for e in [CAP_BLOBS, CAP_BOOT_LOADER,  # pragma: no cover
                    CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FCOE, CAP_FIRSTBOOT,
                    CAP_HARDWARE_INFO, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
@@ -844,9 +845,8 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
                    CAP_SYSTEM_LOGS, CAP_SYSTEM_SERVICES, CAP_TAPDISK_LOGS,
                    CAP_XAPI_DEBUG, CAP_XAPI_SUBPROCESS, CAP_VTPM,
                    CAP_XENRT, CAP_XENSERVER_CONFIG, CAP_XENSERVER_DOMAINS, CAP_XENSERVER_DATABASES,
-                   CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM]
-    else:
-        entries = [cap_key for cap_key in caps if caps[cap_key][CHECKED]]
+                   CAP_XENSERVER_INSTALL, CAP_XENSERVER_LOGS, CAP_XEN_INFO, CAP_XHA_LIVESET, CAP_YUM] \
+                   if e not in entries]
 
     update_capabilities()
 
