@@ -1257,7 +1257,7 @@ exclude those logs from the archive.
                    'xen/xen-hotplug.log', 'xen/domain-builder-ng.log',
                    'squeezed.log', 'openvswitch/ovs-brcompatd.log',
                    'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log',
-                   'telemetry/telemetry.log'] +
+                   'telemetry/telemetry.log', 'telemetry/license_server.log'] +
                   [ f % n for n in get_log_range(caps[CAP_XENSERVER_LOGS][VERBOSITY]) \
                         for f in ['xensource.log.%d', 'xensource.log.%d.gz',
                                   'SMlog.%d', 'SMlog.%d.gz',
@@ -1269,7 +1269,8 @@ exclude those logs from the archive.
                                   'openvswitch/ovs-brcompatd.log.%d', 'openvswitch/ovs-brcompatd.log.%d.gz',
                                   'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz',
                                   'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz',
-                                  'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz']]]
+                                  'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz',
+                                  'telemetry/license_server.log.%d', 'telemetry/license_server.log.%d.gz']]]
 
     # Collect SAR data (binary and text, and add today's report with sar -A)
     cmd_output(CAP_SYSTEM_LOAD, ['sar', '-A'])
