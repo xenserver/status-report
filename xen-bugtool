@@ -214,7 +214,6 @@ XAPI_DEBUG_DIR = '/var/xapi/debug'
 INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 UPDATE_APPLIED_DIR = '/var/update/applied'
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
-XHA_LOG = '/var/log/xha.log'
 XHAD_CONF = '/etc/xensource/xhad.conf'
 YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
@@ -1007,7 +1006,7 @@ exclude those logs from the archive.
     for d in disk_list():
         cmd_output(CAP_HDPARM_T, [HDPARM, '-tT', '/dev/%s' % d])
 
-    file_output(CAP_HIGH_AVAILABILITY, [XHAD_CONF, XHA_LOG])
+    file_output(CAP_HIGH_AVAILABILITY, [XHAD_CONF])
 
     tree_output(CAP_HOST_CRASHDUMP_LOGS, HOST_CRASHDUMPS_DIR,
                 HOST_CRASHDUMP_LOGS_EXCLUDES_RE, True)
@@ -1257,7 +1256,8 @@ exclude those logs from the archive.
                    'xen/xen-hotplug.log', 'xen/domain-builder-ng.log',
                    'squeezed.log', 'openvswitch/ovs-brcompatd.log',
                    'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log',
-                   'telemetry/telemetry.log', 'telemetry/license_server.log'] +
+                   'telemetry/telemetry.log', 'telemetry/license_server.log',
+                   'xha.log'] +
                   [ f % n for n in get_log_range(caps[CAP_XENSERVER_LOGS][VERBOSITY]) \
                         for f in ['xensource.log.%d', 'xensource.log.%d.gz',
                                   'SMlog.%d', 'SMlog.%d.gz',
@@ -1270,7 +1270,8 @@ exclude those logs from the archive.
                                   'openvswitch/ovs-vswitchd.log.%d', 'openvswitch/ovs-vswitchd.log.%d.gz',
                                   'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz',
                                   'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz',
-                                  'telemetry/license_server.log.%d', 'telemetry/license_server.log.%d.gz']]]
+                                  'telemetry/license_server.log.%d', 'telemetry/license_server.log.%d.gz',
+                                  'xha.log.%d', 'xha.log.%d.gz']]]
 
     # Collect SAR data (binary and text, and add today's report with sar -A)
     cmd_output(CAP_SYSTEM_LOAD, ['sar', '-A'])
