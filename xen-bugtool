@@ -759,6 +759,14 @@ def collect_data(subdir, archive):
                 pass
 
 
+def lockdown_enabled():
+    try:
+        with open('/sys/kernel/security/lockdown') as f:
+            return not any('[none]' in line for line in f)
+    except:
+        return False
+
+
 def usage():
     return '''Usage: xenserver-status-report [OPTION]...
 Capture information to help diagnose bugs.
@@ -1117,7 +1125,8 @@ exclude those logs from the archive.
         cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'bond/list'])
         for b in bond_list():
             cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'bond/show', b])
-    tree_output(CAP_NETWORK_STATUS, SYS_NETBACK_DEBUG)
+    if not lockdown_enabled():
+        tree_output(CAP_NETWORK_STATUS, SYS_NETBACK_DEBUG)
 
     cmd_output(CAP_FCOE, [FCOEADM, '-i'])
     cmd_output(CAP_FCOE, [FCOEADM, '-t'])
