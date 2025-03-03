@@ -468,7 +468,7 @@ cap(CAP_XAPI_SUBPROCESS,     PII_NO,                    max_size=5*KB,
 cap(CAP_XEN_BUGTOOL,         PII_NO,    min_size=0)
 cap(CAP_XENRT,               PII_NO,    min_size=0,     max_size=500*MB,
     checked=False, hidden=True)
-cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=80*KB,
+cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=160*KB,
     max_time=10)
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=10)
