@@ -43,3 +43,4 @@ python_libs.egg-info/
 
 # pytest logfile
 test.log
+.idea

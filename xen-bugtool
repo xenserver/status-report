@@ -963,6 +963,7 @@ exclude those logs from the archive.
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/scsi_host'])
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/scsi_disk'])
     cmd_output(CAP_DISK_INFO, [LS, '-R', '/sys/class/fc_transport'])
+    file_output(CAP_DISK_INFO, ["/sys/class/fc_host/*/*"])
     cmd_output(CAP_DISK_INFO, [SG_MAP, '-x'])
     func_output(CAP_DISK_INFO, 'scsi-hosts', dump_scsi_hosts)
     cmd_output(CAP_DISK_INFO, [LVDISPLAY, '--map'])
