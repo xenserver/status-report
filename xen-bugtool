@@ -215,7 +215,6 @@ INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 UPDATE_APPLIED_DIR = '/var/update/applied'
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
 XHAD_CONF = '/etc/xensource/xhad.conf'
-YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 PAM_DIR = '/etc/pam.d'
 FIST_RE = re.compile(r'.*/fist_')
@@ -1168,7 +1167,7 @@ exclude those logs from the archive.
          [ VAR_LOG_DIR + x for x in
            [ 'crit.log', 'kern.log', 'daemon.log', 'user.log', 'syslog', 'messages',
              'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg', 'blktap.log',
-             'xen-dmesg', 'wtmp', 'xen/hypervisor.log', 'mcelog', 'dnf5.log'] +
+             'xen-dmesg', 'wtmp', 'xen/hypervisor.log', 'mcelog', 'dnf5.log', 'yum.log'] +
            [ f % n for n in get_log_range(caps[CAP_SYSTEM_LOGS][VERBOSITY]) \
                  for f in ['crit.log.%d', 'crit.log.%d.gz',
                            'kern.log.%d', 'kern.log.%d.gz',
@@ -1179,7 +1178,8 @@ exclude those logs from the archive.
                            'secure.%d', 'secure.%d.gz',
                            'xen/hypervisor.log.%d', 'xen/hypervisor.log.%d.gz',
                            'blktap.log.%d', 'wtmp.%d.gz',
-                           'dnf5.log.%d', 'dnf5.log.%d.gz']]])
+                           'dnf5.log.%d', 'dnf5.log.%d.gz',
+                           'yum.log.%d', 'yum.log.%d.gz']]])
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
     file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
@@ -1298,7 +1298,6 @@ exclude those logs from the archive.
 
     cmd_output(CAP_XHA_LIVESET, [HA_QUERY_LIVESET])
 
-    file_output(CAP_YUM, [YUM_LOG])
     tree_output(CAP_YUM, YUM_REPOS_DIR)
     cmd_output(CAP_YUM, [RPM, '-qa'])
     tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
