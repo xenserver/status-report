@@ -215,7 +215,6 @@ INSTALLED_REPOS_DIR = '/etc/xensource/installed-repos'
 UPDATE_APPLIED_DIR = '/var/update/applied'
 OEM_XENSERVER_LOGS_RE = re.compile(r'^.*xensource\.log$')
 XHAD_CONF = '/etc/xensource/xhad.conf'
-YUM_LOG = '/var/log/yum.log'
 YUM_REPOS_DIR = '/etc/yum.repos.d'
 PAM_DIR = '/etc/pam.d'
 FIST_RE = re.compile(r'.*/fist_')
@@ -1259,7 +1258,7 @@ exclude those logs from the archive.
                    'squeezed.log', 'openvswitch/ovs-brcompatd.log',
                    'openvswitch/ovs-vswitchd.log', 'openvswitch/ovsdb-server.log',
                    'telemetry/telemetry.log', 'telemetry/license_server.log',
-                   'xha.log'] +
+                   'xha.log', 'yum.log'] +
                   [ f % n for n in get_log_range(caps[CAP_XENSERVER_LOGS][VERBOSITY]) \
                         for f in ['xensource.log.%d', 'xensource.log.%d.gz',
                                   'SMlog.%d', 'SMlog.%d.gz',
@@ -1273,7 +1272,8 @@ exclude those logs from the archive.
                                   'openvswitch/ovsdb-server.log.%d', 'openvswitch/ovsdb-server.log.%d.gz',
                                   'telemetry/telemetry.log.%d', 'telemetry/telemetry.log.%d.gz',
                                   'telemetry/license_server.log.%d', 'telemetry/license_server.log.%d.gz',
-                                  'xha.log.%d', 'xha.log.%d.gz']]]
+                                  'xha.log.%d', 'xha.log.%d.gz',
+                                  'yum.log.%d', 'yum.log.%d.gz']]]
 
     # Collect SAR data (binary and text, and add today's report with sar -A)
     cmd_output(CAP_SYSTEM_LOAD, ['sar', '-A'])
@@ -1298,7 +1298,6 @@ exclude those logs from the archive.
 
     cmd_output(CAP_XHA_LIVESET, [HA_QUERY_LIVESET])
 
-    file_output(CAP_YUM, [YUM_LOG])
     tree_output(CAP_YUM, YUM_REPOS_DIR)
     cmd_output(CAP_YUM, [RPM, '-qa'])
     tree_output(CAP_YUM, SIGNING_KEY_INFO_DIR)
