@@ -472,7 +472,7 @@ cap(CAP_XENSERVER_CONFIG,    PII_MAYBE,                 max_size=160*KB,
     max_time=10)
 cap(CAP_XENSERVER_DOMAINS,   PII_NO,                    max_size=1*KB,
     max_time=10)
-cap(CAP_XENSERVER_DATABASES, PII_YES,                   max_size=10*KB,
+cap(CAP_XENSERVER_DATABASES, PII_YES,                   max_size=10*MB,
     max_time=5)
 cap(CAP_XENSERVER_INSTALL,   PII_MAYBE, min_size=10*KB, max_size=4*MB)
 cap(CAP_XENSERVER_LOGS,      PII_MAYBE, min_size=0,     max_size=70*MB)
@@ -1225,6 +1225,7 @@ exclude those logs from the archive.
     file_output(CAP_XENSERVER_DATABASES, [XAPI_LOCAL_DB])
     cmd_output(CAP_XENSERVER_DATABASES, [XE, 'pool-dump-database', 'file-name='],
                label="xapi-db-dumped.xml", filter=filter_db_pii)
+    file_output(CAP_XENSERVER_DATABASES, [os.path.join('/run', 'sr-mount', '*', 'sqlite3-metadata.db')])
 
     cmd_output(CAP_XENSERVER_DOMAINS, [LIST_DOMAINS])
     cmd_output(CAP_XENSERVER_DOMAINS, [XL, "vcpu-list"])
