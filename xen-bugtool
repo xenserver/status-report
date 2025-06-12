@@ -289,6 +289,7 @@ LOSETUP = 'losetup'
 LS = 'ls'
 LSBLK = 'lsblk'
 LSPCI = 'lspci'
+DRIVER_TOOL = 'driver-tool'
 LVDISPLAY = 'lvdisplay'
 LVS = 'lvs'
 MD5SUM = 'md5sum'
@@ -369,6 +370,7 @@ CAP_DISK_INFO            = 'disk-info'
 CAP_FCOE                 = 'fcoe'
 CAP_FIRSTBOOT            = 'firstboot'
 CAP_HARDWARE_INFO        = 'hardware-info'
+CAP_DRIVER_INFO          = 'driver-info'
 CAP_HDPARM_T             = 'hdparm-t'
 CAP_HIGH_AVAILABILITY    = 'high-availability'
 CAP_HOST_CRASHDUMP_LOGS  = 'host-crashdump-logs'
@@ -437,6 +439,7 @@ cap(CAP_FCOE,                PII_YES,   max_size=4*KB, max_time=10)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=800*KB,
     max_time=60)
+cap(CAP_DRIVER_INFO,         PII_NO,                    max_size=80*KB)
 cap(CAP_HDPARM_T,            PII_NO,    min_size=0,     max_size=5*KB,
     min_time=20, max_time=90, checked=False, hidden=True)
 cap(CAP_HIGH_AVAILABILITY,   PII_MAYBE,                 max_size=5*MB)
@@ -979,6 +982,9 @@ exclude those logs from the archive.
         cmd_output(CAP_DISK_INFO, [MDADM, '--query', '--detail', a])
 
     tree_output(CAP_FIRSTBOOT, FIRSTBOOT_DIR)
+
+    # run with -u argument as sometimes this command execution times out
+    cmd_output(CAP_DRIVER_INFO, [DRIVER_TOOL, '-l'])
 
     file_output(CAP_HARDWARE_INFO, [PROC_CPUINFO, PROC_MEMINFO, PROC_IOMEM, PROC_IOPORTS, PROC_INTERRUPTS])
     file_output(CAP_HARDWARE_INFO, [PROC_SOFTIRQS])
