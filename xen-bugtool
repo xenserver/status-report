@@ -288,6 +288,7 @@ LOSETUP = 'losetup'
 LS = 'ls'
 LSBLK = 'lsblk'
 LSPCI = 'lspci'
+DRIVER_TOOL = 'driver-tool'
 LVDISPLAY = 'lvdisplay'
 LVS = 'lvs'
 MD5SUM = 'md5sum'
@@ -992,6 +993,7 @@ exclude those logs from the archive.
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-vv'])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-nm'])
     cmd_output(CAP_HARDWARE_INFO, [LSPCI, '-nnm'])
+    cmd_output(CAP_HARDWARE_INFO, [DRIVER_TOOL, '-l'])
     cmd_output(CAP_HARDWARE_INFO, [ACPIDUMP])
     file_output(CAP_HARDWARE_INFO, [PROC_USB_DEV, PROC_SCSI])
     file_output(CAP_HARDWARE_INFO, [BOOT_TIME_CPUS, BOOT_TIME_MEMORY])
