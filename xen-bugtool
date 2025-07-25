@@ -118,8 +118,6 @@ GRUB_EFI_CONFIG = '/boot/efi/EFI/xenserver/grub.cfg'
 BOOT_KERNEL = '/boot/vmlinuz-' + OS_RELEASE
 BOOT_INITRD = '/boot/initrd-' + OS_RELEASE + '.img'
 PROC_PARTITIONS = '/proc/partitions'
-FCOE_BLACKLIST_FILE = '/etc/sysconfig/fcoe-blacklist'
-FCOE_CONFIG_DIR = '/etc/fcoe/'
 FSTAB = '/etc/fstab'
 PROC_MOUNTS = '/proc/mounts'
 ISCSI_CONF = '/etc/iscsi/iscsid.conf'
@@ -265,7 +263,6 @@ BIN_STATIC_VDIS = 'static-vdis'
 BIOSDEVNAME = 'biosdevname'
 BRCTL = 'brctl'
 CHRONYC = 'chronyc'
-DCBTOOL = 'dcbtool'
 DF = 'df'
 DU = 'du'
 DMESG = 'dmesg'
@@ -274,7 +271,6 @@ DMSETUP = 'dmsetup'
 EBTABLES = 'ebtables'
 EFIBOOTMGR = 'efibootmgr'
 ETHTOOL = 'ethtool'
-FCOEADM = 'fcoeadm'
 FDISK = 'fdisk'
 HA_QUERY_LIVESET = '/opt/xensource/debug/debug_ha_query_liveset'
 HDPARM = 'hdparm'
@@ -283,7 +279,6 @@ IPTABLES = 'iptables'
 ISCSIADM = 'iscsiadm'
 KPATCH = 'kpatch'
 LIST_DOMAINS = 'list_domains'
-LLDPTOOL = 'lldptool'
 LOSETUP = 'losetup'
 LS = 'ls'
 LSBLK = 'lsblk'
@@ -366,7 +361,6 @@ CAP_BLOBS                = 'blobs'
 CAP_BOOT_LOADER          = 'boot-loader'
 CAP_DEVICE_MODEL         = 'device-model'
 CAP_DISK_INFO            = 'disk-info'
-CAP_FCOE                 = 'fcoe'
 CAP_FIRSTBOOT            = 'firstboot'
 CAP_HARDWARE_INFO        = 'hardware-info'
 CAP_HDPARM_T             = 'hdparm-t'
@@ -433,7 +427,6 @@ cap(CAP_BOOT_LOADER,         PII_NO,                    max_size=3*KB,
 cap(CAP_DEVICE_MODEL,        PII_YES,   min_size=200*KB, max_size=8*MB)
 cap(CAP_DISK_INFO,           PII_MAYBE,                 max_size=8*MB,
     max_time=120)
-cap(CAP_FCOE,                PII_YES,   max_size=4*KB, max_time=10)
 cap(CAP_FIRSTBOOT,           PII_YES,   min_size=60*KB, max_size=80*KB)
 cap(CAP_HARDWARE_INFO,       PII_MAYBE,                 max_size=800*KB,
     max_time=60)
@@ -837,7 +830,7 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
     entries = [cap_key for cap_key in caps if caps[cap_key][CHECKED]]
     if os.getenv('XEN_RT'):
         entries += [e for e in [CAP_BLOBS, CAP_BOOT_LOADER,  # pragma: no cover
-                   CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FCOE, CAP_FIRSTBOOT,
+                   CAP_DEVICE_MODEL, CAP_DISK_INFO, CAP_FIRSTBOOT,
                    CAP_HARDWARE_INFO, CAP_HOST_CRASHDUMP_LOGS, CAP_KERNEL_INFO, CAP_LOSETUP_A,
                    CAP_NETWORK_CONFIG, CAP_NETWORK_STATUS, CAP_PROCESS_LIST, CAP_HIGH_AVAILABILITY,
                    CAP_PAM, CAP_MULTIPATH,
@@ -1120,33 +1113,6 @@ exclude those logs from the archive.
         for b in bond_list():
             cmd_output(CAP_NETWORK_STATUS, [OVS_APPCTL, 'bond/show', b])
     tree_output(CAP_NETWORK_STATUS, SYS_NETBACK_DEBUG)
-
-    cmd_output(CAP_FCOE, [FCOEADM, '-i'])
-    cmd_output(CAP_FCOE, [FCOEADM, '-t'])
-    tree_output(CAP_FCOE, FCOE_CONFIG_DIR)
-    file_output(CAP_FCOE, [FCOE_BLACKLIST_FILE])
-
-    for p in os.listdir('/sys/class/net/'):
-        if p.startswith('eth') and p.isalnum():
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gc', p, 'dcb'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gc', p, 'pg'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gc', p, 'pfc'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gc', p, 'app:0'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gc', p, 'll:0'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'go', p, 'pg'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'go', p, 'pfc'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'go', p, 'app:0'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'go', p, 'll:0'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gp', p, 'pg'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gp', p, 'pfc'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gp', p, 'app:0'])
-            cmd_output(CAP_FCOE, [DCBTOOL, 'gp', p, 'll:0'])
-            cmd_output(CAP_FCOE, [LLDPTOOL, '-t', '-i', p, '-n'])
-            cmd_output(CAP_FCOE, [LLDPTOOL, '-t', '-i', p])
-            cmd_output(CAP_FCOE, [LLDPTOOL, '-t', '-i', p, '-V', 'APP', '-c'])
-            cmd_output(CAP_FCOE, [LLDPTOOL, '-t', '-i', p, '-V', 'PFC', '-c'])
-            cmd_output(CAP_FCOE, [LLDPTOOL, '-t', '-i', p, '-V', 'ETS-CFG', '-c'])
-            cmd_output(CAP_FCOE, [LLDPTOOL, '-t', '-i', p, '-V', 'ETS-REC', '-c'])
 
     tree_output(CAP_PAM, PAM_DIR)
     file_output(CAP_PAM, [KRB5_CONF, SSHD_CONFIG])
@@ -2086,10 +2052,6 @@ def update_capabilities():
     update_cap_size(CAP_NETWORK_STATUS, max_size)
     max_size = caps[CAP_NETWORK_CONFIG][MAX_SIZE] * num_pifs + CAP_NETWORK_CONFIG_OVERHEAD
     update_cap_size(CAP_NETWORK_CONFIG, max_size)
-
-    # update FCOE capabilities based on number of PIFs
-    update_cap_time(CAP_FCOE, caps[CAP_FCOE][MAX_TIME] * num_pifs)
-    update_cap_size(CAP_FCOE, caps[CAP_FCOE][MAX_SIZE] * num_pifs)
 
     # compute max time & size based on number of domains, VBDs and VIFs
     num_vbds = 0
