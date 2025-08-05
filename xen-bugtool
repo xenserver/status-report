@@ -272,6 +272,7 @@ EBTABLES = 'ebtables'
 EFIBOOTMGR = 'efibootmgr'
 ETHTOOL = 'ethtool'
 FDISK = 'fdisk'
+FIREWALL_CMD = '/usr/bin/firewall-cmd'
 HA_QUERY_LIVESET = '/opt/xensource/debug/debug_ha_query_liveset'
 HDPARM = 'hdparm'
 IP = "ip"
@@ -290,6 +291,7 @@ MD5SUM = 'md5sum'
 MDADM = 'mdadm'
 MODINFO = 'modinfo'
 MULTIPATHD = 'multipathd'
+NFT = '/usr/sbin/nft'
 NSTAT = 'nstat'
 SS = 'ss'
 OVS_APPCTL = 'ovs-appctl'
@@ -1050,6 +1052,8 @@ exclude those logs from the archive.
     cmd_output(CAP_NETWORK_STATUS, [EBTABLES, '-L'])
     cmd_output(CAP_NETWORK_STATUS, [IPTABLES, '-nvL'])
     cmd_output(CAP_NETWORK_STATUS, [BRCTL, 'show'])
+    cmd_output(CAP_NETWORK_STATUS, [NFT, ' list', 'ruleset'])
+    cmd_output(CAP_NETWORK_STATUS, [FIREWALL_CMD, '--list-all-zones'])
     cmd_output(CAP_NETWORK_STATUS, [BIOSDEVNAME, '-d', '-x'])
     for p in os.listdir('/sys/class/net/'):
         if os.path.isdir('/sys/class/net/%s/bridge' % p):
