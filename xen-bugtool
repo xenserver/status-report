@@ -1321,6 +1321,10 @@ exclude those logs from the archive.
     logging.info('Running commands to collect data')
     collect_data(subdir, archive)
 
+    logging.debug("Category sizes (max, actual):\n")
+    for key in entries:
+        logging.debug("    %s (%d, %d)", key, caps[key][MAX_SIZE], cap_sizes[key])
+
     # after all is done, include all log() entries from the XEN_BUGTOOL_LOG file
     if CAP_XEN_BUGTOOL in entries:
         archive.addRealFile(
@@ -1342,9 +1346,6 @@ exclude those logs from the archive.
     except:
         pass
 
-    logging.debug("Category sizes (max, actual):\n")
-    for key in entries:
-        logging.debug("    %s (%d, %d)", key, caps[key][MAX_SIZE], cap_sizes[key])
     return res
 
 def find_tapdisk_logs():
