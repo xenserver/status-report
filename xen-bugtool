@@ -772,11 +772,22 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
     if argv is None:
         argv = sys.argv
 
-    # Ensure we have a clean bugtool log file
-    try:
-        os.remove(XEN_BUGTOOL_LOG)
-    except:
-        pass
+
+    logger = logging.getLogger()
+    logging.getLogger().handlers.clear()
+    logger.setLevel(logging.NOTSET)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    formatter.default_msec_format='%s.%03d'
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    bugtool_log = StringIOmtime()
+    bugtool_handler = logging.StreamHandler(bugtool_log)
+    bugtool_handler.setLevel(logging.DEBUG)
+    bugtool_handler.setFormatter(formatter)
+    logger.addHandler(bugtool_handler)
 
     logging.debug(" ".join(argv))
     logging.debug("PATH=%s", os.environ['PATH'])
@@ -878,7 +889,7 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
             unlimited_time = True
         elif k in ['-d', '--debug']:
             dbg = True
-            logging.getLogger().setLevel(logging.DEBUG)  # Activates logging.debug("log messages")
+            console_handler.setLevel(logging.DEBUG)  # Activates logging.debug("log messages")
 
     if len(params) != 1:
         logging.fatal("Invalid additional arguments: %s", str(params))
@@ -1327,9 +1338,11 @@ exclude those logs from the archive.
 
     # after all is done, include all log() entries from the XEN_BUGTOOL_LOG file
     if CAP_XEN_BUGTOOL in entries:
-        archive.addRealFile(
-            construct_filename(subdir, XEN_BUGTOOL_LOG, {}), XEN_BUGTOOL_LOG
-        )
+        logger.removeHandler(bugtool_handler)
+        bugtool_handler.flush()
+        bugtool_handler.close()
+
+        archive.add_path_with_data(construct_filename(subdir, XEN_BUGTOOL_LOG, {}), bugtool_log)
 
     # include inventory
     include_inventory(archive, subdir)
@@ -1340,11 +1353,6 @@ exclude those logs from the archive.
         res = 1
 
     clean_tapdisk_logs()
-
-    try:
-        os.remove(XEN_BUGTOOL_LOG)
-    except:
-        pass
 
     return res
 
