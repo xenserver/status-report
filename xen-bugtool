@@ -557,7 +557,10 @@ def file_output(cap, path_list):
     if cap in entries:
         pl = []
         for path in path_list:
-            pl.extend(glob.glob(path))
+            matches = glob.glob(path)
+            if not matches:
+                logging.debug('No match for file glob %s', path)
+            pl.extend(matches)
 
         for p in pl:
             try:
@@ -694,6 +697,7 @@ def collect_data(subdir, archive):
         cap = v["cap"]
         filename = v.get("filename")
         if filename and (filename.startswith("/proc/") or filename.startswith("/sys/")):
+            logging.debug('Collecting %s', filename)
             # proc files must be read into memory
             try:
                 f = open(v["filename"], "rb")
@@ -714,6 +718,7 @@ def collect_data(subdir, archive):
                 else:
                     logging.debug("File not found: %s", filename)
         elif "func" in v:
+            logging.debug("Collecting '%s' from %s", k, v["func"])
             try:
                 s = no_unicode(v["func"](cap))
             except Exception:
@@ -730,6 +735,7 @@ def collect_data(subdir, archive):
             else:
                 logging.info("Omitting %s, size constraint of %s exceeded", k, cap)
         elif filename:
+            logging.debug('Collecting %s', filename)
             try:
                 archive.addRealFile(name, filename)
             except:
@@ -1768,6 +1774,7 @@ def getBoolAttr(el, attr, default = False):
 
 
 def load_capability_plugin(path, dir):
+    logging.debug('Loading capability plugin %s', path)
     xmldoc = parse(path)
     assert xmldoc.documentElement.tagName == "capability"
 
@@ -1802,6 +1809,7 @@ def load_collect_plugin(path, dir):
             return rc
         return rc.encode()
 
+    logging.debug('Loading collect plugin %s', path)
     xmldoc = parse(path)
     assert xmldoc.documentElement.tagName == "collect"
 
