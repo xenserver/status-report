@@ -1338,7 +1338,7 @@ exclude those logs from the archive.
     logging.info('Running commands to collect data')
     collect_data(subdir, archive)
 
-    logging.debug("Category sizes (max, actual):\n")
+    logging.debug("Category sizes (max, actual):")
     for key in entries:
         logging.debug("    %s (%d, %d)", key, caps[key][MAX_SIZE], cap_sizes[key])
 
