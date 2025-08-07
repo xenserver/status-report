@@ -2262,6 +2262,10 @@ class ProcOutput:
             fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             self.running = True
             self.failed = False
+        except FileNotFoundError:
+            logging.debug("'%s' failed, not found", self.cmdAsStr())
+            self.running = False
+            self.failed = True
         except Exception:
             logging.exception("'%s' failed", self.cmdAsStr())
             self.running = False
