@@ -59,7 +59,6 @@ import traceback
 import xml
 import zipfile
 from collections import OrderedDict
-from contextlib import contextmanager
 from hashlib import md5 as md5_new
 from select import select
 from signal import SIGHUP, SIGTERM, SIGUSR1
@@ -527,35 +526,9 @@ class StringIOmtime(io.BytesIO):
 def no_unicode(x):
     return x.encode("utf-8") if isinstance(x, unicode_type) else x
 
-
-@contextmanager
-def log_exceptions():
-    """Context manager to log exceptions."""
-    try:
-        yield
-    except Exception as e:  # pylint: disable=broad-except
-        log("%s, %s" % (e, traceback.format_exc()))
-
-
-def log_internal_error(_):
-    """Log an internal error and return an empty string as bugtool output data"""
-    log("bugtool: Internal error: " + traceback.format_exc())
-    return ""  # For now, no diagnostic output in the individual output files
-
-
-def log(x, print_output=True):
-    if print_output:
-        output(x)
-
-    with open(XEN_BUGTOOL_LOG, "a") as logFile:
-        print(x, file=logFile)
-
 def output(x):
     if not SILENT_MODE:
         print(x)
-
-def output_ts(x):
-    output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
 
 def cmd_output(cap, args, label = None, filter = None):
     if cap in entries:
@@ -594,7 +567,7 @@ def file_output(cap, path_list):
                     data[p] = {'cap': cap, 'filename': p}
                     cap_sizes[cap] += s.st_size
                 else:
-                    log("Omitting %s, size constraint of %s exceeded" % (p, cap))
+                    logging.info("Omitting %s, size constraint of %s exceeded", p, cap)
             except:
                 pass
 
@@ -734,16 +707,18 @@ def collect_data(subdir, archive):
                     del v['output']
                     cap_sizes[cap] += len(s)
                 else:
-                    log("Omitting %s, size constraint of %s exceeded" % (v['filename'], cap))
+                    logging.info("Omitting %s, size constraint of %s exceeded", v['filename'], cap)
             except IOError as e:
                 if e.errno != 2:
-                    log("IOError reading %s: %s" % (filename, e))
+                    logging.exception("IOError reading %s", filename)
+                else:
+                    logging.debug("File not found: %s", filename)
         elif "func" in v:
             try:
                 s = no_unicode(v["func"](cap))
             except Exception:
+                logging.exception("Failed executing function %s", v["func"])
                 backtrace = traceback.format_exc()  # type: str
-                log(backtrace)
                 s = backtrace.encode()
             if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                     cap_sizes[cap] < caps[cap][MAX_SIZE]:
@@ -753,7 +728,7 @@ def collect_data(subdir, archive):
                 del v['output']
                 cap_sizes[cap] += len(s)
             else:
-                log("Omitting %s, size constraint of %s exceeded" % (k, cap))
+                logging.info("Omitting %s, size constraint of %s exceeded", k, cap)
         elif filename:
             try:
                 archive.addRealFile(name, filename)
@@ -803,8 +778,8 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
     except:
         pass
 
-    log(" ".join(argv), print_output=False)
-    log("PATH=%s" % os.environ['PATH'], print_output=False)
+    logging.debug(" ".join(argv))
+    logging.debug("PATH=%s", os.environ['PATH'])
 
     try:
         (options, params) = getopt.gnu_getopt(
@@ -903,7 +878,6 @@ def main(argv=None):  # pylint: disable=too-many-statements,too-many-branches
             unlimited_time = True
         elif k in ['-d', '--debug']:
             dbg = True
-            ProcOutput.debug = True
             logging.getLogger().setLevel(logging.DEBUG)  # Activates logging.debug("log messages")
 
     if len(params) != 1:
@@ -1160,8 +1134,10 @@ exclude those logs from the archive.
     # tree_output(CAP_PAM, SAMBA_DATA_DIR) # Explictly skip samba data as it contains credentials
     tree_output(CAP_PAM, VAR_LOG_DIR + "samba")
 
-    with log_exceptions():
+    try:
         dump_xapi_rrds(entries)
+    except Exception:  # pylint: disable=broad-except
+        logging.exception('Failed dumping XAPI RRDs')
 
     cmd_output(CAP_PROCESS_LIST, [PS, 'wwwaxf', '-eo', 'pid,tty,stat,time,nice,psr,pcpu,pmem,nwchan,wchan:25,args'], label='process-tree')
     func_output(CAP_PROCESS_LIST, 'fd_usage', fd_usage)
@@ -1333,7 +1309,7 @@ exclude those logs from the archive.
             pass
 
     if output_fd == -1:
-        output_ts('Creating output file')
+        logging.info('Creating output file')
 
     if output_type.startswith('tar'):
         archive = TarOutput(subdir, output_type, output_fd)
@@ -1342,7 +1318,7 @@ exclude those logs from the archive.
     archive.declare_subarchive(SYSTEMD_CONF_DIR, subdir + SYSTEMD_CONF_DIR + ".tar")
 
     # collect selected data now
-    output_ts('Running commands to collect data')
+    logging.info('Running commands to collect data')
     collect_data(subdir, archive)
 
     # after all is done, include all log() entries from the XEN_BUGTOOL_LOG file
@@ -1386,7 +1362,7 @@ def generate_tapdisk_logs():
     for pid in pidof('tapdisk2'):
         try:
             os.kill(pid, SIGUSR1)
-            output_ts("Including logs for tapdisk process %d" % pid)
+            logging.debug("Including logs for tapdisk process %d", pid)
         except :
             pass
     # give processes a second to write their logs
@@ -1477,8 +1453,8 @@ def dump_xapi_rrds(requested_entries):
                     % (session._session, vm["uuid"]),
                     timeout=5,
                 )
-            except HTTPError as e:
-                log("Failed to fetch RRD for VM %s: %s" % (vm["uuid"], e))
+            except HTTPError:
+                logging.exception("Failed to fetch RRD for VM %s", vm["uuid"])
                 continue
             try:
                 name = "xapi_rrd-%s.out" % vm['uuid']
@@ -1603,8 +1579,9 @@ def filter_xapi_clusterd_db(cap):
     try:
         with open(XAPI_CLUSTERD, 'r') as f:
             clusterd_data = json.load(f)
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        return log_internal_error(e)
+    except Exception:  # pylint: disable=broad-exception-caught
+        logging.exception('Failed to open xapi-clusterd DB')
+        return ""
     try:
         config_keys = ['cluster_config', 'old_cluster_config']
         for config_key in config_keys:
@@ -1618,8 +1595,9 @@ def filter_xapi_clusterd_db(cap):
         if "token" in clusterd_data:
             clusterd_data["token"] = "REMOVED"
         output_str = json.dumps(clusterd_data)
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        return log_internal_error(e)
+    except Exception:  # pylint: disable=broad-exception-caught
+        logging.exception('Failed to filter xapi-clusterd DB')
+        return ""
 
     return output_str
 
@@ -1642,8 +1620,8 @@ def dump_filtered_xapi_db(cap):
             raw_xml = file_obj.read()
             dbfilter = DBFilter(raw_xml)
             return dbfilter.output()
-    except Exception as e:
-        output_ts("Failed to filter xapi database %s" % (str(e)))
+    except Exception:
+        logging.exception("Failed to filter xapi database")
         return ""
 
 def dump_scsi_hosts(cap):
@@ -2219,7 +2197,6 @@ def disk_list():
 
 
 class ProcOutput:
-    debug = False
 
     def __init__(self, command, max_time, inst=None, filter=None):
         self.command = command
@@ -2242,8 +2219,7 @@ class ProcOutput:
     def run(self):
         self.timed_out = False
         try:
-            if ProcOutput.debug:
-                output_ts("Starting '%s'" % self.cmdAsStr())
+            logging.debug("Starting '%s'", self.cmdAsStr())
             self.proc = Popen(
                 self.command,
                 # Python3 would issue the warning that line buffering
@@ -2258,8 +2234,8 @@ class ProcOutput:
             fcntl.fcntl(self.proc.stdout.fileno(), fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
             self.running = True
             self.failed = False
-        except Exception as e:
-            output_ts("'%s' failed: %s" % (self.cmdAsStr(), e))
+        except Exception:
+            logging.exception("'%s' failed", self.cmdAsStr())
             self.running = False
             self.failed = True
 
@@ -2348,7 +2324,7 @@ def run_proc_group(pp):
 
             # handle timeout
             if not unlimited_time and p.running and now > (p.start_time + p.max_time):
-                output_ts("'%s' timed out" % p.cmdAsStr())
+                logging.error("'%s' timed out", p.cmdAsStr())
                 if p.inst:
                     p.inst.write("\n** timeout **\n")
                 p.timed_out = True
