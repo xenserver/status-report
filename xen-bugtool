@@ -517,7 +517,7 @@ class StringIOmtime(io.BytesIO):
         io.BytesIO.__init__(self, buf)
         self.mtime = time.time()
 
-    def write(self, s):  # type: (StringIOmtime, ReadableBuffer) -> int
+    def write(self, s):  # type: (StringIOmtime, Union[ReadableBuffer, str]) -> int
         """Write to the StringIOmtime object and update the mtime"""
         self.mtime = time.time()
         return io.BytesIO.write(self, no_unicode(s))
