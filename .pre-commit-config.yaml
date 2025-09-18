@@ -31,7 +31,7 @@
 # https://pre-commit.com/#automatically-enabling-pre-commit-on-repositories
 # All hooks: https://pre-commit.com/hooks.html
 fail_fast: false
-default_stages: [commit, push]
+default_stages: [pre-commit, pre-push]
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -89,7 +89,7 @@ repos:
         name: Ensure that changes staged for updating xen-bugtool are black-formatted
         files: xen-bugtool
         # If needed, hooks can be disabled temporarily by removing commit and push:
-        stages: [commit, push, manual]
+        stages: [pre-commit, pre-push, manual]
         entry: make
         pass_filenames: false
         args: [darker-xen-bugtool]
