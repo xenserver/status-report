@@ -2371,7 +2371,7 @@ def pidof(name):
     return pids
 
 
-def readKeyValueFile(filename, strip_quotes=True):
+def readKeyValueFile(filename):
     """ Reads a KEY=Value style file (e.g. xensource-inventory). Returns a
     dictionary of key/values in the file.  Not designed for use with large files
     as the file is read entirely into memory."""
@@ -2381,11 +2381,8 @@ def readKeyValueFile(filename, strip_quotes=True):
 
     defs = [ (l[:l.find("=")], l[(l.find("=") + 1):]) for l in lines ]
 
-    if strip_quotes:
-        def quotestrip(x):
-            return x.strip("'")
-        defs = [ (a, quotestrip(b)) for (a,b) in defs ]
-
+    # Return the list of key/value tuples as a dictionary of key/value pairs
+    defs = [(a, b.strip("'")) for (a, b) in defs]
     return dict(defs)
 
 
