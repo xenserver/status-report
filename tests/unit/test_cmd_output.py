@@ -25,6 +25,11 @@ def check_cmd_output_data(bugtool, command, label=None, filter_func=None):
     bugtool.cmd_output(bugtool.entries[0], command, label, filter=filter_func)
 
     # Assert
+
+    if command.startswith("/missing"):
+        assert not bugtool.data  # missing command: no data should be added
+        return
+
     assert bugtool.data == {
         label
         or command: {
@@ -70,13 +75,8 @@ def test_cmd_output_multiple_commands(bugtool_fixture):
 
     # Assert
     #
+    # Note: Commands which are missing on the system are not added to data
     assert bugtool_fixture.data == {
-        # At the moment, we also add commands which are missing on the system to data
-        "missing-cmd arg1 arg2": {
-            "cap": cap2,
-            "cmd_args": cmd2,
-            "filter": None,
-        },
         # Uses command as string without path as key when no label is set
         "pwd --version": {
             "cap": cap1,
