@@ -558,13 +558,14 @@ def output_ts(x):
     output("[%s]  %s" % (time.strftime("%x %X %Z"), x))
 
 def cmd_output(cap, args, label = None, filter = None):
+    """If the cap shall be collected, add the specification to run the command"""
     if cap in entries:
-        if not label:
+        if not label:  # The default label not set, generate the label from the command
             if isinstance(args, list):
-                a = [aa for aa in args]
-                a[0] = os.path.basename(a[0])
-                label = ' '.join(a)
-            else:
+                a = list(args)  # Copy it, and in the copy, use only
+                a[0] = os.path.basename(a[0])  # the basename of the command
+                label = ' '.join(a)  # (and then its args) for a shorter label
+            else:  # The command is a non-empty string, fall back to use it as label
                 label = args
         data[label] = {'cap': cap, 'cmd_args': args, 'filter': filter}
 
@@ -1841,7 +1842,6 @@ def load_plugins(just_capabilities = False):
                     tree_output(dir, getText(el.childNodes), pattern, negate)
                 elif el.tagName == "command":
                     label = el.getAttribute("label")
-                    if label == '': label = None
                     cmd_output(dir, getText(el.childNodes), label)
 
 def removeNoError(filename):
