@@ -143,6 +143,8 @@ lowlevel
 ltex
 LVDISPLAY
 lwidentity
+lxml
+maddr
 maxsplit
 mcelog
 mdadm
@@ -188,6 +190,7 @@ pii
 pmem
 pragma
 pre
+prek
 prepend
 proc
 procs

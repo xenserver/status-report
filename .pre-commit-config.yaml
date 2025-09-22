@@ -98,16 +98,17 @@ repos:
 
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.18.2
     hooks:
     -   id: mypy
+        files: '(^xen-bugtool|tests/.*\.py)$'
+        pass_filenames: false  # Workaround issue with prek (very fast pre-commit alternative)
         name: Run mypy to check e.g. that all expected arguments are passed to functions etc
         additional_dependencies:
-        - defusedxml
+        - types-defusedxml
         - pytest
         - types-lxml
         - types-mock
-        - types-requests
 
 
 -   repo: https://github.com/pylint-dev/pylint
