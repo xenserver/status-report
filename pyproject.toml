@@ -20,7 +20,6 @@ readme = "README.md"
 classifiers = [
     "Environment :: Console",
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
     "Operating System :: POSIX :: Linux :: XenServer/XCP-ng Dom0",
     "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: Implementation :: CPython",
