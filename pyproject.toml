@@ -11,9 +11,9 @@ authors = [
     {name = "Simon Rowe"},
 ]
 maintainers = [
-    {name = "Ashwin H"},
     {name = "Bernhard Kaindl"},
-    {name = "Pau Ruiz Safont"},
+    {name = "Gerald Elder-Vass"},
+    {name = "Mark Syms"},
     {name = "Ross Lagerwall"},
 ]
 readme = "README.md"
