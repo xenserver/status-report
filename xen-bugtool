@@ -672,7 +672,7 @@ def run_procs_and_capture_collected_output(collect, subdir, archive):
     """
 
     # Prepare the process_list dictionary
-    process_lists = {}  # type: dict[str, list[ProcOutputAndArchive]]
+    process_lists = {}
     for k, v in collect.items():
         name = construct_filename(subdir, k, v)
         cap = v['cap']
@@ -1426,7 +1426,7 @@ def dump_xapi_subprocess_info(cap):
                 return i.split()[-1]
         return None
     def pstree(pid):
-        result = {"cmdline": cmdline(pid)}  # type: dict[str, str | dict[str, str]]
+        result = { "cmdline": cmdline(pid) }
         child_pids = [child_pid for child_pid in all_pids if parent(child_pid) == pid]
         children = { }
         for child in child_pids:
@@ -1754,7 +1754,7 @@ def bond_list():
 
 def fd_usage(cap):
     output = ''
-    fd_dict = {}  # type: dict[int, list[str]]
+    fd_dict = {}
     for d in [p for p in os.listdir('/proc') if p.isdigit()]:
         try:
             with open('/proc/'+d+'/cmdline') as fh:
