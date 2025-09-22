@@ -56,7 +56,7 @@ import sys
 import tarfile
 import time
 import traceback
-import xml
+import xml.sax
 import zipfile
 from collections import OrderedDict
 from contextlib import contextmanager
