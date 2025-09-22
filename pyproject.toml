@@ -63,6 +63,7 @@ extra_standard_library = "commands"
 
 [tool.mypy]
 files = ["xen-bugtool", "tests"]
+mypy_path = "stubs"
 pretty = true
 error_summary = true
 strict_equality = true
