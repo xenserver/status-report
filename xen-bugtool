@@ -2379,7 +2379,7 @@ def readKeyValueFile(filename):
     with open(filename, "r") as f:
         lines = [x.strip("\n") for x in f.readlines()]
 
-    defs = [ (l[:l.find("=")], l[(l.find("=") + 1):]) for l in lines ]
+    defs = [ (l[:l.find("=")], l[(l.find("=") + 1):]) for l in lines if "=" in l ]
 
     # Return the list of key/value tuples as a dictionary of key/value pairs
     defs = [(a, b.strip("'")) for (a, b) in defs]
