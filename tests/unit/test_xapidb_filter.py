@@ -53,7 +53,7 @@ expected = r"""<?xml version="1.0" ?>
         <row NVRAM="(('EFI-variables'%.'REMOVED'))" id="1" snapshot_metadata="('NVRAM'%.'(('_%.'_')%.(\'EFI-variables\'%.\'REMOVED\')()"/>
     </table>
     <table name="pool">
-        <row ref="OpaqueRef:123" wlb_enabled="true" wlb_password="test_password"/>
+        <row ref="OpaqueRef:123" wlb_enabled="true" wlb_password="REMOVED"/>
     </table>
 </root>
 """
