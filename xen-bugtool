@@ -1772,6 +1772,11 @@ def fd_usage(cap):
     return output
 
 def load_plugins(just_capabilities = False):
+    """
+    Load plugins from PLUGIN_DIR.
+    If `just_capabilities` is True, only load the capabilities of the plugins.
+    See doc/plugins.md for details on the plugin XML formats.
+    """
     def getText(nodelist):
         rc = ""
         for node in nodelist:
