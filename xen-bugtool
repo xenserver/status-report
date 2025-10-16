@@ -1169,23 +1169,17 @@ exclude those logs from the archive.
     def get_log_range(verbosity):
         return range(1, verbosity) if verbosity < 9 else range(1, 20)
 
-    file_output(CAP_SYSTEM_LOGS,
-         [ VAR_LOG_DIR + x for x in
-           [ 'crit.log', 'kern.log', 'daemon.log', 'user.log', 'syslog', 'messages',
-             'monitor_memory.log', 'secure', 'debug', 'dmesg', 'boot.msg', 'blktap.log',
-             'xen-dmesg', 'wtmp', 'xen/hypervisor.log', 'mcelog', 'dnf5.log', 'yum.log'] +
-           [ f % n for n in get_log_range(caps[CAP_SYSTEM_LOGS][VERBOSITY]) \
-                 for f in ['crit.log.%d', 'crit.log.%d.gz',
-                           'kern.log.%d', 'kern.log.%d.gz',
-                           'daemon.log.%d', 'daemon.log.%d.gz',
-                           'user.log.%d', 'user.log.%d.gz',
-                           'messages.%d', 'messages.%d.gz',
-                           'monitor_memory.log.%d', 'monitor_memory.log.%d.gz',
-                           'secure.%d', 'secure.%d.gz',
-                           'xen/hypervisor.log.%d', 'xen/hypervisor.log.%d.gz',
-                           'blktap.log.%d', 'wtmp.%d.gz',
-                           'dnf5.log.%d', 'dnf5.log.%d.gz',
-                           'yum.log.%d', 'yum.log.%d.gz']]])
+    system_logs = [VAR_LOG_DIR + x for x in
+           ['crit.log', 'kern.log', 'daemon.log', 'user.log', 'syslog', 'messages', 'monitor_memory.log', 'secure',
+            'debug', 'dmesg', 'boot.msg', 'blktap.log', 'xen-dmesg', 'wtmp', 'xen/hypervisor.log', 'mcelog', 'dnf5.log',
+            'yum.log'] + [f % n for n in get_log_range(caps[CAP_SYSTEM_LOGS][VERBOSITY]) for f in
+                          ['crit.log.%d', 'crit.log.%d.gz', 'kern.log.%d', 'kern.log.%d.gz', 'daemon.log.%d',
+                           'daemon.log.%d.gz', 'user.log.%d', 'user.log.%d.gz', 'messages.%d', 'messages.%d.gz',
+                           'monitor_memory.log.%d', 'monitor_memory.log.%d.gz', 'secure.%d', 'secure.%d.gz',
+                           'xen/hypervisor.log.%d', 'xen/hypervisor.log.%d.gz', 'blktap.log.%d', 'wtmp.%d.gz',
+                           'dnf5.log.%d', 'dnf5.log.%d.gz', 'yum.log.%d', 'yum.log.%d.gz']]]
+    update_cap_size(CAP_SYSTEM_LOGS, size_of_all(system_logs))
+    file_output(CAP_SYSTEM_LOGS, system_logs)
     if not os.path.exists('/var/log/dmesg') and not os.path.exists('/var/log/boot.msg'):
         cmd_output(CAP_SYSTEM_LOGS, [DMESG])
     file_output(CAP_SYSTEM_LOGS, [LWIDENTITY_JOIN_LOG, HOSTS_LWIDENTITY_ORIG])
