@@ -79,8 +79,7 @@ test, as some test cases check the output:
 - `pytest --capture=no` disables capturing the output of the code under test.
   But this may not work well for test cases that assert the output.
 
-Instead, add new, dedicated logs to the test or the code under test
-or even the test case.
+Instead, add new, dedicated logs to the test case or the code under test.
 
 You can do this by instrumenting the code at the desired location using `logging`:
 
