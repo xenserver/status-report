@@ -4,6 +4,13 @@ dictionaryDefinitions: []
 dictionaries:
   - .vscode/ltex.dictionary.en-US.txt
 words:
+  - bugtool
+  - corosync
+  - Initialise
   - ltex
+  - rrdd
+  - xapi
+  - xenserver
+  - xensource
 ignoreWords: []
 import: []

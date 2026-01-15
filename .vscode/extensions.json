@@ -11,6 +11,6 @@
         "sourcery.sourcery",
         "streetsidesoftware.code-spell-checker",
         "timonwong.shellcheck",
-        "valentjn.vscode-ltex",
+        "ltex-plus.vscode-ltex-plus",
     ]
 }
