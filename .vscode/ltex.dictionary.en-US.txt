@@ -118,6 +118,7 @@ ifaces
 inet
 init
 initialisation
+Initialise
 initialised
 initiatorname
 inotify
