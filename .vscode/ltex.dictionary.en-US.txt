@@ -60,6 +60,7 @@ Cyclomatic
 dbcache
 dbfilter
 DCBTOOL
+debugfs
 defusedxml
 dev
 devcontents
@@ -136,6 +137,7 @@ LIVEPATCH
 LIVESET
 LLDPTOOL
 localca
+lockdown
 logfile
 logfiles
 LOSETUP

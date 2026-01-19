@@ -61,6 +61,7 @@ from contextlib import contextmanager
 from hashlib import md5 as md5_new
 from select import select
 from signal import SIGHUP, SIGTERM, SIGUSR1
+from stat import S_IRGRP, S_IROTH, S_IRUSR
 
 # Kept here for now to avoid conflicts with other open pull requests
 from subprocess import PIPE, Popen, getoutput
@@ -587,6 +588,14 @@ def file_output(cap, path_list):
         for p in pl:
             try:
                 s = os.stat(p)
+
+                # Skip unreadable debugfs files: In lockdown mode, attempting
+                # to read them would result in lockdown warnings being logged.
+                if p.startswith("/sys/kernel/debug/") and (
+                    s.st_mode & (S_IRUSR | S_IRGRP | S_IROTH) == 0
+                ):
+                    continue
+
                 if unlimited_data or caps[cap][MAX_SIZE] == -1 or \
                         cap_sizes[cap] < caps[cap][MAX_SIZE] or s.st_size == 0:
                     data[p] = {'cap': cap, 'filename': p}
