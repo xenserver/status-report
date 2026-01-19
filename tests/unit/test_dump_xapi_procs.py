@@ -1,7 +1,5 @@
 """This module contains the unit tests for the dump_xapi_procs function"""
 
-import sys
-
 
 def test_dump_xapi_subprocess_info(bugtool, fs):
     """Test the dump_xapi_subprocess_info() function to perform as expected"""
@@ -24,10 +22,6 @@ def test_dump_xapi_subprocess_info(bugtool, fs):
                                       'fds': {'0': '/dev/zero'}}},
              'cmdline': '/opt/xensource/bin/xapi',
              'fds': {'1': '/dev/null'}}}"""
-
-    if sys.version_info.major == 2:  # pragma: no cover
-        expected_result = expected_result.replace("{}", "{   }")
-        expected_result = expected_result.replace(": {'", ": {   '")
 
     # Assert the expected result
 

@@ -125,10 +125,7 @@ def patch_bugtool(bugtool, mocker, dom0_template, report_name, tmp_path):
 
         return "n" if "/proc" in prompt else "y"
 
-    if sys.version_info.major == 2:  # pragma: no cover
-        bugtool.raw_input = return_no_for_proc_files
-    else:
-        bugtool.input = return_no_for_proc_files
+    bugtool.input = return_no_for_proc_files
 
     entries = [
         "xenserver-config",

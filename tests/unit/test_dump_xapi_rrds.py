@@ -1,15 +1,10 @@
 """Test: test_dump_xapi_rrds"""
 
-import sys
 from email.message import Message
 
 import pytest
 from mock import MagicMock
-
-if sys.version_info.major == 2:  # pragma: no cover
-    from urllib2 import HTTPError  # type:ignore[import-not-found,attr-defined]
-else:
-    from urllib.request import HTTPError
+from urllib.request import HTTPError
 
 
 @pytest.fixture
@@ -77,11 +72,6 @@ def mock_urlopen():
 
     side_effect += [mock_response] * 3
     mock_urlopen.side_effect = side_effect
-
-    # Mock the fileno() method to return 0 for use by select(), except for Python3,
-    # urlopen returns http.client.HTTPResponse, which doesn't have a fileno() method:
-    if sys.version_info.major == 2:  # pragma: no cover
-        mock_urlopen.return_value.fileno.return_value = 0
 
     return mock_urlopen
 

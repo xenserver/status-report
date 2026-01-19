@@ -48,29 +48,18 @@ def imported_bugtool(testdir, dom0_template):
     def import_from_file(module_name, file_path):
         """Inner function which loads a module from the given file path"""
 
-        if sys.version_info.major == 2:  # pragma: no cover
-            # Python 2.7, use the deprecated imp module (no alternative)
-            # pylint: disable-next=deprecated-module
-            import imp  # pyright: ignore[reportMissingImports]
+        from importlib import machinery, util
 
-            module = imp.load_source(module_name, file_path)
+        loader = machinery.SourceFileLoader(module_name, file_path)
+        spec = util.spec_from_loader(module_name, loader)
+        assert spec
+        assert spec.loader
+        module = util.module_from_spec(spec)
 
-            # Prevent other code from importing the same module again:
-            sys.modules[module_name] = module
-            return module
-        else:
-            from importlib import machinery, util
-
-            loader = machinery.SourceFileLoader(module_name, file_path)
-            spec = util.spec_from_loader(module_name, loader)
-            assert spec
-            assert spec.loader
-            module = util.module_from_spec(spec)
-
-            # Prevent other code from importing the same module again:
-            sys.modules[module_name] = module
-            spec.loader.exec_module(module)
-            return module
+        # Prevent other code from importing the same module again:
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        return module
 
     #
     # Import the xen-bugtool script as a module:
