@@ -33,8 +33,6 @@
 #
 
 # Special pylint disables for latest pylint on xen-bugtool itself (for the moment):
-# The old Pylint-1.9.x thinks some of these are useless:
-# pylint: disable=useless-suppression
 # pylint: disable=missing-docstring,line-too-long,multiple-statements,unnecessary-pass
 # pylint: disable=broad-exception-raised,missing-type-doc,useless-object-inheritance
 # pylint: disable=undefined-variable,unnecessary-comprehension
@@ -63,28 +61,19 @@ from contextlib import contextmanager
 from hashlib import md5 as md5_new
 from select import select
 from signal import SIGHUP, SIGTERM, SIGUSR1
-from subprocess import PIPE, Popen
+
+# Kept here for now to avoid conflicts with other open pull requests
+from subprocess import PIPE, Popen, getoutput
+from urllib.request import HTTPError, urlopen
 from xml.dom.minidom import getDOMImplementation, parse
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 import defusedxml.sax
+from typing import TYPE_CHECKING
 
-if sys.version_info.major == 2:  # pragma: no cover
-    from commands import getoutput  # pyright: ignore[reportMissingImports]
-    from urllib2 import HTTPError, urlopen  # type:ignore[attr-defined]
-
-    unicode_type = unicode  # pyright:ignore[reportUndefinedVariable] # pylint: disable=unicode-builtin
-else:
-    from subprocess import getoutput
-    from urllib.request import HTTPError, urlopen
-
-    from typing import TYPE_CHECKING
-
-    if TYPE_CHECKING:  # Used for type checking only:
-        from _typeshed import ReadableBuffer  # pylint: disable=unused-import
-
-    unicode_type = str
+if TYPE_CHECKING:  # Used for type checking only:
+    from _typeshed import ReadableBuffer
 
 # Fixed in 3.7: https://github.com/python/cpython/pull/12628
 # Monkey-patch zipfile's __del__ function to be less stupid
@@ -534,7 +523,7 @@ class StringIOmtime(io.BytesIO):
 
 
 def no_unicode(x):
-    return x.encode("utf-8") if isinstance(x, unicode_type) else x
+    return x.encode("utf-8") if isinstance(x, str) else x
 
 
 @contextmanager

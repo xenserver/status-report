@@ -119,16 +119,10 @@ coverage:
 
       # The above defaults apply to each of these, unless overridden here:
       #
-      tool-py2:  # declare a new status context "tool-py2"
-        paths: ["xen-bugtool"]
-        flags: ["python2.7"]
       tool-py3:  # declare a new status context "tool-py3"
         paths: ["xen-bugtool"]
         flags: ["python3.11"]
 
-      tests-py2:
-        paths: ["tests/**/test_*.py"]
-        flags: ["python2.7"]
       tests-py3:
         paths: ["tests/**/test_*.py"]
         flags: ["python3.11"]
@@ -151,16 +145,10 @@ coverage:
         threshold: 0%
 
       # The above defaults apply to each of these, unless overridden here:
-      script-py2:
-        paths: ["xen-bugtool"]
-        flags: ["python2.7"]
       script-py3:
         paths: ["xen-bugtool"]
         flags: ["python3.11"]
 
-      tests-py2:
-        paths: ["tests/**/test_*.py"]
-        flags: ["python2.7"]
       tests-py3:
         paths: ["tests/**/test_*.py"]
         flags: ["python3.11"]
