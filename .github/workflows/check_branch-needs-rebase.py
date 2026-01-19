@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Check if the current branch is up-to-date with the remote branch."""
 
-# pylint: disable=using-f-string-in-unsupported-version
 import subprocess
 import sys
 from logging import basicConfig, INFO, info as log

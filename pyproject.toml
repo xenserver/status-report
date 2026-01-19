@@ -38,7 +38,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "pytest<7",
+    "pytest>9",
 ]
 
 [project.urls]
