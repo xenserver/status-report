@@ -31,13 +31,30 @@ The test environment contains two classes of test frameworks:
 
 ## Testing this project
 
-To run the tests using, simply run `pytest`.
+To install `pytest` with the dependencies for running the tests, you can use
+a Python `venv`/`virtualenv` or use `pipx`.
 
-The pytest.ini configures `pytest` to show you logs of failed tests.
+Many times, using `pipx` would be enough and can be easier to handle because
+you can inject the test dependencies into the environment of the `pytest`
+installation of `pipx`, and you do not have to activate a Python environment
+to run `pytest`. You only need to ensure that the `~/.local/bin/` is in your PATH.
 
-For development, do show also logs from passing tests, run `pytest -rA`
+```bash
+sudo apt purge pytest # The distribution pytests are outdated, don't use old tools
+sudo apt install pipx
+pipx ensurepath  # Ensures that `~/.local/bin/` is in your PATH, restart the shell
+pipx install pytest  # The new maintainers made big improvements in current pytest
+pipx inject pytest pyfakefs pytest-mock lxml mock defusedxml
+```
 
-In case a test fails on an asserting, use `pytest -vv` to get the full assert.
+The last command injects the dependencies into the `pytest` environment of `pipx`.
+
+To run all tests, simply run `pytest`.
+
+Hints:
+- `pytest.ini` configures `pytest` to show you logs of failed tests.
+- To also show logs of passing tests, use: `pytest -rA`
+- When test fails in an `assert`, use `pytest -vv` to get all assertion output.
 
 ### Introduction to `pytest`, `pytest.mark` and `pytest fixtures`:
 
