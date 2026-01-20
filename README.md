@@ -205,21 +205,6 @@ maximum size limits are quirky and have led in the past to unexpectedly omitting
 potentially important files just because a change caused a different ordering for
 the collection of files.
 
-This was triggered for example, by the change to collect up-to-date RRDs that
-we'll need to provide as an HotFix for the Yangtze release. This was discovered
-only much later during manual use while working on completely unrelated issues.
-
-Because of this Testability is a problem, it is risky to make such changes.
-
-When the testability is a challenge, there is one other concept that can be applied,
-which is the concept of “proven in use”, where you have confidence by it being
-proven in use.
-
-This result is a testament that keeping Python2 compatibility is necessary.
-We need it to have a good “proven in use” statement for confidence in backporting
-complex changes like collection of up-to-date RRDs (see above) to the Yangtze release
-for Hotfixes.
-
 ### References
 - https://pypi.org/project/radon/
 - https://radon.readthedocs.io/en/latest/
