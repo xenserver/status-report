@@ -20,71 +20,24 @@ For more information, see these README files:
 
 ## Frequently asked Questions
 
-### How stable is the Python3 support in `xen-bugtool`?
+### Why use unit tests, isn't testing optional when we have XenRT?
 
-- It is completely stable and well-tested from usage on XS9:
-  The last Python3 issue was fixed 25 March 2024, and since then,
-  there have been no further Python3 issues.
-- The test suite runs with very high code coverage on both Python2 and Python3
+- By intentional design, the failure mode of the status report tool is to catch
+  all possible exceptions and silently omit the collections that failed.
+- XenRT does not have tests for missing files in the status reports.
+- Therefore, XenRT has effectively no efficient testing of status reports.
+- Most code changes can be tested more effectively using unit tests.
+- The test suite runs with very high code coverage
   and is run on every commit by GitHub Actions.
+- For development, the unit tests can be run in a controlled environment
+  using `pre-commit run -av`. See [doc/pre-commit.md] for details.
 
-### Is Python2 support still needed?
+### How to modernize the status-report tool with Python3
 
-No. Regular support for XenServer 8.2 has ended.
-There will be no backports to XenServer 8.2 and thus Python2 is fully obsolete.
-
-### Why was Python2 support kept for so long?
-
-In case of backporting complex changes to XenServer 8.2, actual use of Python2
-mode on XenServer 8.4 provided confidence that Python2 support was still working.
-But this aspect is no longer a concern.
-
-### What are the benefits of dropping Python2 support?
-
-- Switching `xen-bugtool` to Python3 on XenServer 8.4 too should de-risk it from
-  breaking its Python2 support accidentally when making changes to `xen-bugtool`:
-- As developers now use Python3, the risk of accidentally breaking Python2 support
-  exists. With Python2 support dropped, this risk is gone.
-- Also, more friendly Python3 features become available:
-
-  - `contextlib` context manager `suppress` instead of try-except or try-finally.
-  - `f-strings` instead of the older `%` formatting and "str1" + "str2", etc.
-  - `pathlib` instead of `os.path`
-  - Type annotations that can use type aliases for better readability
-
-### How is the change to Python3-only implemented?
-
-In this repo, the change to Python3-only is implemented in these steps:
-
-- Switching the shebang line to `#!/usr/bin/env python3` (done)
-- Disabling the Python2 test runs in GitHub Actions: See PR #157
-
-In `xenserver-status-report.spec`, the change to Python3 is implemented by
-
-- Replacing the `python2` RPM dependencies with `python3` dependencies
-
-Once this is done, Python2 all compatibility code can be removed.
-
-The Python2 compatibility code is negligible:
-It does not affect the main code paths. Thus, there is no hurry.
-
-#### Which python2 compatibility code can be removed?
-
-There are only 5 (yes, just five) conditions in the status-report code where
-there is a tiny special case for Python2/Python3. Compared to the total size
-of over 2390 lines of the program, this is totally negligible.
-
-Being free to use more elegant Python3 features can make the code
-easier to read and maintain, which can reduce cognitive load over time.
-
-The main change is that with Python3-only, the code can use more elegant
-constructs like `contextlib.suppress` instead of try-except or
-try-finally, and `f-strings` instead of the older `%` formatting.
-
-However, removing these five simple if conditions that run next to no code
-does not change the overall code that much.
-
-See the next question for the concrete data that fosters this point.
+- Replace `try-except-pass` or `try-finally` with `contextlib.suppress`.
+- Replace `%` formatting and "str1" + "str2", etc with `f-strings`.
+- Use `pathlib` instead of `os.path`.
+- Type annotations can now use type aliases for better readability
 
 ### What and where is the complexity in xenserver-status-report?
 
