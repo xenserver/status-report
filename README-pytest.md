@@ -148,43 +148,16 @@ See [doc/testing.md](doc/testing.md) for the different types of tests.
   Calls `xen-bugtool`'s `main()` to generate bug-reports using all output
   formats and verifies the output.
 
-## Discussion on the current state of testing of `xen-bugtool`
+## Tips on testing the status report tool using pytest and pyfakefs
 
-- Unit test cover the cases where we need to supply different input data.
-- Integration and E2E tests use files from
-[`tests/integration/dom0-template`](tests/integration/dom0-template) directly:
-  - We can start to add tests that copy these files into the virtual
-    [pyfakefs](https://pytest-pyfakefs.readthedocs.io/en/v3.7.2/usage.html)
-    file system to test using a virtual file system.
-  - It allows to vary the input data to test different kinds of input data.
-  - Six test cases of [python-libs](https://github.com/xenserver/python-libs)
-    use it very successfully.
+Tip: Use [pyfakefs](https://pytest-pyfakefs.readthedocs.io/en/v3.7.2/usage.html)
+to create a fake file system for test cases. Examples:
 
-- Currently, the End-to-End and integration tests provide most code coverage,
-  which we urgently needed to verify the correctness of the Python3 migrations.
-
-- Unit tests to ensure that the individual functions handle specific correctly
-  are needed still.
-
-
-## Suggested `pytest` plugins for development of test cases
-
-### pytest-pickled
-When updating existing tests or developing new code with new test coverage, we might want to
-ignore all other tests. This can be achieved with an exciting plugin called `pytest-picked`:
-`pytest --picked` will collect all test modules that were newly created or changed but not
-yet committed in a Git repository and run only them.
-
-### pytest-sugar
-`pytest-sugar` is a plugin that, once installed, automatically changes the format of the
-`pytest` standard output to include a graphical %-progress bar when running the test suite.
-
-### Installation of these pytest plugins
-For nicer diffs of dictionaries, arrays, and the like,
-use `pytest-clarity` or `pytest-icdiff`:
-
-```py
-pip install "pytest<7" pytest-picked pytest-sugar pytest-clarity # pytest-icdiff
-```
+- [tests/unit/test_file_output.py](tests/unit/test_file_output.py)
+  - Creates fake files to assert which files are requested for collection.
+  - Captures sys.stdout to assert the expected log messages.
+  - Captures the log file to assert the expected log messages in the file.
+- [tests/unit/test_dump_xapi_procs.py](tests/unit/test_dump_xapi_procs.py)
+  - Creates a fake /proc filesystem and asserts the expected data for collection.
 
 For more information to debug `pytest` test suites see: https://stribny.name/blog/pytest/
