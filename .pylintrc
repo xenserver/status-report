@@ -134,31 +134,23 @@ allow-any-import-level=XenAPI,xen.lowlevel.xc
 # --disable=W".
 
 # Common checks which need to be disabled for now and shall be fixed one by one:
-disable=anomalous-backslash-in-string,
+disable=broad-exception-caught,
         attribute-defined-outside-init,
-        bad-builtin,
         bare-except,
-        broad-except,
-        consider-iterating-dictionary,
         consider-using-dict-items,
         consider-using-f-string,
         consider-using-generator,
         consider-using-in,
-        consider-using-ternary,
         consider-using-tuple,
         consider-using-with,
-        else-if-used,
         fixme,
         global-statement,
         import-error,
         import-outside-toplevel,
         invalid-name,
-        invalid-name,
-        len-as-condition,
         missing-type-doc,  # better do typing than type in the param docstring
         no-else-break,
         no-else-return,
-        no-name-in-module,
         protected-access,
         redefined-builtin,
         redefined-outer-name,
@@ -175,8 +167,6 @@ disable=anomalous-backslash-in-string,
         wrong-import-order,
         # Py2 compat: Python2 requires calls to super() to have it's arguments:
         super-with-arguments,
-        # Py2 compat: As long as we try to use conditional imports for Py2+Py3:
-        ungrouped-imports,
         use-maxsplit-arg
 
 # Enable the message, report, category or checker with the given id(s). You can
