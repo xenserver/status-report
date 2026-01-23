@@ -631,6 +631,8 @@ def cmd_output(cap, args, label = None, filter = None):
     """
     if cap in entries:
         if not is_deemed_executable(args):
+            cmd = args if isinstance(args, str) else " ".join(args)
+            log(f"Command for cap {cap} not found: {cmd}", print_output=False)
             return
         if not label:
             if isinstance(args, list):

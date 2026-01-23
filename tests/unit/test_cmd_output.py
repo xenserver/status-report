@@ -28,6 +28,15 @@ def check_cmd_output_data(bugtool, command, label=None, filter_func=None):
 
     if command.startswith("/missing"):
         assert not bugtool.data  # missing command: no data should be added
+
+        # Check the log file for the missing command
+        with open(bugtool.XEN_BUGTOOL_LOG) as log_file:
+            log = log_file.read().splitlines()
+        assert [f"Command for cap {bugtool.entries[0]} not found: {command}"] == log
+
+        # Clear the log file for the next test
+        with open(bugtool.XEN_BUGTOOL_LOG, "w") as log_file:
+            log_file.write("")
         return
 
     assert bugtool.data == {
@@ -54,6 +63,7 @@ def test_cmd_output_commands_and_labels(bugtool_fixture):
     check_cmd_output_data(bugtool_fixture, "pwd --version", "label", mock_filter)
 
     # Additionally, verify that the given filter function can be used as expected:
+    assert "label" in bugtool_fixture.data
     assert bugtool_fixture.data["label"]["filter"]("arg") == "cookie"
 
 
@@ -84,3 +94,13 @@ def test_cmd_output_multiple_commands(bugtool_fixture):
             "filter": None,
         },
     }
+
+    # Check bugtool logs for missing command
+    with open(bugtool_fixture.XEN_BUGTOOL_LOG) as log_file:
+        log_content = log_file.read().splitlines()
+
+    assert log_content == ["Command for cap pam not found: /missing-cmd arg1 arg2"]
+
+    # Clear the log file for the next test
+    with open(bugtool_fixture.XEN_BUGTOOL_LOG, "w") as f:
+        f.write("")
