@@ -82,14 +82,17 @@ may occur multiple times):
   - The `label` attribute describes the output. Example:
 
     ```xml
-    <command label="host_data_source_list">/opt/xensource/bin/xe host-data-source-list host=$(/opt/xensource/bin/xe pool-list params=master --minimal)</command>
+    <command label="host_data_source_list">/opt/xensource/bin/xe host-data-source-list
+    host=$(/opt/xensource/bin/xe pool-list params=master --minimal)</command>
     ```
 
 ### Example `stuff.xml` file from the `xapi` bugtool Plugin
 
 ```xml
 <collect>
-<command label="sr_data_source_list">/opt/xensource/bin/xe sr-list --minimal | tr , '\n' | xargs --verbose -n 1 -I {} /opt/xensource/bin/xe sr-data-source-list uuid={} 2>&amp;1</command>
+<command label="sr_data_source_list">/opt/xensource/bin/xe sr-list --minimal |
+   tr , '\n' | xargs --verbose -n 1 -I {} /opt/xensource/bin/xe sr-data-source-list
+   uuid={} 2>&amp;1</command>
 <files>/etc/stunnel/xapi.conf</files>
 <list>/var/lib/corosync</list>
 <list recursive="false">/etc/xen/scripts</list>
