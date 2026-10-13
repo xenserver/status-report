@@ -353,3 +353,50 @@ def test_main_func_output_to_tarbz2(patched_bugtool, capfd):
     args = ["--output=" + filetype]
     bugtool.ProcOutput.debug = False
     assert_valid_inventory(bugtool, args, capfd, tmp_path, base_path, filetype)
+
+
+def collect_system_logs(bugtool, mocker, base_path, tmp_path, log_names):
+    """Run main() to collect the system logs from a temporary log directory
+
+    :param bugtool: The patched bugtool module object to be executed
+    :param mocker: The mocker object for mocking functions and attributes.
+    :param base_path: The base directory and base name of the output file.
+    :param tmp_path: The temporary path where the log directory is created.
+    :param log_names: The names of the files to create in the log directory.
+    :returns: The names of the files of the log directory found in the archive.
+    """
+
+    log_dir = tmp_path + "/var/log/"
+    os.makedirs(log_dir)
+    for log_name in log_names:
+        with open(log_dir + log_name, "w"):
+            pass
+    mocker.patch.object(bugtool, "VAR_LOG_DIR", log_dir)
+
+    sys.argv.extend(["--entries=system-logs", "--output=tar"])
+    assert bugtool.main() == 0
+
+    archived_dir = os.path.basename(base_path) + log_dir
+    with tarfile.open(base_path + ".tar") as tar:
+        names = tar.getnames()
+    return [name[len(archived_dir) :] for name in names if name.startswith(archived_dir)]
+
+
+def test_main_collects_log_rotations_beyond_19(patched_bugtool, mocker):
+    """Assert that main() collects all the rotations of a log, beyond the 19th"""
+
+    bugtool, base_path, tmp_path = patched_bugtool
+    log_names = ["kern.log", "kern.log.1"] + ["kern.log.%d.gz" % n for n in range(2, 26)]
+
+    archived = collect_system_logs(bugtool, mocker, base_path, tmp_path, log_names)
+    assert sorted(archived) == sorted(log_names)
+
+
+def test_main_collects_uncompressed_wtmp_rotation(patched_bugtool, mocker):
+    """Assert that main() collects the uncompressed rotation of wtmp"""
+
+    bugtool, base_path, tmp_path = patched_bugtool
+    log_names = ["wtmp", "wtmp.1"]
+
+    archived = collect_system_logs(bugtool, mocker, base_path, tmp_path, log_names)
+    assert sorted(archived) == sorted(log_names)

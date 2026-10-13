@@ -12,6 +12,26 @@ def test_get_recent_logs(bugtool):
     assert bugtool.get_recent_logs(files, 1) == [files[1]]
 
 
+def test_get_rotated_logs(bugtool, tmpdir):
+    """Assert get_rotated_logs() returning all the rotations of the logs"""
+
+    kern = str(tmpdir.join("kern.log"))
+    wtmp = str(tmpdir.join("wtmp"))
+    for name in ["kern.log", "kern.log.1", "kern.log.1.bak", "wtmp.1"]:
+        tmpdir.join(name).write("")
+    for number in range(2, 26):
+        tmpdir.join("kern.log.%d.gz" % number).write("")
+
+    # All the rotations, beyond the 19th, ordered by number, then by log.
+    # kern.log.1.bak is not a rotation: neither `<log>.<n>` nor `<log>.<n>.gz`.
+    expected = [kern + ".1", wtmp + ".1"] + [kern + ".%d.gz" % n for n in range(2, 26)]
+    assert bugtool.get_rotated_logs([kern, wtmp], 9) == expected
+    # 8 is the highest verbosity which limits the rotations: only return
+    # the rotations 1 to 7:
+    expected = [kern + ".1", wtmp + ".1"] + [kern + ".%d.gz" % n for n in range(2, 8)]
+    assert bugtool.get_rotated_logs([kern, wtmp], 8) == expected
+
+
 def test_read_inventory(bugtool, dom0_template):
     """Assert readKeyValueFile() reading the a xensource inventory file"""
 
